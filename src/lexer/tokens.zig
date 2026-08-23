@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const TokenKind = enum {
     eof,
     illegal,
@@ -45,4 +47,20 @@ pub const Token = struct {
     kind: TokenKind,
     lexeme: []const u8,
     span: Span,
+
+    pub fn debug(self: *Token) void {
+        std.debug.print("{}-{}:{}-{} \"{s}\" ({s})\n", .{
+            self.span.column_start,
+            self.span.column_end,
+            self.span.line_start,
+            self.span.line_end,
+            self.lexeme,
+            @tagName(self.kind),
+        });
+    }
 };
+
+pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
+    .{ "and", .@"and" },
+    .{ "or", .@"or" },
+});
