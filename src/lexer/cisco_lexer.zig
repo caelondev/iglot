@@ -1,3 +1,36 @@
+//! Copyright (C) 2026  caelondev
+//!
+//! This program is free software: you can redistribute it and/or modify
+//! it under the terms of the GNU Affero General Public License as published
+//! by the Free Software Foundation, either version 3 of the License, or
+//! (at your option) any later version.
+//!
+//! This program is distributed in the hope that it will be useful,
+//! but WITHOUT ANY WARRANTY; without even the implied warranty of
+//! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//! GNU Affero General Public License for more details.
+//!
+//! You should have received a copy of the GNU Affero General Public License
+//! along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//!
+//! The Cisco lexer converts a null-terminated source buffer into a stream
+//! of lexical tokens.
+//!
+//! The lexer recognizes identifiers, keywords, numeric and string literals,
+//! punctuation, operators, and illegal characters. Whitespace is consumed
+//! internally and does not produce tokens.
+//!
+//! Tokens retain slices of the original source buffer rather than allocating
+//! new memory. The caller must therefore keep `source` alive and unchanged
+//! for as long as the produced tokens are used.
+//!
+//! Each token also carries source-location information describing its
+//! beginning and ending line and column.
+//!
+//! `CiscoLexer.nextToken` advances the lexer by one token on each call and
+//! eventually returns an `.eof` token once the source has been exhausted.
+//! Lexical errors are represented as `.error` tokens.
+
 const tokens = @import("tokens.zig");
 
 pub const CiscoLexer = struct {
