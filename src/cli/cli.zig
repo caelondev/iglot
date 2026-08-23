@@ -13,17 +13,22 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//!
 //! Command-line interface for cisco.
 //!
-//! Parses process arguments, dispatches to the matching subcommand handler
-//! in `commands`, and falls back to `help` when no command is given or the
-//! given command isn't recognized. Each command receives a `Context`
-//! carrying the arena allocator, raw args, the remaining argument iterator,
-//! and the `std.Io` instance used for output.
+//! Parses process arguments, dispatches them to the corresponding subcommand
+//! handler, and provides each command with a shared execution context.
+//!
+//! Commands are registered in `commands` and selected by their command name.
+//! When no command is provided, the CLI prints usage information. Unknown
+//! commands are reported as errors.
+//!
+//! `Context` provides command handlers with the process arguments, remaining
+//! argument iterator, general-purpose allocator, arena allocator, and
+//! `std.Io` instance used for input and output.
 
 const std = @import("std");
 
+/// Shared execution context provided to command handlers.
 pub const Context = struct {
     arena: *std.heap.ArenaAllocator,
     allocator: std.mem.Allocator,
@@ -40,6 +45,7 @@ const commands: std.StaticStringMap(*const Command) = .initComptime(.{
     .{ "run", &@import("run_command.zig").run },
 });
 
+/// Entry point for the cisco command-line interface.
 pub const CiscoCLI = struct {
     args: []const []const u8,
     argsIter: std.process.Args.Iterator,
