@@ -19,10 +19,12 @@ const CiscoCLI = @import("cli/cli.zig").CiscoCLI;
 pub fn main(init: std.process.Init) !void {
     defer init.arena.deinit();
 
-    var cli = CiscoCLI.init(
-        try init.minimal.args.toSlice(init.arena.allocator()),
-        init.minimal.args.iterate(),
-    );
+    const args =
+        try init.minimal.args.toSlice(init.gpa);
+    defer init.gpa.free(args);
+
+    const argsIter = init.minimal.args.iterate();
+    var cli = CiscoCLI.init(args, argsIter);
 
     try cli.run(
         init.arena,
