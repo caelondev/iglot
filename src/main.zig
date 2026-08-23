@@ -14,14 +14,19 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const std = @import("std");
-const CiscoCLI = @import("cli.zig").CiscoCLI;
+const CiscoCLI = @import("cli/cli.zig").CiscoCLI;
 
 pub fn main(init: std.process.Init) !void {
+    defer init.arena.deinit();
+
     var cli = CiscoCLI.init(
-        init.arena,
         try init.minimal.args.toSlice(init.arena.allocator()),
         init.minimal.args.iterate(),
     );
 
-    try cli.run(init.io);
+    try cli.run(
+        init.arena,
+        init.gpa,
+        init.io,
+    );
 }
