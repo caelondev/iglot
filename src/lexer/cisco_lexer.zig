@@ -126,19 +126,47 @@ pub const CiscoLexer = struct {
                     },
 
                     '>' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == '=') {
+                            self.advance();
+                            return self.newToken(.greater_equal_to, self.source[start..self.cursor]);
+                        }
+
                         return self.newToken(.greater, self.source[start..self.cursor]);
                     },
                     '<' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == '=') {
+                            self.advance();
+                            return self.newToken(.less_equal_to, self.source[start..self.cursor]);
+                        }
+
                         return self.newToken(.less, self.source[start..self.cursor]);
                     },
                     '=' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == '=') {
+                            self.advance();
+                            return self.newToken(.equal_to, self.source[start..self.cursor]);
+                        }
+
                         return self.newToken(.assign, self.source[start..self.cursor]);
                     },
                     '!' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == '=') {
+                            self.advance();
+                            return self.newToken(.not_equal_to, self.source[start..self.cursor]);
+                        }
+
                         return self.newToken(.bang, self.source[start..self.cursor]);
                     },
 
@@ -227,6 +255,14 @@ pub const CiscoLexer = struct {
 
     fn cur(self: *Self) u8 {
         return self.source[self.cursor];
+    }
+
+    fn peek(self: *Self) u8 {
+        if (self.cursor + 1 >= self.source.len) {
+            return 0;
+        }
+
+        return self.source[self.cursor + 1];
     }
 
     fn errorToken(self: *Self, message: []const u8) tokens.Token {

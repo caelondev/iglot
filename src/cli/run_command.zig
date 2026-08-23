@@ -6,8 +6,8 @@ pub fn run(ctx: Context) !void {
     _ = ctx;
 
     const src =
-        \\ apple or orange +*-/()[]{}=><!
-        \\ and banana "1010"
+        \\ ! = < = > = = =
+        \\ != <= >= == !=
     ;
 
     var lexer = CiscoLexer.init(src);
