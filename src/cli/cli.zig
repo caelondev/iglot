@@ -59,7 +59,7 @@ pub const CiscoCLI = struct {
         allocator: std.mem.Allocator,
         io: std.Io,
     ) !void {
-        _ = self.argsIter.next(); // skip bin name
+        _ = self.argsIter.next(); // skip bin path
 
         var stdout_writer = std.Io.File.stdout().writer(io, &.{});
         const writer = &stdout_writer.interface;
