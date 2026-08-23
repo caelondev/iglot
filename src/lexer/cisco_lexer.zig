@@ -13,6 +13,8 @@ pub const CiscoLexer = struct {
     const State = enum {
         start,
         identifier,
+        numeric,
+        strings,
     };
 
     const Self = @This();
@@ -70,6 +72,93 @@ pub const CiscoLexer = struct {
                         continue :lexer .identifier;
                     },
 
+                    '0'...'9' => {
+                        self.advance();
+                        continue :lexer .numeric;
+                    },
+
+                    '"' => {
+                        self.advance();
+                        start = self.cursor;
+                        continue :lexer .strings;
+                    },
+
+                    '[' => {
+                        self.advance();
+                        return self.newToken(.left_bracket, self.source[start..self.cursor]);
+                    },
+                    ']' => {
+                        self.advance();
+                        return self.newToken(.right_bracket, self.source[start..self.cursor]);
+                    },
+                    '{' => {
+                        self.advance();
+                        return self.newToken(.left_brace, self.source[start..self.cursor]);
+                    },
+                    '}' => {
+                        self.advance();
+                        return self.newToken(.right_brace, self.source[start..self.cursor]);
+                    },
+                    '(' => {
+                        self.advance();
+                        return self.newToken(.left_parenthesis, self.source[start..self.cursor]);
+                    },
+                    ')' => {
+                        self.advance();
+                        return self.newToken(.right_parenthesis, self.source[start..self.cursor]);
+                    },
+
+                    '+' => {
+                        self.advance();
+                        return self.newToken(.plus, self.source[start..self.cursor]);
+                    },
+                    '-' => {
+                        self.advance();
+                        return self.newToken(.minus, self.source[start..self.cursor]);
+                    },
+                    '*' => {
+                        self.advance();
+                        return self.newToken(.asterisk, self.source[start..self.cursor]);
+                    },
+                    '/' => {
+                        self.advance();
+                        return self.newToken(.slash, self.source[start..self.cursor]);
+                    },
+
+                    '>' => {
+                        self.advance();
+                        return self.newToken(.greater, self.source[start..self.cursor]);
+                    },
+                    '<' => {
+                        self.advance();
+                        return self.newToken(.less, self.source[start..self.cursor]);
+                    },
+                    '=' => {
+                        self.advance();
+                        return self.newToken(.assign, self.source[start..self.cursor]);
+                    },
+                    '!' => {
+                        self.advance();
+                        return self.newToken(.bang, self.source[start..self.cursor]);
+                    },
+
+                    ';' => {
+                        self.advance();
+                        return self.newToken(.semicolon, self.source[start..self.cursor]);
+                    },
+                    ':' => {
+                        self.advance();
+                        return self.newToken(.colon, self.source[start..self.cursor]);
+                    },
+                    ',' => {
+                        self.advance();
+                        return self.newToken(.comma, self.source[start..self.cursor]);
+                    },
+                    '.' => {
+                        self.advance();
+                        return self.newToken(.dot, self.source[start..self.cursor]);
+                    },
+
                     else => {
                         const tok = self.newToken(.illegal, &.{self.cur()});
                         self.advance();
@@ -81,7 +170,7 @@ pub const CiscoLexer = struct {
             .identifier => {
                 while (!self.isAtEnd()) {
                     switch (self.cur()) {
-                        'a'...'z', 'A'...'Z', '_' => {
+                        'a'...'z', 'A'...'Z', '_', '0'...'9' => {
                             self.advance();
                         },
 
@@ -93,6 +182,36 @@ pub const CiscoLexer = struct {
                 if (tokens.keywords.get(lexeme)) |kind| {
                     return self.newToken(kind, lexeme);
                 } else return self.newToken(.identifier, lexeme);
+            },
+
+            .numeric => {
+                while (!self.isAtEnd()) {
+                    switch (self.cur()) {
+                        'a'...'z', 'A'...'Z', '_', '0'...'9' => {
+                            self.advance();
+                        },
+
+                        else => break,
+                    }
+                }
+
+                const lexeme = self.source[start..self.cursor];
+                return self.newToken(.number, lexeme);
+            },
+
+            .strings => {
+                while (!self.isAtEnd() and self.cur() != '"') {
+                    self.advance();
+                }
+
+                if (self.isAtEnd()) {
+                    return self.errorToken("unterminated string literal");
+                }
+
+                const lexeme = self.source[start..self.cursor];
+                self.advance(); // eat the "
+
+                return self.newToken(.string, lexeme);
             },
         }
     }
@@ -108,6 +227,10 @@ pub const CiscoLexer = struct {
 
     fn cur(self: *Self) u8 {
         return self.source[self.cursor];
+    }
+
+    fn errorToken(self: *Self, message: []const u8) tokens.Token {
+        return self.newToken(.@"error", message);
     }
 
     fn newToken(self: *Self, kind: tokens.TokenKind, lexeme: []const u8) tokens.Token {

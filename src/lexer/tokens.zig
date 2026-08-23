@@ -3,6 +3,7 @@ const std = @import("std");
 pub const TokenKind = enum {
     eof,
     illegal,
+    @"error",
 
     string,
     number,
@@ -18,6 +19,8 @@ pub const TokenKind = enum {
     @"and",
     @"or",
 
+    less,
+    greater,
     equal_to,
     not_equal_to,
     less_equal_to,
