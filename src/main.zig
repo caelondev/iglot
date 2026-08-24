@@ -17,8 +17,6 @@ const std = @import("std");
 const CiscoCLI = @import("cli/cli.zig").CiscoCLI;
 
 pub fn main(init: std.process.Init) !void {
-    defer init.arena.deinit();
-
     const args =
         try init.minimal.args.toSlice(init.gpa);
     defer init.gpa.free(args);

@@ -1,0 +1,98 @@
+const std = @import("std");
+
+const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
+const tokens = @import("../lexer/tokens.zig");
+const ast = @import("ast.zig");
+const CiscoDiagnostic = @import("diagnostics.zig").CiscoDiagnostic;
+
+const nud_lit = @import("nud/literals.zig");
+const parseStatement = @import("statements/parseStatement.zig").parseStatement;
+
+const NudFn = *const fn (
+    *CiscoParser,
+    std.mem.Allocator,
+) anyerror!?ast.Expression;
+
+const LedFn = *const fn (
+    *CiscoParser,
+    ast.Expression,
+    std.mem.Allocator,
+) anyerror!?ast.Expression;
+
+const NullDenotedExpr = struct {
+    token: tokens.TokenKind,
+    callback: NudFn,
+};
+
+const LeftDenotedExpr = struct {
+    token: tokens.TokenKind,
+    callback: LedFn,
+};
+
+pub const nud_exprs = [_]NullDenotedExpr{
+    .{
+        .token = .number,
+        .callback = nud_lit.parseInteger,
+    },
+};
+
+pub const led_exprs = [_]LeftDenotedExpr{};
+
+pub const CiscoParser = struct {
+    lexer: *CiscoLexer,
+    cur_tok: tokens.Token,
+    peek_tok: tokens.Token,
+
+    diagnostics: std.ArrayList(CiscoDiagnostic),
+
+    const Self = @This();
+
+    pub fn init(
+        allocator: std.mem.Allocator,
+        lexer: *CiscoLexer,
+    ) !Self {
+        const cur_tok = lexer.nextToken();
+        const peek_tok = lexer.nextToken();
+
+        return .{
+            .lexer = lexer,
+            .cur_tok = cur_tok,
+            .peek_tok = peek_tok,
+            .diagnostics = try .initCapacity(allocator, 15),
+        };
+    }
+
+    pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !ast.Program {
+        var stmts: std.ArrayList(ast.Statement) = .empty;
+
+        while (!self.isEof()) {
+            const s = parseStatement(self, allocator) catch |e| {
+                @panic(@tagName(e));
+            };
+
+            if (s) |stmt| {
+                try stmts.append(allocator, stmt);
+            }
+        }
+
+        const body = try stmts.toOwnedSlice(allocator);
+        return .{ .body = body };
+    }
+
+    pub fn advance(self: *Self) tokens.Token {
+        const cur = self.cur_tok;
+
+        self.cur_tok = self.peek_tok;
+        self.peek_tok = self.lexer.nextToken();
+
+        return cur;
+    }
+
+    pub fn isEof(self: *Self) bool {
+        return self.cur_tok.kind == .eof;
+    }
+
+    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {
+        try self.diagnostics.append(allocator, diagnostic);
+    }
+};

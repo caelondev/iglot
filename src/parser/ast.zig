@@ -35,6 +35,8 @@
 
 const tokens = @import("../lexer/tokens.zig");
 
+pub const Program = struct { body: []Statement };
+
 pub const Node = struct {
     span: tokens.Span,
     kind: Kind,
