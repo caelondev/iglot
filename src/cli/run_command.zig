@@ -25,17 +25,20 @@ const std = @import("std");
 const Context = @import("cli.zig").Context;
 const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
 const p = @import("../parser/parser.zig");
+const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
         \\ 170141183460469231731687303715884105727
+        \\ 67 69
     ;
 
     const allocator = ctx.arena.*.allocator();
 
     var lexer = CiscoLexer.init(src);
     var parser = try p.CiscoParser.init(allocator, &lexer);
-    const ast = try parser.parseProgram(allocator);
-    _ = ast;
+    var ast = try parser.parseProgram(allocator);
+    const dump = try dumpProgramAst(allocator, &ast);
+    std.debug.print("{s}", .{dump});
 }
