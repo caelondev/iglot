@@ -7,6 +7,7 @@ const CiscoDiagnostic = @import("diagnostics.zig").CiscoDiagnostic;
 
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
+const Precedence = @import("precedence.zig").Precedence;
 
 pub const NudFn = *const fn (
     parser: *CiscoParser,
@@ -48,7 +49,24 @@ pub const nud_exprs = [_]NullDenotedExpr{
     },
 };
 
-pub const led_exprs = [_]LeftDenotedExpr{};
+pub const led_exprs = [_]LeftDenotedExpr{
+    .{
+        .token_kind = .plus,
+        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .minus,
+        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .slash,
+        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .asterisk,
+        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+    },
+};
 
 pub const CiscoParser = struct {
     lexer: *CiscoLexer,
@@ -106,5 +124,9 @@ pub const CiscoParser = struct {
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {
         try self.diagnostics.append(allocator, diagnostic);
+    }
+
+    pub fn cur_precedence(self: *Self) Precedence {
+        return .ofToken(self.cur_tok);
     }
 };

@@ -47,11 +47,18 @@ pub const Node = struct {
     };
 };
 
-pub const Expression = union(enum) {
-    integer: IntegerExpression,
-    float: FloatExpression,
-    string: StringExpression,
-    identifier: IdentifierExpression,
+pub const Expression = struct {
+    span: tokens.Span,
+    expr: union(enum) {
+        // literals
+        integer: IntegerExpression,
+        float: FloatExpression,
+        string: StringExpression,
+        identifier: IdentifierExpression,
+
+        // le regular expressions
+        binary: BinaryExpression,
+    },
 };
 
 pub const Statement = union(enum) {
@@ -74,6 +81,13 @@ pub const IdentifierExpression = struct {
     value: []const u8,
 };
 
+pub const BinaryExpression = struct {
+    left: *const Expression,
+    right: *const Expression,
+    operator: tokens.TokenKind,
+};
+
 pub const ExpressionStatement = struct {
     expression: Expression,
+    span: tokens.Span,
 };

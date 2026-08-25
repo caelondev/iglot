@@ -6,5 +6,6 @@ pub const CiscoDiagnostic = struct {
 
     const Kind = enum {
         IntegerOverflow,
+        MissingRightHandSideExpression,
     };
 };

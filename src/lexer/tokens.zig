@@ -75,6 +75,38 @@ pub const Span = struct {
     column_end: usize,
     line_start: usize,
     line_end: usize,
+
+    pub fn mergeFromSpans(span_start: Span, span_end: Span) Span {
+        return .{
+            .column_start = span_start.column_start,
+            .column_end = span_end.column_end,
+            .line_start = span_start.line_start,
+            .line_end = span_end.line_end,
+        };
+    }
+
+    pub fn format(
+        self: Span,
+        writer: *std.Io.Writer,
+    ) !void {
+        try writer.print("{d}:{d}", .{
+            self.line_start,
+            self.column_start,
+        });
+
+        if (self.line_start == self.line_end) {
+            if (self.column_start != self.column_end) {
+                try writer.print("-{d}", .{
+                    self.column_end,
+                });
+            }
+        } else {
+            try writer.print("-{d}:{d}", .{
+                self.line_end,
+                self.column_end,
+            });
+        }
+    }
 };
 
 /// A lexical token produced by the lexer.

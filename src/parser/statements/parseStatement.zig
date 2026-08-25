@@ -9,7 +9,10 @@ pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.
     };
 
     if (expression) |expr| {
-        const stmt: ast.ExpressionStatement = .{ .expression = expr };
+        const stmt: ast.ExpressionStatement = .{
+            .expression = expr,
+            .span = expr.span,
+        };
         return .{ .expression = stmt };
     }
 

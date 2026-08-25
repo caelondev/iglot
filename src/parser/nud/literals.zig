@@ -32,7 +32,8 @@ pub fn parseInteger(
     };
 
     return .{
-        .integer = integer_expr,
+        .expr = .{ .integer = integer_expr },
+        .span = lit_raw.span,
     };
 }
 
@@ -50,18 +51,25 @@ pub fn parseFloat(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
     };
 
     return .{
-        .float = float_expr,
+        .expr = .{ .float = float_expr },
+        .span = lit_raw.span,
     };
 }
 
 pub fn parseIdentifier(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.advance();
     const ident_expr: ast.IdentifierExpression = .{ .value = lit_raw.lexeme };
-    return .{ .identifier = ident_expr };
+    return .{
+        .expr = .{ .identifier = ident_expr },
+        .span = lit_raw.span,
+    };
 }
 
 pub fn parseString(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.advance();
     const str_expr: ast.StringExpression = .{ .value = lit_raw.lexeme };
-    return .{ .string = str_expr };
+    return .{
+        .expr = .{ .string = str_expr },
+        .span = lit_raw.span,
+    };
 }
