@@ -9,14 +9,14 @@ const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
 
 pub const NudFn = *const fn (
-    *CiscoParser,
-    std.mem.Allocator,
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
 ) anyerror!?ast.Expression;
 
 pub const LedFn = *const fn (
-    *CiscoParser,
-    ast.Expression,
-    std.mem.Allocator,
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+    left: ast.Expression,
 ) anyerror!?ast.Expression;
 
 const NullDenotedExpr = struct {

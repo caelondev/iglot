@@ -81,4 +81,8 @@ pub const Precedence = enum(u8) {
             else => .lowest,
         };
     }
+
+    pub fn toInt(self: Precedence) u8 {
+        return @intFromEnum(self);
+    }
 };

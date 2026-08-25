@@ -4,7 +4,7 @@ const CiscoParser = @import("../parser.zig").CiscoParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 
 pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Statement {
-    const expression = parseExpression(parser, allocator) catch |e| {
+    const expression = parseExpression(parser, allocator, .lowest) catch |e| {
         @panic(@errorName(e));
     };
 
