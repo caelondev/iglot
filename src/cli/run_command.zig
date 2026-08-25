@@ -31,7 +31,9 @@ const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgr
 pub fn run(ctx: Context) !void {
     const src =
         \\ 170141183460469231731687303715884105727
-        \\ 67 69
+        \\ 67 69.0000 68.6278
+        \\ "hello world"
+        \\ apple orange
     ;
 
     const allocator = ctx.arena.*.allocator();

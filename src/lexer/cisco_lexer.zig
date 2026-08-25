@@ -31,6 +31,7 @@
 //! eventually returns an `.eof` token once the source has been exhausted.
 //! Lexical errors are represented as `.error` tokens.
 
+const std = @import("std");
 const tokens = @import("tokens.zig");
 
 pub const CiscoLexer = struct {
@@ -248,8 +249,20 @@ pub const CiscoLexer = struct {
             .numeric => {
                 while (!self.isAtEnd()) {
                     switch (self.cur()) {
-                        'a'...'z', 'A'...'Z', '_', '0'...'9' => {
+                        '0'...'9', '.' => {
                             self.advance();
+                            if (self.cur() == '.') {
+                                self.advance();
+
+                                while (!self.isAtEnd()) {
+                                    switch (self.cur()) {
+                                        '0'...'9' => self.advance(),
+                                        else => break,
+                                    }
+                                }
+
+                                break;
+                            }
                         },
 
                         else => break,
@@ -257,7 +270,10 @@ pub const CiscoLexer = struct {
                 }
 
                 const lexeme = self.source[start..self.cursor];
-                return self.newToken(.number, lexeme);
+                if (std.mem.indexOfScalar(u8, lexeme, '.')) |_| {
+                    return self.newToken(.float, lexeme);
+                }
+                return self.newToken(.integer, lexeme);
             },
 
             .strings => {

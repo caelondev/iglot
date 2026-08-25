@@ -35,7 +35,8 @@ pub const TokenKind = enum {
     @"error",
 
     string,
-    number,
+    float,
+    integer,
     identifier,
 
     plus,

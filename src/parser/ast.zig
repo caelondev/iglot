@@ -51,7 +51,7 @@ pub const Expression = union(enum) {
     integer: IntegerExpression,
     float: FloatExpression,
     string: StringExpression,
-    boolean: BooleanExpression,
+    identifier: IdentifierExpression,
 };
 
 pub const Statement = union(enum) {
@@ -70,8 +70,8 @@ pub const StringExpression = struct {
     value: []const u8,
 };
 
-pub const BooleanExpression = struct {
-    value: bool,
+pub const IdentifierExpression = struct {
+    value: []const u8,
 };
 
 pub const ExpressionStatement = struct {

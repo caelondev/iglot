@@ -45,12 +45,19 @@ fn dumpExpr(
     depth: usize,
     expr: ast.Expression,
 ) !void {
+    try out.appendNTimes(allocator, ' ', depth * 2);
     switch (expr) {
         .integer => |i| {
-            try out.appendNTimes(allocator, ' ', depth * 2);
             try out.print(allocator, "Integer: {d}\n", .{i.value});
         },
-
-        else => unreachable,
+        .string => |s| {
+            try out.print(allocator, "String: \"{s}\"\n", .{s.value});
+        },
+        .float => |f| {
+            try out.print(allocator, "Float: {d}\n", .{f.value});
+        },
+        .identifier => |i| {
+            try out.print(allocator, "Identifier: {s}\n", .{i.value});
+        },
     }
 }

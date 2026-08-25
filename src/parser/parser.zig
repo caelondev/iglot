@@ -8,31 +8,43 @@ const CiscoDiagnostic = @import("diagnostics.zig").CiscoDiagnostic;
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
 
-const NudFn = *const fn (
+pub const NudFn = *const fn (
     *CiscoParser,
     std.mem.Allocator,
 ) anyerror!?ast.Expression;
 
-const LedFn = *const fn (
+pub const LedFn = *const fn (
     *CiscoParser,
     ast.Expression,
     std.mem.Allocator,
 ) anyerror!?ast.Expression;
 
 const NullDenotedExpr = struct {
-    token: tokens.TokenKind,
+    token_kind: tokens.TokenKind,
     callback: NudFn,
 };
 
 const LeftDenotedExpr = struct {
-    token: tokens.TokenKind,
+    token_kind: tokens.TokenKind,
     callback: LedFn,
 };
 
 pub const nud_exprs = [_]NullDenotedExpr{
     .{
-        .token = .number,
+        .token_kind = .integer,
         .callback = nud_lit.parseInteger,
+    },
+    .{
+        .token_kind = .float,
+        .callback = nud_lit.parseFloat,
+    },
+    .{
+        .token_kind = .string,
+        .callback = nud_lit.parseString,
+    },
+    .{
+        .token_kind = .identifier,
+        .callback = nud_lit.parseIdentifier,
     },
 };
 
