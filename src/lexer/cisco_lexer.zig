@@ -57,8 +57,8 @@ pub const CiscoLexer = struct {
             .source = source,
             .cursor = 0,
 
-            .prev_col = 0,
-            .cur_col = 0,
+            .prev_col = 1,
+            .cur_col = 1,
 
             .prev_line = 1,
             .cur_line = 1,
@@ -86,12 +86,12 @@ pub const CiscoLexer = struct {
                             switch (self.cur()) {
                                 ' ', '\t', '\n', '\r' => {
                                     if (self.cur() == '\n') {
-                                        self.prev_col = 0;
-                                        self.cur_col = 0;
+                                        self.advance();
+                                        self.cur_col = 1;
                                         self.cur_line += 1;
+                                    } else {
+                                        self.advance();
                                     }
-
-                                    self.advance();
                                 },
                                 else => break,
                             }

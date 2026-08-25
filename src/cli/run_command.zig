@@ -23,7 +23,7 @@
 
 const std = @import("std");
 const Context = @import("cli.zig").Context;
-
+const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
 const p = @import("../parser/parser.zig");
 const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
 
