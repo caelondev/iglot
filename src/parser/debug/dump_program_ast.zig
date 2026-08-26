@@ -1,3 +1,34 @@
+//! Copyright (C) 2026  caelondev
+//!
+//! This program is free software: you can redistribute it and/or modify
+//! it under the terms of the GNU Affero General Public License as published
+//! by the Free Software Foundation, either version 3 of the License, or
+//! (at your option) any later version.
+//!
+//! This program is distributed in the hope that it will be useful,
+//! but WITHOUT ANY WARRANTY; without even the implied warranty of
+//! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//! GNU Affero General Public License for more details.
+//!
+//! You should have received a copy of the GNU Affero General Public License
+//! along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//!
+//! Provides a human-readable representation of the Cisco abstract syntax
+//! tree.
+//!
+//! The abstract syntax tree dumper traverses a program and writes its
+//! structure to a newly allocated byte slice. Nodes are indented according
+//! to their depth in the tree, making nested expressions and statement
+//! structure visible.
+//!
+//! Each node is printed with its source span and relevant node data, such as
+//! literal values, identifiers, and binary operators.
+//!
+//! `dumpProgramAst` is intended primarily for debugging and development.
+//! Its output is a textual representation of the abstract syntax tree rather
+//! than a serialization format and should not be relied upon for program data
+//! interchange.
+
 const std = @import("std");
 const ast = @import("../ast.zig");
 const Allocator = std.mem.Allocator;

@@ -134,8 +134,19 @@ pub const CiscoParser = struct {
         return .ofToken(self.cur_tok);
     }
 
-    pub fn expect(self: *Self, expected_kind: tokens.TokenKind) ?tokens.Token {
+    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind, span: tokens.Span) ?tokens.Token {
         if (self.cur_tok.kind != expected_kind) {
+            self.reportError(allocator, .{
+                .span = span,
+                .kind = .{
+                    .ExpectedToken = .{
+                        .expected = expected_kind,
+                        .found = self.cur_tok.kind,
+                    },
+                },
+            }) catch {
+                @panic("ran out of memory during parsing.");
+            };
             return null;
         }
 
