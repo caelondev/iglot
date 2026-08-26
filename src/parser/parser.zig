@@ -47,6 +47,10 @@ pub const nud_exprs = [_]NullDenotedExpr{
         .token_kind = .identifier,
         .callback = nud_lit.parseIdentifier,
     },
+    .{
+        .token_kind = .left_parenthesis,
+        .callback = @import("nud/grouping_expression.zig").parseGroupingExpression,
+    },
 };
 
 pub const led_exprs = [_]LeftDenotedExpr{
@@ -128,5 +132,13 @@ pub const CiscoParser = struct {
 
     pub fn cur_precedence(self: *Self) Precedence {
         return .ofToken(self.cur_tok);
+    }
+
+    pub fn expect(self: *Self, expected_kind: tokens.TokenKind) ?tokens.Token {
+        if (self.cur_tok.kind != expected_kind) {
+            return null;
+        }
+
+        return self.advance();
     }
 };

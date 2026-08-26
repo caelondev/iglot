@@ -8,13 +8,14 @@ const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseExpression(parser: *CiscoParser, allocator: std.mem.Allocator, precedence: Precedence) !?ast.Expression {
     const nud = lookupNud(parser.cur_tok.kind) orelse return null;
+
     var left = try nud(parser, allocator) orelse return null;
 
     while (precedence.toInt() < Precedence.ofToken(parser.cur_tok).toInt()) {
         const led = lookupLed(parser.cur_tok.kind) orelse break;
+
         left = try led(parser, allocator, left) orelse return left;
     }
-
     return left;
 }
 

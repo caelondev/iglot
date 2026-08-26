@@ -30,7 +30,7 @@ const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgr
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ 100 * 2 + 10 / 100
+        \\ (1+2)*3-4/(5+6)
     ;
 
     const allocator = ctx.arena.*.allocator();
