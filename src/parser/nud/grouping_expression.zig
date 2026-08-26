@@ -29,7 +29,7 @@ const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseGroupingExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Expression {
     _ = parser.advance();
-    const expression = parseExpression(parser, allocator, .lowest);
-    _ = parser.expect(.right_parenthesis) orelse return null;
+    const expression = try parseExpression(parser, allocator, .lowest) orelse return null;
+    _ = parser.expect(allocator, .right_parenthesis, expression.span) orelse return null;
     return expression;
 }

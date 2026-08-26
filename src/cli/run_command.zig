@@ -38,6 +38,26 @@ pub fn run(ctx: Context) !void {
     var lexer = CiscoLexer.init(src);
     var parser = try p.CiscoParser.init(allocator, &lexer);
     var ast = try parser.parseProgram(allocator);
+
+    for (parser.diagnostics.items) |e| {
+        var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
+        const writer = &stdout_writer.interface;
+        try writer.writeAll("[");
+        try e.span.format(writer);
+        try writer.writeAll("]");
+
+        switch (e.kind) {
+            .ExpectedToken => |exp| {
+                try writer.print(" {s} (expected: {s} found: {s})\n", .{
+                    @tagName(e.kind),
+                    @tagName(exp.expected),
+                    @tagName(exp.found),
+                });
+            },
+            else => try writer.print(" {s}\n", .{@tagName(e.kind)}),
+        }
+    }
+
     const dump = try dumpProgramAst(allocator, &ast);
     std.debug.print("{s}", .{dump});
 }

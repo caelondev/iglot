@@ -43,7 +43,7 @@ pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.
             .span = expr.span,
         };
 
-        _ = parser.expect(.semicolon) orelse return null;
+        _ = parser.expect(allocator, .semicolon, expr.span) orelse return null;
         return .{ .expression = stmt };
     }
 

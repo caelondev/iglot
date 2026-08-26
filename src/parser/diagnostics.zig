@@ -4,8 +4,12 @@ pub const CiscoDiagnostic = struct {
     span: tokens.Span,
     kind: Kind,
 
-    const Kind = enum {
+    const Kind = union(enum) {
         IntegerOverflow,
         MissingRightHandSideExpression,
+        ExpectedToken: struct {
+            expected: tokens.TokenKind,
+            found: tokens.TokenKind,
+        },
     };
 };
