@@ -30,13 +30,18 @@ const CiscoParser = @import("../parser.zig").CiscoParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const ast = @import("../ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
+const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseBinaryExpression(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
-    const precedence = parser.cur_precedence();
+    const precedence = switch (parser.cur_tok.kind) {
+        .assign => parser.cur_precedence() - 1,
+        else => parser.cur_precedence(),
+    };
+
     const op = parser.advance();
     const right = try parseExpression(parser, allocator, precedence) orelse return {
         const full_span: Span = .mergeFromSpans(left.span, parser.cur_tok.span);

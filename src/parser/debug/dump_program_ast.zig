@@ -43,8 +43,11 @@ pub fn dumpProgramAst(
 
     try out.appendSlice(allocator, "Program:\n");
 
-    for (program.body) |stmt| {
+    for (program.body, 0..) |stmt, i| {
         try dumpStmt(allocator, &out, 1, stmt);
+        if (i != program.body.len - 1) {
+            try out.append(allocator, '\n');
+        }
     }
 
     return out.toOwnedSlice(allocator);
@@ -160,6 +163,40 @@ fn dumpExpr(
                 out,
                 depth + 2,
                 b.right.*,
+            );
+        },
+
+        .variable_declaration => |v| {
+            try out.appendSlice(allocator, "VariableDeclarationExpression ");
+            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(allocator, ":\n");
+
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try out.appendSlice(allocator, "Identifier:\n");
+
+            try dumpExpr(
+                allocator,
+                out,
+                depth + 2,
+                @as(ast.Expression, .{
+                    .span = v.span,
+                    .expr = .{ .identifier = v.identifier },
+                }),
+            );
+
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try out.print(allocator, "Type: {s}\n", .{
+                v.type.identifier,
+            });
+
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try out.appendSlice(allocator, "Value:\n");
+
+            try dumpExpr(
+                allocator,
+                out,
+                depth + 2,
+                v.value.*,
             );
         },
     }

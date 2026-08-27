@@ -37,6 +37,7 @@ const tokens = @import("../lexer/tokens.zig");
 pub const Precedence = enum(u8) {
     lowest,
     assignment,
+    declaration,
     conditional,
     logical_or,
     logical_and,
@@ -52,6 +53,7 @@ pub const Precedence = enum(u8) {
     pub fn ofToken(token: tokens.Token) Precedence {
         return switch (token.kind) {
             .assign => .assignment,
+            .box_colon => .declaration,
 
             .@"or" => .logical_or,
             .@"and" => .logical_and,

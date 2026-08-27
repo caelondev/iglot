@@ -209,7 +209,14 @@ pub const CiscoLexer = struct {
                         return self.newToken(.semicolon, self.source[start..self.cursor]);
                     },
                     ':' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == ':') {
+                            self.advance();
+                            return self.newToken(.box_colon, self.source[start..self.cursor]);
+                        }
+
                         return self.newToken(.colon, self.source[start..self.cursor]);
                     },
                     ',' => {

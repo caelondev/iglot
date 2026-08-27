@@ -31,9 +31,10 @@ const std = @import("std");
 const ast = @import("../ast.zig");
 const CiscoParser = @import("../parser.zig").CiscoParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
+const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Statement {
-    const expression = parseExpression(parser, allocator, .lowest) catch |e| {
+    const expression = parseExpression(parser, allocator, Precedence.lowest.toInt()) catch |e| {
         @panic(@errorName(e));
     };
 
@@ -43,7 +44,7 @@ pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.
             .span = expr.span,
         };
 
-        _ = parser.expect(allocator, .semicolon, expr.span) orelse return null;
+        _ = parser.expect(allocator, .semicolon) orelse return null;
         return .{ .expression = stmt };
     }
 

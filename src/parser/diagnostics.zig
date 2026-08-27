@@ -7,6 +7,8 @@ pub const CiscoDiagnostic = struct {
     const Kind = union(enum) {
         IntegerOverflow,
         MissingRightHandSideExpression,
+        InvalidLeftHandSideDeclaration,
+        MissingType,
         ExpectedToken: struct {
             expected: tokens.TokenKind,
             found: tokens.TokenKind,

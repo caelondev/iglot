@@ -1,0 +1,60 @@
+const std = @import("std");
+const ast = @import("../ast.zig");
+const CiscoParser = @import("../parser.zig").CiscoParser;
+const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
+const parseTypeExpression = @import("../type/parse_type_expression.zig").parseTypeExpression;
+const Span = @import("../../lexer/tokens.zig").Span;
+const Precedence = @import("../precedence.zig").Precedence;
+
+pub fn parseVariableDeclaration(
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+    left: ast.Expression,
+) !?ast.Expression {
+    if (left.expr != .identifier) {
+        try parser.reportError(allocator, .{
+            .span = left.span,
+            .kind = .InvalidLeftHandSideDeclaration,
+        });
+        return null;
+    }
+
+    _ = parser.advance();
+
+    if (parser.cur_tok.kind != .identifier) {
+        try parser.reportError(allocator, .{
+            .span = parser.cur_tok.span,
+            .kind = .MissingType,
+        });
+
+        _ = parser.advance();
+        return null;
+    }
+
+    const decl_type = parseTypeExpression(parser);
+
+    _ = parser.expect(allocator, .assign) orelse return null;
+
+    const value = try parseExpression(
+        parser,
+        allocator,
+        Precedence.lowest.toInt(),
+    ) orelse return null;
+
+    const val_ptr = try allocator.create(ast.Expression);
+    val_ptr.* = value;
+
+    const span = Span.mergeFromSpans(left.span, value.span);
+
+    return .{
+        .span = span,
+        .expr = .{
+            .variable_declaration = .{
+                .identifier = left.expr.identifier,
+                .type = decl_type,
+                .value = val_ptr,
+                .span = span,
+            },
+        },
+    };
+}

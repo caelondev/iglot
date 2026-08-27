@@ -26,10 +26,11 @@ const ast = @import("../ast.zig");
 const CiscoParser = @import("../parser.zig").CiscoParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const Span = @import("../../lexer/tokens.zig").Span;
+const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseGroupingExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Expression {
     _ = parser.advance();
-    const expression = try parseExpression(parser, allocator, .lowest) orelse return null;
-    _ = parser.expect(allocator, .right_parenthesis, expression.span) orelse return null;
+    const expression = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+    _ = parser.expect(allocator, .right_parenthesis) orelse return null;
     return expression;
 }

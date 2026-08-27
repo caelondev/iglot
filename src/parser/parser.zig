@@ -56,19 +56,27 @@ pub const nud_exprs = [_]NullDenotedExpr{
 pub const led_exprs = [_]LeftDenotedExpr{
     .{
         .token_kind = .plus,
-        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
     .{
         .token_kind = .minus,
-        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
     .{
         .token_kind = .slash,
-        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
     .{
         .token_kind = .asterisk,
-        .callback = @import("left/binary_expression.zig").parseBinaryExpression,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .assign,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .box_colon,
+        .callback = @import("led/parse_variable_declaration.zig").parseVariableDeclaration,
     },
 };
 
@@ -130,14 +138,14 @@ pub const CiscoParser = struct {
         try self.diagnostics.append(allocator, diagnostic);
     }
 
-    pub fn cur_precedence(self: *Self) Precedence {
-        return .ofToken(self.cur_tok);
+    pub fn cur_precedence(self: *Self) u8 {
+        return Precedence.ofToken(self.cur_tok).toInt();
     }
 
-    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind, span: tokens.Span) ?tokens.Token {
+    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) ?tokens.Token {
         if (self.cur_tok.kind != expected_kind) {
             self.reportError(allocator, .{
-                .span = span,
+                .span = self.cur_tok.span,
                 .kind = .{
                     .ExpectedToken = .{
                         .expected = expected_kind,

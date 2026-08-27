@@ -47,6 +47,10 @@ pub const Node = struct {
     };
 };
 
+pub const TypeExpression = union(enum) {
+    identifier: []const u8,
+};
+
 pub const Expression = struct {
     span: tokens.Span,
     expr: union(enum) {
@@ -58,6 +62,7 @@ pub const Expression = struct {
 
         // le regular expressions
         binary: BinaryExpression,
+        variable_declaration: VariableDeclarationExpression,
     },
 };
 
@@ -65,6 +70,7 @@ pub const Statement = union(enum) {
     expression: ExpressionStatement,
 };
 
+// EXPRESSIONS
 pub const IntegerExpression = struct {
     value: i128,
 };
@@ -86,6 +92,15 @@ pub const BinaryExpression = struct {
     right: *const Expression,
     operator: tokens.TokenKind,
 };
+
+pub const VariableDeclarationExpression = struct {
+    identifier: IdentifierExpression,
+    type: TypeExpression,
+    value: *Expression,
+    span: tokens.Span,
+};
+
+// STATEMENTS
 
 pub const ExpressionStatement = struct {
     expression: Expression,
