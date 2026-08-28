@@ -28,5 +28,6 @@ pub fn main(init: std.process.Init) !void {
         init.arena,
         init.gpa,
         init.io,
+        init.environ_map
     );
 }

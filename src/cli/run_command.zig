@@ -26,6 +26,7 @@ const Context = @import("cli.zig").Context;
 const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
 const p = @import("../parser/parser.zig");
 const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
+const InkDye = @import("inkdye");
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
@@ -59,6 +60,13 @@ pub fn run(ctx: Context) !void {
         }
     }
 
-    const dump = try dumpProgramAst(allocator, &ast);
+    var dye = InkDye.initRuntime(.{
+        .environ_map = ctx.environ_map,
+        .allocator = allocator,
+    });
+
+    defer dye.deinit();
+
+    const dump = try dumpProgramAst(allocator, &dye, &ast);
     std.debug.print("{s}", .{dump});
 }

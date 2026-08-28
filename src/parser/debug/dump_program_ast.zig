@@ -33,18 +33,21 @@ const std = @import("std");
 const ast = @import("../ast.zig");
 const Allocator = std.mem.Allocator;
 const Span = @import("../../lexer/tokens.zig").Span;
+const InkDye = @import("inkdye");
 
 pub fn dumpProgramAst(
     allocator: Allocator,
+    dye: *InkDye.RuntimeChameleon,
     program: *ast.Program,
 ) ![]u8 {
     var out: std.ArrayList(u8) = .empty;
     defer out.deinit(allocator);
-
-    try out.appendSlice(allocator, "Program:\n");
+    try out.appendSlice(allocator, try dye.bold().cyan().fmt("Program:", .{}));
+    try out.append(allocator, '\n');
 
     for (program.body, 0..) |stmt, i| {
-        try dumpStmt(allocator, &out, 1, stmt);
+        try dumpStmt(allocator, &out, 1, stmt, dye);
+
         if (i != program.body.len - 1) {
             try out.append(allocator, '\n');
         }
@@ -57,8 +60,10 @@ fn appendSpan(
     allocator: Allocator,
     out: *std.ArrayList(u8),
     span: Span,
+    dye: *InkDye.RuntimeChameleon,
 ) !void {
-    try out.append(allocator, '[');
+    try out.appendSlice(allocator, try dye.dim().fmt("[", .{}));
+
     try out.print(allocator, "{d}:{d}", .{
         span.line_start,
         span.column_start,
@@ -76,7 +81,8 @@ fn appendSpan(
             span.column_end,
         });
     }
-    try out.append(allocator, ']');
+
+    try out.appendSlice(allocator, try dye.dim().fmt("]", .{}));
 }
 
 fn dumpStmt(
@@ -84,12 +90,20 @@ fn dumpStmt(
     out: *std.ArrayList(u8),
     depth: usize,
     stmt: ast.Statement,
+    dye: *InkDye.RuntimeChameleon,
 ) !void {
     switch (stmt) {
         .expression => |e| {
             try out.appendNTimes(allocator, ' ', depth * 2);
-            try out.appendSlice(allocator, "ExpressionStatement ");
-            try appendSpan(allocator, out, e.span);
+
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("ExpressionStatement", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, e.span, dye);
+
             try out.appendSlice(allocator, ":\n");
 
             try dumpExpr(
@@ -97,6 +111,7 @@ fn dumpStmt(
                 out,
                 depth + 1,
                 e.expression,
+                dye,
             );
         },
     }
@@ -107,72 +122,131 @@ fn dumpExpr(
     out: *std.ArrayList(u8),
     depth: usize,
     expr: ast.Expression,
+    dye: *InkDye.RuntimeChameleon,
 ) !void {
     try out.appendNTimes(allocator, ' ', depth * 2);
 
     switch (expr.expr) {
         .integer => |i| {
-            try out.appendSlice(allocator, "Integer ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().yellow().fmt("Integer", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.print(allocator, ": {d}\n", .{i.value});
         },
 
         .string => |s| {
-            try out.appendSlice(allocator, "String ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().green().fmt("String", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.print(allocator, ": \"{s}\"\n", .{s.value});
         },
 
         .float => |f| {
-            try out.appendSlice(allocator, "Float ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().yellow().fmt("Float", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.print(allocator, ": {d}\n", .{f.value});
         },
 
         .identifier => |i| {
-            try out.appendSlice(allocator, "Identifier ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().magenta().fmt("Identifier", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.print(allocator, ": {s}\n", .{i.value});
         },
 
         .binary => |b| {
-            try out.appendSlice(allocator, "BinaryExpression ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().cyan().fmt("BinaryExpression", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.appendSlice(allocator, ":\n");
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.appendSlice(allocator, "Left:\n");
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Left:", .{}),
+            );
+            try out.append(allocator, '\n');
 
             try dumpExpr(
                 allocator,
                 out,
                 depth + 2,
                 b.left.*,
+                dye,
             );
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.print(allocator, "Operator: {s}\n", .{
+            try out.appendSlice(
+                allocator,
+                try dye.bold().yellow().fmt("Operator:", .{}),
+            );
+
+            try out.print(allocator, " {s}\n", .{
                 @tagName(b.operator),
             });
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.appendSlice(allocator, "Right:\n");
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Right:", .{}),
+            );
+            try out.append(allocator, '\n');
 
             try dumpExpr(
                 allocator,
                 out,
                 depth + 2,
                 b.right.*,
+                dye,
             );
         },
 
         .variable_declaration => |v| {
-            try out.appendSlice(allocator, "VariableDeclarationExpression ");
-            try appendSpan(allocator, out, expr.span);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().cyan().fmt(
+                    "VariableDeclarationExpression",
+                    .{},
+                ),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
             try out.appendSlice(allocator, ":\n");
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.appendSlice(allocator, "Identifier:\n");
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Identifier:", .{}),
+            );
+            try out.append(allocator, '\n');
 
             try dumpExpr(
                 allocator,
@@ -180,23 +254,36 @@ fn dumpExpr(
                 depth + 2,
                 @as(ast.Expression, .{
                     .span = v.span,
-                    .expr = .{ .identifier = v.identifier },
+                    .expr = .{
+                        .identifier = v.identifier,
+                    },
                 }),
+                dye,
             );
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.print(allocator, "Type: {s}\n", .{
+            try out.appendSlice(
+                allocator,
+                try dye.bold().yellow().fmt("Type:", .{}),
+            );
+
+            try out.print(allocator, " {s}\n", .{
                 v.type.identifier,
             });
 
             try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
-            try out.appendSlice(allocator, "Value:\n");
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Value:", .{}),
+            );
+            try out.append(allocator, '\n');
 
             try dumpExpr(
                 allocator,
                 out,
                 depth + 2,
                 v.value.*,
+                dye,
             );
         },
     }

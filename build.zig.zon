@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .inkdye = .{
-            .url = "git+https://codeberg.org/caelondev/inkdye#78383f12d024da1526102f64c853a0489f6ff56b",
-            .hash = "inkdye-0.1.0-PJZZVdYTAQBatyfqvOLxV4OMMIAso2VPezzpxFQfhSw3",
+            .url = "git+https://codeberg.org/caelondev/inkdye#cc2d8395b4949ecc67aa42ae4a3e2beb49a570ff",
+            .hash = "inkdye-0.1.1-PJZZVfkTAQB_fv9qX-_suDlgQgf68QLDZfwe9YQ349nB",
         },
     },
     .paths = .{

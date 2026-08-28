@@ -4,10 +4,14 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const inkdye = b.dependency("inkdye", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     const build_time_path = "src/build_time.zig";
     {
         const now = std.Io.Clock.real.now(b.graph.io);
-
         const contents = std.fmt.allocPrint(
             b.allocator,
             \\ //! DO NOT TOUCH! This file is NOT intended for editing.
@@ -32,6 +36,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+
+    exe.root_module.addImport("inkdye", inkdye.module("inkdye"));
 
     const cisco_information = b.createModule(.{
         .root_source_file = b.path("build.zig.zon"),

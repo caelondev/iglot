@@ -33,6 +33,7 @@ pub const Context = struct {
     arena: *std.heap.ArenaAllocator,
     allocator: std.mem.Allocator,
     args: []const []const u8,
+    environ_map: *std.process.Environ.Map,
     argsIter: std.process.Args.Iterator,
     io: std.Io,
 };
@@ -64,6 +65,7 @@ pub const CiscoCLI = struct {
         arena: *std.heap.ArenaAllocator,
         allocator: std.mem.Allocator,
         io: std.Io,
+        environ_map: *std.process.Environ.Map,
     ) !void {
         _ = self.argsIter.next(); // skip bin path
 
@@ -86,6 +88,7 @@ pub const CiscoCLI = struct {
             .allocator = allocator,
             .arena = arena,
             .io = io,
+            .environ_map = environ_map,
         });
     }
 };
