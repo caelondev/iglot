@@ -32,8 +32,7 @@ const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").rende
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\a = 999999999999999999999999999999999999999999999999999999999999;
-        \\a = ;
+        \\ a ::= 10;
         \\x :: int = y = z = 10
     ;
 
@@ -43,10 +42,15 @@ pub fn run(ctx: Context) !void {
     var parser = try p.CiscoParser.init(allocator, &lexer);
     var ast = try parser.parseProgram(allocator);
 
+    var error_dye = InkDye.initRuntime(.{
+        .environ_map = ctx.environ_map,
+        .allocator = allocator,
+    });
+    defer error_dye.deinit();
     for (parser.diagnostics.items, 0..) |d, i| {
         var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
         const writer = &stdout_writer.interface;
-        try renderDiagnostics(writer, allocator, src, d);
+        try renderDiagnostics(writer, allocator, &error_dye, src, d);
         if (i != parser.diagnostics.items.len - 1) {
             try writer.writeByte('\n');
         }
