@@ -33,7 +33,7 @@ const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").rende
 pub fn run(ctx: Context) !void {
     const src =
         \\ a ::= 10;
-        \\x :: int = y = z = 10
+        \\                              x :: int = y = z = 10
     ;
 
     const allocator = ctx.arena.*.allocator();

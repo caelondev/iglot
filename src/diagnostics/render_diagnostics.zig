@@ -48,7 +48,7 @@ fn renderSnippet(
     try writer.writeAll(bar);
     try writer.writeByte('\n');
 
-    while (lines.next()) |line| : (line_number += 1) {
+    while (lines.next()) |raw_line| : (line_number += 1) {
         if (line_number < span.line_start)
             continue;
 
@@ -62,12 +62,15 @@ fn renderSnippet(
             try writer.writeAll(bar);
         }
 
+        const left_trim = raw_line.len - std.mem.trimStart(u8, raw_line, " \t\r").len;
+        const line = std.mem.trim(u8, raw_line, " \t\r");
+
         const larrow = try dye.redBright().fmt(">", .{});
         const rarrow = try dye.redBright().fmt("<", .{});
         if (span.line_start == span.line_end) {
             // single-line span
-            const start = @min(span.column_start - 1, line.len);
-            const end = @min(span.column_end - 1, line.len);
+            const start = @min((span.column_start - 1) -| left_trim, line.len);
+            const end = @min((span.column_end - 1) -| left_trim, line.len);
 
             try writer.writeAll(line[0..start]);
             try writer.writeAll(larrow);
@@ -76,14 +79,14 @@ fn renderSnippet(
             try writer.writeAll(line[end..]);
         } else if (line_number == span.line_start) {
             // first line of a multiline span
-            const start = @min(span.column_start - 1, line.len);
+            const start = @min((span.column_start - 1) -| left_trim, line.len);
 
             try writer.writeAll(line[0..start]);
             try writer.writeAll(larrow);
             try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..]}));
         } else if (line_number == span.line_end) {
             // last line of a multiline span
-            const end = @min(span.column_end - 1, line.len);
+            const end = @min((span.column_end - 1) -| left_trim, line.len);
 
             try writer.writeAll(line[0..end]);
             try writer.writeAll(rarrow);
