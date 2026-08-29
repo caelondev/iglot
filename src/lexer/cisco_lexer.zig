@@ -71,7 +71,16 @@ pub const CiscoLexer = struct {
         lexer: switch (State.start) {
             .start => {
                 if (self.isAtEnd()) {
-                    return self.newToken(.eof, "END_OF_FILE");
+                    return .{
+                        .kind = .eof,
+                        .lexeme = "END_OF_FILE",
+                        .span = .{
+                            .column_start = self.cur_col,
+                            .column_end = self.cur_col,
+                            .line_start = self.cur_line,
+                            .line_end = self.cur_line,
+                        },
+                    };
                 }
 
                 start = self.cursor;

@@ -44,7 +44,7 @@ pub fn parseInteger(
                     allocator,
                     .{
                         .span = lit_raw.span,
-                        .kind = .IntegerOverflow,
+                        .kind = .ParseIntegerOverflow,
                     },
                 );
 

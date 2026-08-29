@@ -11,16 +11,19 @@ pub fn parseVariableDeclaration(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
+    // NOTE: this check is super important. since the declaration is an expression,
+    // the precedence also mess with the main pratt parser. without checking if
+    // left is not an identifier, the parser will recurse indefinitely
     if (left.expr != .identifier) {
         try parser.reportError(allocator, .{
             .span = left.span,
             .kind = .InvalidLeftHandSideDeclaration,
         });
+        parser.synchronize();
         return null;
     }
 
     _ = parser.advance();
-
     if (parser.cur_tok.kind != .identifier) {
         try parser.reportError(allocator, .{
             .span = parser.cur_tok.span,

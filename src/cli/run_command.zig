@@ -24,15 +24,17 @@
 const std = @import("std");
 const Context = @import("cli.zig").Context;
 const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
+const InkDye = @import("inkdye");
 const p = @import("../parser/parser.zig");
 const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
-const InkDye = @import("inkdye");
+const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ a = b;
-        \\ x :: int = y = z = 10;
+        \\a = 999999999999999999999999999999999999999999999999999999999999;
+        \\a = ;
+        \\x :: int = y = z = 10
     ;
 
     const allocator = ctx.arena.*.allocator();
@@ -41,32 +43,24 @@ pub fn run(ctx: Context) !void {
     var parser = try p.CiscoParser.init(allocator, &lexer);
     var ast = try parser.parseProgram(allocator);
 
-    for (parser.diagnostics.items) |e| {
+    for (parser.diagnostics.items, 0..) |d, i| {
         var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
         const writer = &stdout_writer.interface;
-        try writer.writeAll("[");
-        try e.span.format(writer);
-        try writer.writeAll("]");
-
-        switch (e.kind) {
-            .ExpectedToken => |exp| {
-                try writer.print(" {s} (expected: {s} found: {s})\n", .{
-                    @tagName(e.kind),
-                    @tagName(exp.expected),
-                    @tagName(exp.found),
-                });
-            },
-            else => try writer.print(" {s}\n", .{@tagName(e.kind)}),
+        try renderDiagnostics(writer, allocator, src, d);
+        if (i != parser.diagnostics.items.len - 1) {
+            try writer.writeByte('\n');
         }
     }
 
-    var dye = InkDye.initRuntime(.{
-        .environ_map = ctx.environ_map,
-        .allocator = allocator,
-    });
+    if (parser.diagnostics.items.len == 0) {
+        var dye = InkDye.initRuntime(.{
+            .environ_map = ctx.environ_map,
+            .allocator = allocator,
+        });
 
-    defer dye.deinit();
+        defer dye.deinit();
 
-    const dump = try dumpProgramAst(allocator, &dye, &ast);
-    std.debug.print("{s}", .{dump});
+        const dump = try dumpProgramAst(allocator, &dye, &ast);
+        std.debug.print("{s}", .{dump});
+    }
 }

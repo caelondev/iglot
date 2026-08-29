@@ -1,4 +1,5 @@
 const tokens = @import("../lexer/tokens.zig");
+const std = @import("std");
 
 pub const CiscoDiagnostic = struct {
     span: tokens.Span,
@@ -9,11 +10,10 @@ pub const CiscoDiagnostic = struct {
     pub const Severity = enum {
         err,
         warning,
-        note,
     };
 
     pub const Kind = union(enum) {
-        IntegerOverflow,
+        ParseIntegerOverflow,
         MissingRightHandSideExpression,
         InvalidLeftHandSideDeclaration,
         MissingType,
@@ -22,6 +22,16 @@ pub const CiscoDiagnostic = struct {
             expected: tokens.TokenKind,
             found: tokens.TokenKind,
         },
+
+        pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
+            switch (self) {
+                .ParseIntegerOverflow => try writer.writeAll("integer literal overflowed while parsing"),
+                .MissingRightHandSideExpression => try writer.writeAll("expected an expression after the operator"),
+                .InvalidLeftHandSideDeclaration => try writer.writeAll("invalid expression on the left-hand side of a declaration"),
+                .MissingType => try writer.writeAll("expected a type in this declaration"),
+                .ExpectedToken => |e| try writer.print("expected \"{s}\" found \"{s}\"", .{ @tagName(e.expected), @tagName(e.found) }),
+            }
+        }
     };
 
     pub const Annotation = union(enum) {

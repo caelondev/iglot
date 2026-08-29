@@ -3,7 +3,7 @@ const std = @import("std");
 const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
 const tokens = @import("../lexer/tokens.zig");
 const ast = @import("ast.zig");
-const CiscoDiagnostic = @import("diagnostics.zig").CiscoDiagnostic;
+const CiscoDiagnostic = @import("../diagnostics/diagnostics.zig").CiscoDiagnostic;
 
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
@@ -152,12 +152,38 @@ pub const CiscoParser = struct {
                         .found = self.cur_tok.kind,
                     },
                 },
+                .annotation = .{
+                    .note = .{
+                        .message = "consider adding a semicolon",
+                    },
+                },
             }) catch {
                 @panic("ran out of memory during parsing.");
             };
+
             return null;
         }
 
         return self.advance();
+    }
+
+    pub fn synchronize(self: *CiscoParser) void {
+        while (self.cur_tok.kind != .eof) {
+            switch (self.cur_tok.kind) {
+                .semicolon => {
+                    _ = self.advance();
+                    return;
+                },
+
+                .right_brace,
+                .right_parenthesis,
+                .right_bracket,
+                => return,
+
+                else => {
+                    _ = self.advance();
+                },
+            }
+        }
     }
 };

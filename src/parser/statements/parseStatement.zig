@@ -33,20 +33,32 @@ const CiscoParser = @import("../parser.zig").CiscoParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 
-pub fn parseStatement(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Statement {
-    const expression = parseExpression(parser, allocator, Precedence.lowest.toInt()) catch |e| {
+pub fn parseStatement(
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+) !?ast.Statement {
+    const expression = parseExpression(
+        parser,
+        allocator,
+        Precedence.lowest.toInt(),
+    ) catch |e| {
         @panic(@errorName(e));
     };
 
-    if (expression) |expr| {
-        const stmt: ast.ExpressionStatement = .{
-            .expression = expr,
-            .span = expr.span,
-        };
+    const expr = expression orelse {
+        parser.synchronize();
+        return null;
+    };
 
-        _ = parser.expect(allocator, .semicolon) orelse return null;
-        return .{ .expression = stmt };
-    }
+    _ = parser.expect(allocator, .semicolon) orelse {
+        parser.synchronize();
+        return null;
+    };
 
-    return null;
+    const stmt: ast.ExpressionStatement = .{
+        .expression = expr,
+        .span = expr.span,
+    };
+
+    return .{ .expression = stmt };
 }

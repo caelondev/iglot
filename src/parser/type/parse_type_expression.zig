@@ -3,7 +3,7 @@ const std = @import("std");
 const CiscoLexer = @import("../../lexer/cisco_lexer.zig").CiscoLexer;
 const tokens = @import("../../lexer/tokens.zig");
 const ast = @import("../ast.zig");
-const CiscoDiagnostic = @import("../diagnostics.zig").CiscoDiagnostic;
+const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
 
 const nud_lit = @import("../nud/literals.zig");
 const parseStatement = @import("../statements/parseStatement.zig").parseStatement;
