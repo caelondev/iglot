@@ -28,12 +28,12 @@ const InkDye = @import("inkdye");
 const p = @import("../parser/parser.zig");
 const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
+const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ a ::= 10;
-        \\                              x :: int = y = z = 10
+        \\ 1 + (2 * "i like pizza") / 2;
     ;
 
     const allocator = ctx.arena.*.allocator();
@@ -42,29 +42,32 @@ pub fn run(ctx: Context) !void {
     var parser = try p.CiscoParser.init(allocator, &lexer);
     var ast = try parser.parseProgram(allocator);
 
-    var error_dye = InkDye.initRuntime(.{
+    var dye = InkDye.initRuntime(.{
         .environ_map = ctx.environ_map,
         .allocator = allocator,
     });
-    defer error_dye.deinit();
+    defer dye.deinit();
+    var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
+    const writer = &stdout_writer.interface;
     for (parser.diagnostics.items, 0..) |d, i| {
-        var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
-        const writer = &stdout_writer.interface;
-        try renderDiagnostics(writer, allocator, &error_dye, src, d);
+        try renderDiagnostics(writer, allocator, &dye, src, d);
         if (i != parser.diagnostics.items.len - 1) {
             try writer.writeByte('\n');
         }
     }
 
     if (parser.diagnostics.items.len == 0) {
-        var dye = InkDye.initRuntime(.{
-            .environ_map = ctx.environ_map,
-            .allocator = allocator,
-        });
-
-        defer dye.deinit();
-
         const dump = try dumpProgramAst(allocator, &dye, &ast);
         std.debug.print("{s}", .{dump});
+    } else return;
+
+    var sema: CiscoSemanticAnalyzer = .init();
+    try sema.analyze(allocator, ast);
+
+    for (sema.diagnostics.items, 0..) |d, i| {
+        try renderDiagnostics(writer, allocator, &dye, src, d);
+        if (i != sema.diagnostics.items.len - 1) {
+            try writer.writeByte('\n');
+        }
     }
 }
