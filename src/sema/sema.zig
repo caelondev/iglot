@@ -5,6 +5,7 @@ const ast = @import("../parser/ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
 const validateBinaryExpression = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
+const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 
 pub const CiscoSemanticAnalyzer = struct {
     types: tt.TypeTable,
@@ -39,6 +40,10 @@ pub const CiscoSemanticAnalyzer = struct {
             .string => .string,
             .binary => |b| {
                 return validateBinaryExpression(self, allocator, b, span);
+            },
+
+            .variable_declaration => |v| {
+                return validateVariableDeclaration(self, allocator, v);
             },
             else => unreachable,
         };

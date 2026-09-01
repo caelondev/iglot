@@ -33,10 +33,9 @@ const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ 1+1 :: int = 10;
-        \\ 1 + (2
-        \\      *
-        \\      "i like pizza") / 2
+        \\ a :: int = 100;
+        \\ a :: int = 69;
+        \\ c :: int = "hello world";
     ;
 
     const allocator = ctx.arena.*.allocator();
@@ -67,10 +66,13 @@ pub fn run(ctx: Context) !void {
     var sema: CiscoSemanticAnalyzer = .init();
     try sema.analyze(allocator, ast);
 
-    for (sema.diagnostics.items, 0..) |d, i| {
-        try renderDiagnostics(writer, allocator, &dye, src, d);
-        if (i != sema.diagnostics.items.len - 1) {
-            try writer.writeByte('\n');
+    if (sema.diagnostics.items.len != 0) {
+        try writer.writeByte('\n');
+        for (sema.diagnostics.items, 0..) |d, i| {
+            try renderDiagnostics(writer, allocator, &dye, src, d);
+            if (i != sema.diagnostics.items.len - 1) {
+                try writer.writeByte('\n');
+            }
         }
     }
 }
