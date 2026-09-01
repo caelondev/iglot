@@ -50,7 +50,6 @@ pub fn parseBinaryExpression(
             .kind = .MissingRightHandSideExpression,
         });
 
-        parser.synchronize();
         return null;
     };
 

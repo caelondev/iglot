@@ -47,7 +47,7 @@ pub fn parseExpression(parser: *CiscoParser, allocator: std.mem.Allocator, prece
 
     while (precedence < Precedence.ofToken(parser.cur_tok).toInt()) {
         const led = lookupLed(parser.cur_tok.kind) orelse break;
-        left = try led(parser, allocator, left) orelse return left;
+        left = try led(parser, allocator, left) orelse return null;
     }
 
     return left;

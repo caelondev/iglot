@@ -86,6 +86,7 @@ pub const CiscoParser = struct {
     peek_tok: tokens.Token,
 
     diagnostics: std.ArrayList(CiscoDiagnostic),
+    panic_mode: bool,
 
     const Self = @This();
 
@@ -101,6 +102,7 @@ pub const CiscoParser = struct {
             .cur_tok = cur_tok,
             .peek_tok = peek_tok,
             .diagnostics = try .initCapacity(allocator, 15),
+            .panic_mode = false,
         };
     }
 
@@ -135,6 +137,9 @@ pub const CiscoParser = struct {
     }
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {
+        if (self.panic_mode) return;
+
+        self.panic_mode = true;
         try self.diagnostics.append(allocator, diagnostic);
     }
 
@@ -168,22 +173,26 @@ pub const CiscoParser = struct {
     }
 
     pub fn synchronize(self: *CiscoParser) void {
+        if (!self.panic_mode) return;
+
         while (self.cur_tok.kind != .eof) {
             switch (self.cur_tok.kind) {
                 .semicolon => {
                     _ = self.advance();
-                    return;
+                    break;
                 },
 
                 .right_brace,
                 .right_parenthesis,
                 .right_bracket,
-                => return,
+                => break,
 
                 else => {
                     _ = self.advance();
                 },
             }
         }
+
+        self.panic_mode = false;
     }
 };
