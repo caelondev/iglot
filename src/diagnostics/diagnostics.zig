@@ -6,7 +6,7 @@ pub const CiscoDiagnostic = struct {
     span: tokens.Span,
     severity: Severity = .err,
     kind: Kind,
-    annotation: ?Annotation = null,
+    annotations: []const Annotation = &.{},
 
     pub const Severity = enum {
         err,
@@ -30,6 +30,13 @@ pub const CiscoDiagnostic = struct {
             operator: tokens.TokenKind,
             right: SemaType,
         },
+        IdentifierAlreadyExist: struct {
+            identifier: []const u8,
+        },
+        TypeMismatch: struct {
+            expected: SemaType,
+            found: SemaType,
+        },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -40,6 +47,8 @@ pub const CiscoDiagnostic = struct {
                 .ExpectedToken => |e| try writer.print("expected \"{s}\" found \"{s}\"", .{ @tagName(e.expected), @tagName(e.found) }),
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
+                .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
+                .TypeMismatch => |e| try writer.print("expected type \"{s}\", found type \"{s}\"", .{ e.expected.toString(), e.found.toString() }),
             }
         }
     };

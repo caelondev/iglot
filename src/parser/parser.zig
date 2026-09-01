@@ -157,11 +157,6 @@ pub const CiscoParser = struct {
                         .found = self.cur_tok.kind,
                     },
                 },
-                .annotation = .{
-                    .note = .{
-                        .message = "consider adding a semicolon",
-                    },
-                },
             }) catch {
                 @panic("ran out of memory during parsing.");
             };

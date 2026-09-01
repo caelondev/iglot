@@ -5,6 +5,7 @@ const InkDye = @import("inkdye");
 
 const TAB_WIDTH: usize = 4;
 
+/// renders a diagnostic and its annotations.
 pub fn renderDiagnostics(
     writer: *std.Io.Writer,
     allocator: std.mem.Allocator,
@@ -17,17 +18,16 @@ pub fn renderDiagnostics(
     try diagnostic.kind.toMessage(writer);
     try writer.writeAll("\n\n");
 
-    try renderSnippet(writer, allocator, dye, source, diagnostic);
+    try renderSnippet(writer, allocator, dye, source, diagnostic.span);
 
-    if (diagnostic.annotation) |a| {
+    for (diagnostic.annotations) |a| {
         try writer.writeAll("\n");
-        try formatAnnotation(writer, dye, a);
+        try formatAnnotation(writer, allocator, dye, source, a);
         try writer.writeAll("\n");
     }
 }
 
-// expands tabs to spaces at TAB_WIDTH stops, so our own column math matches
-// what actually gets printed instead of trusting the terminal.
+/// expands tabs so source columns line up with the rendered output.
 fn expandTabs(allocator: std.mem.Allocator, line: []const u8) ![]u8 {
     var out: std.ArrayList(u8) = .empty;
     errdefer out.deinit(allocator);
@@ -46,8 +46,7 @@ fn expandTabs(allocator: std.mem.Allocator, line: []const u8) ![]u8 {
     return out.toOwnedSlice(allocator);
 }
 
-/// maps a 0-based character offset in `line` (tabs count as 1, matching how
-/// the lexer counts columns) to the 0-based visual column after tab expansion.
+/// returns the visual column of a character after tab expansion.
 fn visualCol(line: []const u8, char_offset: usize) usize {
     var visual: usize = 0;
     var i: usize = 0;
@@ -61,14 +60,13 @@ fn visualCol(line: []const u8, char_offset: usize) usize {
     return visual;
 }
 
-/// the raw + tab-expanded lines covered by a span, plus the shared dedent
-/// amount applied to all of them (min leading whitespace across non-blank
-/// lines, so relative indentation between lines is preserved).
+/// holds the source lines used to render a span.
 const SpanLines = struct {
     raw: std.ArrayList([]const u8) = .empty,
     expanded: std.ArrayList([]u8) = .empty,
     common_trim: usize = 0,
 
+    /// collects the lines covered by `span` and expands their tabs.
     fn collect(allocator: std.mem.Allocator, source: []const u8, span: Span) !SpanLines {
         var self: SpanLines = .{};
         errdefer self.deinit(allocator);
@@ -87,6 +85,7 @@ const SpanLines = struct {
         return self;
     }
 
+    /// frees the expanded lines and the backing lists.
     fn deinit(self: *SpanLines, allocator: std.mem.Allocator) void {
         self.raw.deinit(allocator);
         for (self.expanded.items) |line| allocator.free(line);
@@ -94,25 +93,26 @@ const SpanLines = struct {
     }
 };
 
+/// finds the smallest indentation shared by all non-blank lines.
 fn computeCommonTrim(expanded_lines: []const []const u8) usize {
     var common_trim: usize = std.math.maxInt(usize);
     for (expanded_lines) |line| {
         const trimmed = std.mem.trim(u8, line, " \r");
-        if (trimmed.len == 0) continue; // blank lines don't constrain the dedent
+        if (trimmed.len == 0) continue; // blank lines don't affect the trim
         const leading = line.len - std.mem.trimStart(u8, line, " ").len;
         common_trim = @min(common_trim, leading);
     }
     return if (common_trim == std.math.maxInt(usize)) 0 else common_trim;
 }
 
+/// renders the source lines covered by `span`.
 fn renderSnippet(
     writer: *std.Io.Writer,
     allocator: std.mem.Allocator,
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
-    diagnostic: CiscoDiagnostic,
+    span: Span,
 ) !void {
-    const span = diagnostic.span;
     const span_label = try formatSpan(allocator, span, dye);
     defer allocator.free(span_label.text);
 
@@ -153,18 +153,19 @@ fn renderSnippet(
     try writeGutterBlank(writer, bar, span_label.width);
 }
 
-// prefix only, no trailing newline — used before content on the same line.
+/// writes the padding and gutter bar before a source line.
 fn writeGutterPrefix(writer: *std.Io.Writer, bar: []const u8, label_width: usize) !void {
     try writer.splatByteAll(' ', label_width + 2);
     try writer.writeAll(bar);
 }
 
-// a genuinely blank gutter line (used above/below the snippet).
+/// writes an empty line in the source gutter.
 fn writeGutterBlank(writer: *std.Io.Writer, bar: []const u8, label_width: usize) !void {
     try writeGutterPrefix(writer, bar, label_width);
     try writer.writeByte('\n');
 }
 
+/// renders a span contained entirely on one line.
 fn writeSingleLineSpan(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
@@ -183,6 +184,7 @@ fn writeSingleLineSpan(
     try writer.writeAll(line[end..]);
 }
 
+/// renders the first line of a multi-line span.
 fn writeMultilineFirstLine(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
@@ -198,6 +200,7 @@ fn writeMultilineFirstLine(
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..]}));
 }
 
+/// renders the last line of a multi-line span.
 fn writeMultilineLastLine(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
@@ -213,6 +216,7 @@ fn writeMultilineLastLine(
     try writer.writeAll(line[end..]);
 }
 
+/// renders a line fully covered by a multi-line span.
 fn writeMultilineMiddleLine(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
@@ -221,11 +225,13 @@ fn writeMultilineMiddleLine(
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line}));
 }
 
+/// contains the formatted span label and its unstyled width.
 const SpanLabel = struct {
     text: []const u8,
     width: usize,
 };
 
+/// formats a span as a gutter label.
 fn formatSpan(
     allocator: std.mem.Allocator,
     span: Span,
@@ -258,6 +264,7 @@ fn formatSpan(
     };
 }
 
+/// returns the unstyled width of a span label.
 fn spanWidth(span: Span) usize {
     var w = std.fmt.count("{d}:{d}", .{ span.line_start, span.column_start });
     if (span.line_start == span.line_end) {
@@ -270,6 +277,7 @@ fn spanWidth(span: Span) usize {
     return w;
 }
 
+/// writes the severity and diagnostic kind.
 fn formatSeverity(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
@@ -285,9 +293,12 @@ fn formatSeverity(
     }
 }
 
+/// writes a `help` or `note` annotation.
 fn formatAnnotation(
     writer: *std.Io.Writer,
+    allocator: std.mem.Allocator,
     dye: *InkDye.RuntimeChameleon,
+    source: []const u8,
     annotation: CiscoDiagnostic.Annotation,
 ) !void {
     const box_colon = try dye.gray().bold().fmt("::", .{});
@@ -299,6 +310,12 @@ fn formatAnnotation(
         .note => |n| {
             const tag = try dye.cyan().bold().fmt("note", .{});
             try writer.print("{s} {s} {s}", .{ tag, box_colon, n.message });
+
+            if (n.span) |s| {
+                try writer.writeAll("\n");
+                try writer.writeAll("\n");
+                try renderSnippet(writer, allocator, dye, source, s);
+            }
         },
     }
 }
