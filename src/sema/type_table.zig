@@ -11,6 +11,9 @@ pub const SemaType = union(enum) {
     bool,
     double,
 
+    // special type used for error messages
+    number,
+
     pub fn fromTypeExpression(type_expr: TypeExpression) ?SemaType {
         const types: std.StaticStringMap(SemaType) = .initComptime(.{
             .{ "string", .string },
@@ -34,11 +37,19 @@ pub const SemaType = union(enum) {
             .float => "float",
             .double => "double",
             .bool => "bool",
+            .number => "number",
         };
     }
 
     pub fn eql(self: SemaType, other: SemaType) bool {
         return std.meta.activeTag(self) == std.meta.activeTag(other);
+    }
+
+    pub fn is_numerical(self: SemaType) bool {
+        return switch (self) {
+            .int, .wideint, .float, .double => true,
+            else => false,
+        };
     }
 };
 

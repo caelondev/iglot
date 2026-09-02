@@ -49,7 +49,42 @@ pub const CiscoSemanticAnalyzer = struct {
             .variable_declaration => |v| {
                 return validateVariableDeclaration(self, allocator, v);
             },
-            else => unreachable,
+            .unary => |u| {
+                const right_type = try self.validateExpression(allocator, u.rhs.*, u.rhs.span) orelse return null;
+                switch (u.operator) {
+                    .bang => {
+                        if (!right_type.eql(.bool)) {
+                            try self.reportError(allocator, .{
+                                .span = u.rhs.span,
+                                .kind = .{
+                                    .TypeMismatch = .{
+                                        .expected = .bool,
+                                        .found = right_type,
+                                    },
+                                },
+                            });
+                            return null;
+                        }
+                        return .bool;
+                    },
+                    .minus => {
+                        if (!right_type.is_numerical()) {
+                            try self.reportError(allocator, .{
+                                .span = u.rhs.span,
+                                .kind = .{
+                                    .TypeMismatch = .{
+                                        .expected = .number,
+                                        .found = right_type,
+                                    },
+                                },
+                            });
+                            return null;
+                        }
+                        return right_type;
+                    },
+                    else => unreachable,
+                }
+            },
         };
     }
 
