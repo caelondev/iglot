@@ -62,6 +62,7 @@ pub const Expression = struct {
 
         // le regular expressions
         binary: BinaryExpression,
+        unary: UnaryExpression,
         variable_declaration: VariableDeclarationExpression,
     },
 };
@@ -98,6 +99,11 @@ pub const VariableDeclarationExpression = struct {
     type: TypeExpression,
     value: *Expression,
     span: tokens.Span,
+};
+
+pub const UnaryExpression = struct {
+    operator: tokens.TokenKind,
+    rhs: *Expression,
 };
 
 // STATEMENTS

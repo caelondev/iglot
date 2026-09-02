@@ -49,6 +49,7 @@ pub const CiscoSemanticAnalyzer = struct {
             .variable_declaration => |v| {
                 return validateVariableDeclaration(self, allocator, v);
             },
+            else => unreachable,
         };
     }
 

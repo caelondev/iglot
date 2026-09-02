@@ -46,6 +46,7 @@ pub const Precedence = enum(u8) {
     additive,
     multiplicative,
     exponent,
+    unary,
     call,
     index,
     member,

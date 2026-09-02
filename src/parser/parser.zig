@@ -51,6 +51,14 @@ pub const nud_exprs = [_]NullDenotedExpr{
         .token_kind = .left_parenthesis,
         .callback = @import("nud/grouping_expression.zig").parseGroupingExpression,
     },
+    .{
+        .token_kind = .minus,
+        .callback = @import("nud/unary_expression.zig").parseUnaryExpression,
+    },
+    .{
+        .token_kind = .bang,
+        .callback = @import("nud/unary_expression.zig").parseUnaryExpression,
+    },
 };
 
 pub const led_exprs = [_]LeftDenotedExpr{

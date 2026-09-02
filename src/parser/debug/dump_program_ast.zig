@@ -175,6 +175,32 @@ fn dumpExpr(
             try out.print(allocator, ": {s}\n", .{i.value});
         },
 
+        .unary => |u| {
+            try out.appendSlice(
+                allocator,
+                try dye.bold().magenta().fmt("Operator", .{}),
+            );
+
+            try out.append(allocator, '\n');
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try appendSpan(allocator, out, expr.span, dye);
+
+            try out.print(allocator, ": {s}\n", .{@tagName(u.operator)});
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Right:", .{}),
+            );
+            try out.append(allocator, '\n');
+
+            try dumpExpr(
+                allocator,
+                out,
+                depth + 2,
+                u.rhs.*,
+                dye,
+            );
+        },
+
         .binary => |b| {
             try out.appendSlice(
                 allocator,
