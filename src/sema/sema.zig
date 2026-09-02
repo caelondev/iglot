@@ -41,11 +41,14 @@ pub const CiscoSemanticAnalyzer = struct {
             .binary => |b| {
                 return validateBinaryExpression(self, allocator, b, span);
             },
+            .identifier => |i| {
+                const ident_type = self.types.lookupIdentifier(i.value) orelse return null;
+                return ident_type.sem_type;
+            },
 
             .variable_declaration => |v| {
                 return validateVariableDeclaration(self, allocator, v);
             },
-            else => unreachable,
         };
     }
 
