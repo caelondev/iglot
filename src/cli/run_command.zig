@@ -70,11 +70,18 @@ pub fn run(ctx: Context) !void {
 
     if (sema.diagnostics.items.len != 0) {
         try writer.writeByte('\n');
-        for (sema.diagnostics.items, 0..) |d, i| {
+        for (sema.diagnostics.items) |d| {
             try renderDiagnostics(writer, allocator, &dye, src, d);
-            if (i != sema.diagnostics.items.len - 1) {
-                try writer.writeByte('\n');
-            }
+            try writer.writeByte('\n');
         }
+
+        try writer.writeAll(
+            try dye.cyan().fmt("--> ", .{}),
+        );
+        try writer.print("found {s}\n", .{
+            try dye.red().fmt("{d} error(s)", .{
+                sema.diagnostics.items.len,
+            }),
+        });
     }
 }
