@@ -30,6 +30,11 @@ pub const CiscoDiagnostic = struct {
             operator: tokens.TokenKind,
             right: SemaType,
         },
+        ImpossibleComparison: struct {
+            left: SemaType,
+            operator: tokens.TokenKind,
+            right: SemaType,
+        },
         IdentifierAlreadyExist: struct {
             identifier: []const u8,
         },
@@ -49,6 +54,7 @@ pub const CiscoDiagnostic = struct {
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
                 .TypeMismatch => |e| try writer.print("expected type \"{s}\", found type \"{s}\"", .{ e.expected.toString(), e.found.toString() }),
+                .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
             }
         }
     };

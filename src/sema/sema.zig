@@ -2,10 +2,12 @@ const std = @import("std");
 const CiscoDiagnostic = @import("../diagnostics/diagnostics.zig").CiscoDiagnostic;
 const tt = @import("type_table.zig");
 const ast = @import("../parser/ast.zig");
+const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
 const validateBinaryExpression = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
 const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
+const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 
 pub const CiscoSemanticAnalyzer = struct {
     types: tt.TypeTable,
@@ -19,72 +21,52 @@ pub const CiscoSemanticAnalyzer = struct {
         };
     }
 
-    pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !void {
-        for (program.body) |stmt| {
-            try self.validateStatement(allocator, stmt);
+    pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
+        var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
+        for (program.body) |*stmt| {
+            const typed = try self.validateStatement(allocator, stmt) orelse continue;
+            try body.append(allocator, typed);
         }
+        return .{ .body = try body.toOwnedSlice(allocator) };
     }
 
-    pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: ast.Statement) !void {
-        switch (stmt) {
-            .expression => |e| {
-                _ = try self.validateExpression(allocator, e.expression, e.span);
+    pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
+        switch (stmt.*) {
+            .expression => |*e| {
+                const expr = try self.validateExpression(allocator, &e.expression, e.span) orelse return null;
+                return .{
+                    .expression = .{ .typed = expr },
+                };
             },
         }
     }
 
-    pub fn validateExpression(self: *Self, allocator: std.mem.Allocator, expr: ast.Expression, span: Span) !?tt.SemaType {
+    pub fn validateExpression(self: *Self, allocator: std.mem.Allocator, expr: *const ast.Expression, span: Span) !?*typed_ast.TypedExpr {
         return switch (expr.expr) {
-            .float => .float,
-            .integer => .int,
-            .string => .string,
-            .binary => |b| {
-                return validateBinaryExpression(self, allocator, b, span);
+            .float => |f| blk: {
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{ .span = span, .sem_type = .float, .kind = .{ .float = f } };
+                break :blk node;
             },
-            .identifier => |i| {
+            .integer => |i| blk: {
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{ .span = span, .sem_type = .int, .kind = .{ .integer = i } };
+                break :blk node;
+            },
+            .string => |s| blk: {
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{ .span = span, .sem_type = .string, .kind = .{ .string = s } };
+                break :blk node;
+            },
+            .identifier => |i| blk: {
                 const ident_type = self.types.lookupIdentifier(i.value) orelse return null;
-                return ident_type.sem_type;
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{ .span = span, .sem_type = ident_type.sem_type, .kind = .{ .identifier = i } };
+                break :blk node;
             },
-
-            .variable_declaration => |v| {
-                return validateVariableDeclaration(self, allocator, v);
-            },
-            .unary => |u| {
-                const right_type = try self.validateExpression(allocator, u.rhs.*, u.rhs.span) orelse return null;
-                switch (u.operator) {
-                    .bang => {
-                        if (!right_type.eql(.bool)) {
-                            try self.reportError(allocator, .{
-                                .span = u.rhs.span,
-                                .kind = .{
-                                    .TypeMismatch = .{
-                                        .expected = .bool,
-                                        .found = right_type,
-                                    },
-                                },
-                            });
-                            return null;
-                        }
-                        return .bool;
-                    },
-                    .minus => {
-                        if (!right_type.is_numerical()) {
-                            try self.reportError(allocator, .{
-                                .span = u.rhs.span,
-                                .kind = .{
-                                    .TypeMismatch = .{
-                                        .expected = .number,
-                                        .found = right_type,
-                                    },
-                                },
-                            });
-                            return null;
-                        }
-                        return right_type;
-                    },
-                    else => unreachable,
-                }
-            },
+            .binary => |*b| validateBinaryExpression(self, allocator, b, span),
+            .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
+            .unary => |*u| validateUnaryExpression(self, allocator, u, span),
         };
     }
 

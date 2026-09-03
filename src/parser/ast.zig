@@ -53,7 +53,9 @@ pub const TypeExpression = union(enum) {
 
 pub const Expression = struct {
     span: tokens.Span,
-    expr: union(enum) {
+    expr: ExpressionKind,
+
+    pub const ExpressionKind = union(enum) {
         // literals
         integer: IntegerExpression,
         float: FloatExpression,
@@ -64,7 +66,7 @@ pub const Expression = struct {
         binary: BinaryExpression,
         unary: UnaryExpression,
         variable_declaration: VariableDeclarationExpression,
-    },
+    };
 };
 
 pub const Statement = union(enum) {

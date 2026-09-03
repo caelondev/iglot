@@ -86,6 +86,30 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .token_kind = .box_colon,
         .callback = @import("led/parse_variable_declaration.zig").parseVariableDeclaration,
     },
+    .{
+        .token_kind = .less,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .greater,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .less_equal_to,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .greater_equal_to,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .equal_to,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .not_equal_to,
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
 };
 
 pub const CiscoParser = struct {
