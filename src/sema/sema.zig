@@ -10,13 +10,13 @@ const validateVariableDeclaration = @import("expressions/validate_variable_decla
 const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 
 pub const CiscoSemanticAnalyzer = struct {
-    types: tt.TypeTable,
+    type_table: tt.TypeTable,
     diagnostics: std.ArrayList(CiscoDiagnostic),
 
     const Self = @This();
     pub fn init() Self {
         return Self{
-            .types = .{ .types = .empty },
+            .type_table = .{ .types = .empty },
             .diagnostics = .empty,
         };
     }
@@ -59,7 +59,7 @@ pub const CiscoSemanticAnalyzer = struct {
                 break :blk node;
             },
             .identifier => |i| blk: {
-                const ident_type = self.types.lookupIdentifier(i.value) orelse return null;
+                const ident_type = self.type_table.lookupIdentifier(i.value) orelse return null;
                 const node = try allocator.create(typed_ast.TypedExpr);
                 node.* = .{ .span = span, .sem_type = ident_type.sem_type, .kind = .{ .identifier = i } };
                 break :blk node;
@@ -67,6 +67,7 @@ pub const CiscoSemanticAnalyzer = struct {
             .binary => |*b| validateBinaryExpression(self, allocator, b, span),
             .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
             .unary => |*u| validateUnaryExpression(self, allocator, u, span),
+            else => unreachable,
         };
     }
 

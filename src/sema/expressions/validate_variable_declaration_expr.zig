@@ -11,7 +11,7 @@ pub fn validateVariableDeclaration(
     allocator: std.mem.Allocator,
     v: *const ast.VariableDeclarationExpression,
 ) anyerror!?*typed_ast.TypedExpr {
-    if (sema.types.lookupIdentifier(v.identifier.value)) |i| {
+    if (sema.type_table.lookupIdentifier(v.identifier.value)) |i| {
         const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
             .{
                 .note = .{
@@ -37,7 +37,7 @@ pub fn validateVariableDeclaration(
 
     // TODO: add type inferrence instead of returning null
     const var_type = tt.SemaType.fromTypeExpression(v.type) orelse return null;
-    try sema.types.declareIdentifier(allocator, v.identifier.value, .{ .span = v.span, .sem_type = var_type });
+    try sema.type_table.declareIdentifier(allocator, v.identifier.value, .{ .span = v.span, .sem_type = var_type });
 
     const value = try sema.validateExpression(allocator, v.value, v.value.span) orelse return null;
     if (!var_type.eql(value.sem_type)) {

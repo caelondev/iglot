@@ -13,7 +13,11 @@ pub fn validateBinaryExpr(
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
     return switch (b.operator) {
-        .plus, .minus, .asterisk, .slash, .assign => blk: {
+        .plus,
+        .minus,
+        .asterisk,
+        .slash,
+        => blk: {
             const left = try sema.validateExpression(allocator, b.left, b.left.span) orelse return null;
             const right = try sema.validateExpression(allocator, b.right, b.right.span) orelse return null;
 

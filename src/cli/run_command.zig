@@ -34,19 +34,7 @@ const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 pub fn run(ctx: Context) !void {
     const src =
         \\ a :: int = 5;
-        \\ a :: int = 10;
-        \\
-        \\ b :: bool = !10;
-        \\ c :: bool = -"";
-        \\
-        \\ d :: int = 5 + "hello";
-        \\
-        \\ e :: bool = 5 < "hello";
-        \\ f :: bool = true < false;
-        \\
-        \\ g :: bool = 5 == "hello";
-        \\
-        \\ h :: int = true;
+        \\ a = 10;
     ;
 
     const allocator = ctx.arena.*.allocator();

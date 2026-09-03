@@ -80,7 +80,7 @@ pub const led_exprs = [_]LeftDenotedExpr{
     },
     .{
         .token_kind = .assign,
-        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+        .callback = @import("led/assignment_expression.zig").parseAssignmentExpression,
     },
     .{
         .token_kind = .box_colon,

@@ -66,6 +66,7 @@ pub const Expression = struct {
         binary: BinaryExpression,
         unary: UnaryExpression,
         variable_declaration: VariableDeclarationExpression,
+        assignment: AssignmentExpression,
     };
 };
 
@@ -94,6 +95,11 @@ pub const BinaryExpression = struct {
     left: *const Expression,
     right: *const Expression,
     operator: tokens.TokenKind,
+};
+
+pub const AssignmentExpression = struct {
+    assignee: *const Expression,
+    value: *const Expression,
 };
 
 pub const VariableDeclarationExpression = struct {

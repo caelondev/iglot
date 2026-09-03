@@ -253,6 +253,48 @@ fn dumpExpr(
             );
         },
 
+        .assignment => |a| {
+            try out.appendSlice(
+                allocator,
+                try dye.bold().cyan().fmt("AssignmentExpression", .{}),
+            );
+
+            try out.append(allocator, ' ');
+            try appendSpan(allocator, out, expr.span, dye);
+
+            try out.appendSlice(allocator, ":\n");
+
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Asignee:", .{}),
+            );
+            try out.append(allocator, '\n');
+
+            try dumpExpr(
+                allocator,
+                out,
+                depth + 2,
+                a.assignee.*,
+                dye,
+            );
+
+            try out.appendNTimes(allocator, ' ', (depth + 1) * 2);
+            try out.appendSlice(
+                allocator,
+                try dye.bold().blue().fmt("Value:", .{}),
+            );
+            try out.append(allocator, '\n');
+
+            try dumpExpr(
+                allocator,
+                out,
+                depth + 2,
+                a.value.*,
+                dye,
+            );
+        },
+
         .variable_declaration => |v| {
             try out.appendSlice(
                 allocator,
