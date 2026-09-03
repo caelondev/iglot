@@ -8,6 +8,7 @@ const Span = @import("../lexer/tokens.zig").Span;
 const validateBinaryExpression = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
 const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
+const validateAssignmentExpression = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 
 pub const CiscoSemanticAnalyzer = struct {
     type_table: tt.TypeTable,
@@ -59,7 +60,13 @@ pub const CiscoSemanticAnalyzer = struct {
                 break :blk node;
             },
             .identifier => |i| blk: {
-                const ident_type = self.type_table.lookupIdentifier(i.value) orelse return null;
+                const ident_type = self.type_table.lookupIdentifier(i.value) orelse {
+                    try self.reportError(allocator, .{
+                        .span = span,
+                        .kind = .{ .UndefinedIdentifier = .{ .identifier = i.value } },
+                    });
+                    return null;
+                };
                 const node = try allocator.create(typed_ast.TypedExpr);
                 node.* = .{ .span = span, .sem_type = ident_type.sem_type, .kind = .{ .identifier = i } };
                 break :blk node;
@@ -67,7 +74,7 @@ pub const CiscoSemanticAnalyzer = struct {
             .binary => |*b| validateBinaryExpression(self, allocator, b, span),
             .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
             .unary => |*u| validateUnaryExpression(self, allocator, u, span),
-            else => unreachable,
+            .assignment => |*a| validateAssignmentExpression(self, allocator, a, span),
         };
     }
 

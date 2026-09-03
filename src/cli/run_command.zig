@@ -35,6 +35,9 @@ pub fn run(ctx: Context) !void {
     const src =
         \\ a :: int = 5;
         \\ a = 10;
+        \\ n = 10;
+        \\ a = "";
+        \\ 1+1 = 10;
     ;
 
     const allocator = ctx.arena.*.allocator();

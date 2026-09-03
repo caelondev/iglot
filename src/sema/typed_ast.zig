@@ -24,6 +24,10 @@ pub const TypedExpr = struct {
             identifier: ast.IdentifierExpression,
             value: *TypedExpr,
         },
+        assignment: struct {
+            assignee: *TypedExpr,
+            value: *TypedExpr,
+        },
     },
 };
 
