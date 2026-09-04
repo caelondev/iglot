@@ -26,21 +26,21 @@ const Context = @import("cli.zig").Context;
 const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
 const InkDye = @import("inkdye");
 const p = @import("../parser/parser.zig");
-const dumpProgramAst = @import("../parser/debug/dump_program_ast.zig").dumpProgramAst;
+const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ false = 100;
+        \\ a :: int = 100;
     ;
 
     const allocator = ctx.arena.*.allocator();
 
     var lexer = CiscoLexer.init(src);
     var parser = try p.CiscoParser.init(allocator, &lexer);
-    var ast = try parser.parseProgram(allocator);
+    const ast = try parser.parseProgram(allocator);
 
     var dye = InkDye.initRuntime(.{
         .environ_map = ctx.environ_map,
@@ -57,13 +57,12 @@ pub fn run(ctx: Context) !void {
     }
 
     if (parser.diagnostics.items.len == 0) {
-        const dump = try dumpProgramAst(allocator, &dye, &ast);
-        std.debug.print("{s}", .{dump});
+        std.debug.print("parsed ast:", .{});
+        try dumpAny(writer, ast, 0);
     } else return;
 
     var sema: CiscoSemanticAnalyzer = .init();
-    _ = try sema.analyze(allocator, ast);
-
+    const t_ast = try sema.analyze(allocator, ast);
     if (sema.diagnostics.items.len != 0) {
         try writer.writeByte('\n');
         for (sema.diagnostics.items) |d| {
@@ -79,5 +78,8 @@ pub fn run(ctx: Context) !void {
                 sema.diagnostics.items.len,
             }),
         });
+    } else {
+        std.debug.print("typed ast:", .{});
+        try dumpAny(writer, t_ast, 0);
     }
 }
