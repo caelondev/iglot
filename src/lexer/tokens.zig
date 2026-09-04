@@ -70,6 +70,7 @@ pub const TokenKind = enum {
     // Keywords
     @"and",
     @"or",
+    final,
 };
 
 /// A source location covering a token.
@@ -144,4 +145,5 @@ pub const Token = struct {
 pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "and", .@"and" },
     .{ "or", .@"or" },
+    .{ "fin", .final },
 });

@@ -10,6 +10,40 @@ const parseStatement = @import("../statements/parseStatement.zig").parseStatemen
 const Precedence = @import("../precedence.zig").Precedence;
 const CiscoParser = @import("../parser.zig").CiscoParser;
 
-pub fn parseTypeExpression(parser: *CiscoParser) ast.TypeExpression {
-    return .{ .identifier = parser.advance().lexeme };
+pub fn parseTypeExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.TypeExpression {
+    const tok = parser.advance();
+
+    switch (tok.kind) {
+        .final => {
+            const inner = try parseTypeExpression(parser, allocator) orelse return null;
+            if (inner.kind == .final) {
+                try parser.reportError(allocator, .{
+                    .span = inner.span,
+                    .severity = .err,
+                    .kind = .RedundantFinal,
+                });
+                return null;
+            }
+            const inner_ptr = try allocator.create(ast.TypeExpression);
+            inner_ptr.* = inner;
+            return .{
+                .span = tok.span,
+                .kind = .{ .final = inner_ptr },
+            };
+        },
+        .identifier => {
+            return .{
+                .span = tok.span,
+                .kind = .{ .identifier = tok.lexeme },
+            };
+        },
+
+        else => |k| {
+            try parser.reportError(allocator, .{
+                .span = tok.span,
+                .kind = .{ .UnexpectedTokenInType = .{ .found = k } },
+            });
+            return null;
+        },
+    }
 }

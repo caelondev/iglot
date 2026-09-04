@@ -47,8 +47,12 @@ pub const Node = struct {
     };
 };
 
-pub const TypeExpression = union(enum) {
-    identifier: []const u8,
+pub const TypeExpression = struct {
+    span: tokens.Span,
+    kind: union(enum) {
+        identifier: []const u8,
+        final: *TypeExpression,
+    },
 };
 
 pub const Expression = struct {

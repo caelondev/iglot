@@ -19,8 +19,15 @@ pub const CiscoDiagnostic = struct {
         MissingRightHandSideExpression,
         InvalidLeftHandSideDeclaration,
         MissingType,
+        RedundantFinal,
         ExpectedToken: struct {
             expected: tokens.TokenKind,
+            found: tokens.TokenKind,
+        },
+        UnexpectedToken: struct {
+            found: tokens.TokenKind,
+        },
+        UnexpectedTokenInType: struct {
             found: tokens.TokenKind,
         },
 
@@ -53,11 +60,14 @@ pub const CiscoDiagnostic = struct {
                 .InvalidLeftHandSideDeclaration => try writer.writeAll("invalid expression on the left-hand side of a declaration"),
                 .MissingType => try writer.writeAll("expected a type in this declaration"),
                 .ExpectedToken => |e| try writer.print("expected \"{s}\" found \"{s}\"", .{ @tagName(e.expected), @tagName(e.found) }),
+                .UnexpectedTokenInType => |u| try writer.print("unexpected token \"{s}\" in type expression", .{@tagName(u.found)}),
+                .UnexpectedToken => |u| try writer.print("unexpected token \"{s}\"", .{@tagName(u.found)}),
+                .RedundantFinal => try writer.print("redundant final modifier", .{}),
 
-                .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
+                .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
-                .TypeMismatch => |e| try writer.print("expected type \"{s}\", found type \"{s}\"", .{ e.expected.toString(), e.found.toString() }),
-                .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
+                .TypeMismatch => |e| try writer.print("expected type \"{f}\", found type \"{f}\"", .{ e.expected, e.found }),
+                .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
                 .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),

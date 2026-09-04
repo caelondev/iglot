@@ -33,7 +33,9 @@ const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ a :: int = 100;
+        \\ a :: fin fin int = 100;
+        \\ b :: fin int = 100;
+        \\ b = 100;
     ;
 
     const allocator = ctx.arena.*.allocator();

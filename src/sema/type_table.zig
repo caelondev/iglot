@@ -14,7 +14,9 @@ pub const SemaType = union(enum) {
     // special type used for error messages
     number,
 
-    pub fn fromTypeExpression(type_expr: TypeExpression) ?SemaType {
+    pub fn fromTypeExpression(
+        type_expr: TypeExpression,
+    ) ?SemaType {
         const types: std.StaticStringMap(SemaType) = .initComptime(.{
             .{ "string", .string },
             .{ "char", .char },
@@ -25,19 +27,26 @@ pub const SemaType = union(enum) {
             .{ "bool", .bool },
         });
 
-        return types.get(type_expr.identifier);
+        return switch (type_expr.kind) {
+            .identifier => |i| types.get(i),
+            .final => |f| fromTypeExpression(f.*),
+        };
     }
 
-    pub fn toString(self: SemaType) []const u8 {
-        return switch (self) {
-            .string => "string",
-            .char => "char",
-            .int => "int",
-            .wideint => "wideint",
-            .float => "float",
-            .double => "double",
-            .bool => "bool",
-            .number => "number",
+    pub fn format(self: SemaType, writer: *std.Io.Writer) !void {
+        try writeSymbolString(writer, self);
+    }
+
+    pub fn writeSymbolString(writer: *std.Io.Writer, symbol: SemaType) !void {
+        try switch (symbol) {
+            .string => writer.print("string", .{}),
+            .char => writer.print("char", .{}),
+            .int => writer.print("int", .{}),
+            .wideint => writer.print("wideint", .{}),
+            .float => writer.print("float", .{}),
+            .double => writer.print("double", .{}),
+            .bool => writer.print("bool", .{}),
+            .number => writer.print("number", .{}),
         };
     }
 
