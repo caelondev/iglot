@@ -44,6 +44,7 @@ pub const CiscoDiagnostic = struct {
             found: SemaType,
         },
         UndefinedIdentifier: struct { identifier: []const u8 },
+        FinalIdentifierAssignment: struct { identifier: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -59,6 +60,7 @@ pub const CiscoDiagnostic = struct {
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{s}\" and \"{s}\"", .{ @tagName(e.operator), e.left.toString(), e.right.toString() }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
+                .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),
             }
         }
     };

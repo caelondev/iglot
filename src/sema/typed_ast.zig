@@ -9,7 +9,10 @@ pub const TypedExpr = struct {
         integer: ast.IntegerExpression,
         float: ast.FloatExpression,
         string: ast.StringExpression,
-        identifier: ast.IdentifierExpression,
+        identifier: struct {
+            value: []const u8,
+            is_final: bool,
+        },
 
         binary: struct {
             left: *TypedExpr,

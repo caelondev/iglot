@@ -56,6 +56,7 @@ pub const SemaType = union(enum) {
 pub const TypeEntry = struct {
     sem_type: SemaType,
     span: Span,
+    is_final: bool,
 };
 
 pub const TypeTable = struct {

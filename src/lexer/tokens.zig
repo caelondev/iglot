@@ -46,8 +46,6 @@ pub const TokenKind = enum {
     assign,
 
     bang,
-    @"and",
-    @"or",
 
     less,
     greater,
@@ -68,6 +66,10 @@ pub const TokenKind = enum {
     box_colon,
     dot,
     comma,
+
+    // Keywords
+    @"and",
+    @"or",
 };
 
 /// A source location covering a token.
@@ -83,6 +85,15 @@ pub const Span = struct {
             .column_end = span_end.column_end,
             .line_start = span_start.line_start,
             .line_end = span_end.line_end,
+        };
+    }
+
+    pub fn empty() Span {
+        return .{
+            .column_start = 0,
+            .column_end = 0,
+            .line_start = 0,
+            .line_end = 0,
         };
     }
 

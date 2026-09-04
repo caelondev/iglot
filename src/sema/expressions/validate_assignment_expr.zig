@@ -17,6 +17,18 @@ pub fn validateAssignmentExpr(
             const typed_assignee = try sema.validateExpression(allocator, a.assignee, a.assignee.span) orelse return null;
             const typed_value = try sema.validateExpression(allocator, a.value, a.value.span) orelse return null;
 
+            const symbol = typed_assignee.kind.identifier;
+            if (symbol.is_final) {
+                try sema.reportError(allocator, .{
+                    .span = a.assignee.span,
+                    .severity = .err,
+                    .kind = .{
+                        .FinalIdentifierAssignment = .{ .identifier = symbol.value },
+                    },
+                });
+                return null;
+            }
+
             if (!typed_assignee.sem_type.eql(typed_value.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = a.value.span,

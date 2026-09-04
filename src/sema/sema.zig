@@ -17,18 +17,25 @@ pub const CiscoSemanticAnalyzer = struct {
     const Self = @This();
     pub fn init() Self {
         return Self{
-            .type_table = .{ .types = .empty },
+            .type_table = .init(),
             .diagnostics = .empty,
         };
     }
 
     pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
+        try self.initBuiltinIdentifiers(allocator);
+
         var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
         for (program.body) |*stmt| {
             const typed = try self.validateStatement(allocator, stmt) orelse continue;
             try body.append(allocator, typed);
         }
         return .{ .body = try body.toOwnedSlice(allocator) };
+    }
+
+    pub fn initBuiltinIdentifiers(self: *Self, allocator: std.mem.Allocator) !void {
+        try self.type_table.declareIdentifier(allocator, "true", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
+        try self.type_table.declareIdentifier(allocator, "false", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
     }
 
     pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
@@ -68,7 +75,13 @@ pub const CiscoSemanticAnalyzer = struct {
                     return null;
                 };
                 const node = try allocator.create(typed_ast.TypedExpr);
-                node.* = .{ .span = span, .sem_type = ident_type.sem_type, .kind = .{ .identifier = i } };
+                node.* = .{
+                    .span = span,
+                    .sem_type = ident_type.sem_type,
+                    .kind = .{
+                        .identifier = .{ .value = i.value, .is_final = ident_type.is_final },
+                    },
+                };
                 break :blk node;
             },
             .binary => |*b| validateBinaryExpression(self, allocator, b, span),
