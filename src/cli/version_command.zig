@@ -22,7 +22,7 @@ const cisco = @import("cisco_information");
 const Context = @import("cli.zig").Context;
 
 /// Prints the cisco version and build date.
-pub fn version(ctx: Context) !void {
+pub fn version(ctx: *Context) !void {
     var writer = std.Io.File.stdout().writerStreaming(ctx.io, &.{});
     const out = &writer.interface;
 

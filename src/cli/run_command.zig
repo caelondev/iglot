@@ -28,28 +28,40 @@ const InkDye = @import("inkdye");
 const p = @import("../parser/parser.zig");
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
+const pathExists = @import("helpers/path_exists.zig").pathExists;
 const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 
 /// Compiles and interprets a Cisco program.
-pub fn run(ctx: Context) !void {
-    const src =
-        \\ fn int add(a :: fin int, b :: int) {
-        \\      a = 70;
-        \\      sum :: int = a + b;
-        \\ }
-    ;
-
+pub fn run(ctx: *Context) !void {
     const allocator = ctx.arena.*.allocator();
-
-    var lexer = CiscoLexer.init(src);
-    var parser = try p.CiscoParser.init(allocator, &lexer);
-    const ast = try parser.parseProgram(allocator);
 
     var dye = InkDye.initRuntime(.{
         .environ_map = ctx.environ_map,
         .allocator = allocator,
     });
     defer dye.deinit();
+
+    const e = try dye.red().bold().fmt("error", .{});
+    var stderr = std.Io.File.stderr().writer(ctx.io, &.{});
+    const ewriter = &stderr.interface;
+
+    const path = ctx.argsIter.next() orelse {
+        try ewriter.print("{s}: usage: cisco run <filepath>\n", .{e});
+        return;
+    };
+
+    if (!try pathExists(ctx.io, path)) {
+        try ewriter.print("{s}: path does not exist\n", .{e});
+        return;
+    }
+
+    const cwd = std.Io.Dir.cwd();
+    const src = try cwd.readFileAlloc(ctx.io, path, allocator, .unlimited);
+
+    var lexer = CiscoLexer.init(src);
+    var parser = try p.CiscoParser.init(allocator, &lexer);
+    const ast = try parser.parseProgram(allocator);
+
     var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
     const writer = &stdout_writer.interface;
     for (parser.diagnostics.items, 0..) |d, i| {

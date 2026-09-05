@@ -22,7 +22,7 @@ const std = @import("std");
 const Context = @import("cli.zig").Context;
 
 /// Prints the cisco command-line help message.
-pub fn help(ctx: Context) !void {
+pub fn help(ctx: *Context) !void {
     const options = [_][2][]const u8{
         .{ "help", "Show this help message" },
         .{ "version", "Show version information" },

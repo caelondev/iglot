@@ -35,7 +35,7 @@ const std = @import("std");
 const tokens = @import("tokens.zig");
 
 pub const CiscoLexer = struct {
-    source: [:0]const u8,
+    source: []u8,
     cursor: usize,
 
     prev_line: usize,
@@ -52,7 +52,7 @@ pub const CiscoLexer = struct {
     };
 
     const Self = @This();
-    pub fn init(source: [:0]const u8) Self {
+    pub fn init(source: []u8) Self {
         return .{
             .source = source,
             .cursor = 0,

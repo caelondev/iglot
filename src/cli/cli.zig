@@ -27,6 +27,7 @@
 //! `std.Io` instance used for input and output.
 
 const std = @import("std");
+const InkDye = @import("inkdye");
 
 /// Shared execution context provided to command handlers.
 pub const Context = struct {
@@ -38,7 +39,7 @@ pub const Context = struct {
     io: std.Io,
 };
 
-const Command = fn (Context) anyerror!void;
+const Command = fn (*Context) anyerror!void;
 
 const commands: std.StaticStringMap(*const Command) = .initComptime(.{
     .{ "help", &@import("help_command.zig").help },
@@ -69,6 +70,11 @@ pub const CiscoCLI = struct {
     ) !void {
         _ = self.argsIter.next(); // skip bin path
 
+        var dye = InkDye.initRuntime(.{
+            .environ_map = environ_map,
+            .allocator = allocator,
+        });
+        defer dye.deinit();
         var stdout_writer = std.Io.File.stdout().writer(io, &.{});
         const writer = &stdout_writer.interface;
 
@@ -78,17 +84,22 @@ pub const CiscoCLI = struct {
         };
 
         const cmd = commands.get(name) orelse {
-            try writer.print("error: command not found", .{});
+            const e = try dye.red().bold().fmt("error", .{});
+            var stderr = std.Io.File.stderr().writer(io, &.{});
+            const ewriter = &stderr.interface;
+            try ewriter.print("{s}: usage: command not found\n", .{e});
             return;
         };
 
-        try cmd(.{
+        var ctx: Context = .{
             .argsIter = self.argsIter,
             .args = self.args,
             .allocator = allocator,
             .arena = arena,
             .io = io,
             .environ_map = environ_map,
-        });
+        };
+
+        try cmd(&ctx);
     }
 };
