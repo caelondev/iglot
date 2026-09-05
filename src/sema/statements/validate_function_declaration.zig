@@ -37,6 +37,10 @@ pub fn validateFunctionDeclaration(
 
     const ret_sem_type: tt.SemaType = tt.SemaType.fromTypeExpression(f.return_type) orelse return null;
 
+    const prev_ctx = sema.current_function_ctx;
+    sema.current_function_ctx = .{ .return_type = ret_sem_type };
+    defer sema.current_function_ctx = prev_ctx;
+
     try sema.type_table.declareIdentifier(allocator, f.identifier.value, .{
         .span = f.span,
         .sem_type = ret_sem_type,

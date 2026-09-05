@@ -10,16 +10,24 @@ const validateVariableDeclaration = @import("expressions/validate_variable_decla
 const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 const validateAssignmentExpression = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
+const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
+
+const FunctionContext = struct {
+    return_type: tt.SemaType,
+};
 
 pub const CiscoSemanticAnalyzer = struct {
     type_table: tt.TypeTable,
     diagnostics: std.ArrayList(CiscoDiagnostic),
+
+    current_function_ctx: ?FunctionContext,
 
     const Self = @This();
     pub fn init() Self {
         return Self{
             .type_table = undefined,
             .diagnostics = .empty,
+            .current_function_ctx = null,
         };
     }
 
@@ -54,7 +62,12 @@ pub const CiscoSemanticAnalyzer = struct {
                     .function_decl = decl,
                 };
             },
-            else => unreachable,
+            .return_stmt => |r| {
+                const ret_stmt = try validateReturnStatement(self, allocator, &r) orelse return null;
+                return .{
+                    .return_stmt = ret_stmt,
+                };
+            },
         }
     }
 

@@ -50,9 +50,14 @@ pub const CiscoDiagnostic = struct {
             expected: SemaType,
             found: SemaType,
         },
+        ReturnTypeMismatch: struct {
+            expected: SemaType,
+            found: SemaType,
+        },
         UndefinedIdentifier: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
         VoidValueStorage: struct { identifier: []const u8 },
+        IllegalReturn,
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -67,12 +72,14 @@ pub const CiscoDiagnostic = struct {
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
-                .TypeMismatch => |e| try writer.print("expected type \"{f}\", found type \"{f}\"", .{ e.expected, e.found }),
+                .TypeMismatch => |e| try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found }),
+                .ReturnTypeMismatch => |e| try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found }),
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
                 .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),
                 .VoidValueStorage => |v| try writer.print("cannot store a value of type \"void\" to \"{s}\"", .{v.identifier}),
+                .IllegalReturn => try writer.print("cannot return from outside a function", .{}),
             }
         }
     };

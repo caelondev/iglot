@@ -1,4 +1,9 @@
-fn int add(a :: fin int, b :: int) {
-    return;
+fn bool add(a :: fin int, b :: int) {
     return a + b;
 }
+
+fn void add(a :: fin int, b :: int) {
+    return a + b;
+}
+
+return 1;

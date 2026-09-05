@@ -9,6 +9,7 @@ pub const TypedProgram = struct {
 pub const TypedStmt = union(enum) {
     expression: TypedExpressionStmt,
     function_decl: TypedFunctionDeclarationStatement,
+    return_stmt: TypedReturnStatement,
 };
 
 pub const TypedExpressionStmt = struct {
@@ -71,5 +72,10 @@ pub const TypedFunctionDeclarationStatement = struct {
     parameters: []TypedFunctionParameter,
     body: TypedBlockStatement,
     return_type: tt.SemaType,
+    span: tokens.Span,
+};
+
+pub const TypedReturnStatement = struct {
+    return_value: ?*TypedExpr,
     span: tokens.Span,
 };
