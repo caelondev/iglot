@@ -29,7 +29,10 @@
 
 const std = @import("std");
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const p = @import("../parser.zig");
+const TokenKind = @import("../../lexer/tokens.zig").TokenKind;
+const statements = p.statements;
+const CiscoParser = p.CiscoParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 
@@ -37,20 +40,26 @@ pub fn parseStatement(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
-    const expression = parseExpression(
+    if (getStatement(parser.cur_tok.kind)) |callback| {
+        const s = try callback(parser, allocator) orelse {
+            parser.synchronize();
+            return null;
+        };
+        return s;
+    }
+
+    const expression = try parseExpression(
         parser,
         allocator,
         Precedence.lowest.toInt(),
-    ) catch |e| {
-        @panic(@errorName(e));
-    };
+    );
 
     const expr = expression orelse {
         parser.synchronize();
         return null;
     };
 
-    _ = parser.expect(allocator, .semicolon) orelse {
+    _ = try parser.expect(allocator, .semicolon) orelse {
         parser.synchronize();
         return null;
     };
@@ -61,4 +70,13 @@ pub fn parseStatement(
     };
 
     return .{ .expression = stmt };
+}
+
+fn getStatement(kind: TokenKind) ?p.StmtFn {
+    for (statements) |stmt| {
+        if (stmt.token_kind != kind) continue;
+        return stmt.callback;
+    }
+
+    return null;
 }

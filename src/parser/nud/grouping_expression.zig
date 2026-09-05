@@ -31,6 +31,6 @@ const Precedence = @import("../precedence.zig").Precedence;
 pub fn parseGroupingExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Expression {
     _ = parser.advance();
     const expression = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
-    _ = parser.expect(allocator, .right_parenthesis) orelse return null;
+    _ = try parser.expect(allocator, .right_parenthesis) orelse return null;
     return expression;
 }

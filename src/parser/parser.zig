@@ -20,6 +20,11 @@ pub const LedFn = *const fn (
     left: ast.Expression,
 ) anyerror!?ast.Expression;
 
+pub const StmtFn = *const fn (
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+) anyerror!?ast.Statement;
+
 const NullDenotedExpr = struct {
     token_kind: tokens.TokenKind,
     callback: NudFn,
@@ -28,6 +33,11 @@ const NullDenotedExpr = struct {
 const LeftDenotedExpr = struct {
     token_kind: tokens.TokenKind,
     callback: LedFn,
+};
+
+const Statement = struct {
+    token_kind: tokens.TokenKind,
+    callback: StmtFn,
 };
 
 pub const nud_exprs = [_]NullDenotedExpr{
@@ -112,6 +122,13 @@ pub const led_exprs = [_]LeftDenotedExpr{
     },
 };
 
+pub const statements = [_]Statement{
+    .{
+        .token_kind = .@"fn",
+        .callback = @import("statements/function_declaration.zig").parseFunctionDeclarationStatement,
+    },
+};
+
 pub const CiscoParser = struct {
     lexer: *CiscoLexer,
     cur_tok: tokens.Token,
@@ -142,9 +159,7 @@ pub const CiscoParser = struct {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.isEof()) {
-            const s = parseStatement(self, allocator) catch |e| {
-                @panic(@tagName(e));
-            };
+            const s = try parseStatement(self, allocator);
 
             if (s) |stmt| {
                 try stmts.append(allocator, stmt);
@@ -179,9 +194,9 @@ pub const CiscoParser = struct {
         return Precedence.ofToken(self.cur_tok).toInt();
     }
 
-    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) ?tokens.Token {
+    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) !?tokens.Token {
         if (self.cur_tok.kind != expected_kind) {
-            self.reportError(allocator, .{
+            try self.reportError(allocator, .{
                 .span = self.cur_tok.span,
                 .kind = .{
                     .ExpectedToken = .{
@@ -189,9 +204,7 @@ pub const CiscoParser = struct {
                         .found = self.cur_tok.kind,
                     },
                 },
-            }) catch {
-                @panic("ran out of memory during parsing.");
-            };
+            });
 
             return null;
         }

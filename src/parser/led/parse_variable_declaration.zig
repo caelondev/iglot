@@ -26,7 +26,7 @@ pub fn parseVariableDeclaration(
 
     const decl_type = try parseTypeExpression(parser, allocator) orelse return null;
 
-    _ = parser.expect(allocator, .assign) orelse return null;
+    _ = try parser.expect(allocator, .assign) orelse return null;
 
     const value = try parseExpression(
         parser,
