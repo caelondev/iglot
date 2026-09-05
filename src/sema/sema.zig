@@ -9,6 +9,7 @@ const validateBinaryExpression = @import("expressions/validate_binary_expr.zig")
 const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 const validateAssignmentExpression = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
+const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 
 pub const CiscoSemanticAnalyzer = struct {
     type_table: tt.TypeTable,
@@ -17,12 +18,13 @@ pub const CiscoSemanticAnalyzer = struct {
     const Self = @This();
     pub fn init() Self {
         return Self{
-            .type_table = .init(),
+            .type_table = undefined,
             .diagnostics = .empty,
         };
     }
 
     pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
+        self.type_table = try .init(allocator);
         try self.initBuiltinIdentifiers(allocator);
 
         var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
@@ -46,8 +48,24 @@ pub const CiscoSemanticAnalyzer = struct {
                     .expression = .{ .typed = expr },
                 };
             },
-            else => return null,
+            .function_decl => |f| {
+                const decl = try validateFunctionDeclaration(self, allocator, &f) orelse return null;
+                return .{
+                    .function_decl = decl,
+                };
+            },
         }
+    }
+
+    pub fn validateBlockStatement(self: *Self, allocator: std.mem.Allocator, block: *const ast.BlockStatement) !?typed_ast.TypedBlockStatement {
+        var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
+
+        for (block.statements) |*stmt| {
+            const t_stmt = try self.validateStatement(allocator, stmt) orelse return null;
+            try stmts.append(allocator, t_stmt);
+        }
+
+        return .{ .typed_stmts = try stmts.toOwnedSlice(allocator) };
     }
 
     pub fn validateExpression(self: *Self, allocator: std.mem.Allocator, expr: *const ast.Expression, span: Span) !?*typed_ast.TypedExpr {

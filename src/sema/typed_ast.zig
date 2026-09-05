@@ -2,6 +2,19 @@ const ast = @import("../parser/ast.zig");
 const tt = @import("type_table.zig");
 const tokens = @import("../lexer/tokens.zig");
 
+pub const TypedProgram = struct {
+    body: []TypedStmt,
+};
+
+pub const TypedStmt = union(enum) {
+    expression: TypedExpressionStmt,
+    function_decl: TypedFunctionDeclarationStatement,
+};
+
+pub const TypedExpressionStmt = struct {
+    typed: *TypedExpr,
+};
+
 pub const TypedIdentifier = struct {
     value: []const u8,
     is_final: bool,
@@ -43,10 +56,6 @@ pub const TypedExpr = struct {
     },
 };
 
-pub const TypedExpressionStmt = struct {
-    typed: *TypedExpr,
-};
-
 pub const TypedFunctionParameter = struct {
     identifier: ast.IdentifierExpression,
     param_type: tt.SemaType,
@@ -63,13 +72,4 @@ pub const TypedFunctionDeclarationStatement = struct {
     body: TypedBlockStatement,
     return_type: tt.SemaType,
     span: tokens.Span,
-};
-
-pub const TypedStmt = union(enum) {
-    expression: TypedExpressionStmt,
-    function_decl: TypedFunctionDeclarationStatement,
-};
-
-pub const TypedProgram = struct {
-    body: []TypedStmt,
 };

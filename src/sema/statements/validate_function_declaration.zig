@@ -1,0 +1,77 @@
+const std = @import("std");
+const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const tt = @import("../type_table.zig");
+const ast = @import("../../parser/ast.zig");
+const typed_ast = @import("../typed_ast.zig");
+const Span = @import("../../lexer/tokens.zig").Span;
+const CiscoSemanticAnalyzer = @import("../sema.zig").CiscoSemanticAnalyzer;
+
+pub fn validateFunctionDeclaration(
+    sema: *CiscoSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    f: *const ast.FunctionDeclarationStatement,
+) anyerror!?typed_ast.TypedFunctionDeclarationStatement {
+    if (sema.type_table.lookupCurrentScope(f.identifier.value)) |i| {
+        const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+            .{
+                .note = .{
+                    .message = "identifier declared here",
+                    .span = i.span,
+                },
+            },
+        });
+
+        try sema.reportError(allocator, .{
+            .span = f.span,
+            .severity = .err,
+            .kind = .{
+                .IdentifierAlreadyExist = .{
+                    .identifier = f.identifier.value,
+                },
+            },
+            .annotations = annotations,
+        });
+
+        return null;
+    }
+
+    const ret_sem_type: tt.SemaType = tt.SemaType.fromTypeExpression(f.return_type) orelse return null;
+
+    try sema.type_table.declareIdentifier(allocator, f.identifier.value, .{
+        .span = f.span,
+        .sem_type = ret_sem_type,
+        .is_final = false,
+        .is_function = true,
+    });
+
+    try sema.type_table.enterScope(allocator);
+    defer sema.type_table.leaveScope(allocator);
+
+    var params = try allocator.alloc(typed_ast.TypedFunctionParameter, f.parameters.len);
+    for (f.parameters, 0..) |param, i| {
+        const param_sem_type = tt.SemaType.fromTypeExpression(param.param_type) orelse return null;
+
+        try sema.type_table.declareIdentifier(allocator, param.identifier.value, .{
+            .span = param.span,
+            .sem_type = param_sem_type,
+            .is_final = param.param_type.kind == .final,
+            .is_function = false,
+        });
+
+        params[i] = .{
+            .identifier = param.identifier,
+            .param_type = param_sem_type,
+            .span = param.span,
+        };
+    }
+
+    const body = try sema.validateBlockStatement(allocator, &f.body) orelse return null;
+
+    return .{
+        .identifier = f.identifier,
+        .parameters = params,
+        .body = body,
+        .return_type = ret_sem_type,
+        .span = f.span,
+    };
+}

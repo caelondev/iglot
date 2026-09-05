@@ -69,23 +69,58 @@ pub const TypeEntry = struct {
     sem_type: SemaType,
     span: Span,
     is_final: bool,
+    is_function: bool = false,
 };
 
 pub const TypeTable = struct {
-    types: std.StringHashMapUnmanaged(TypeEntry),
+    scopes: std.ArrayList(SymbolTable),
+
+    const SymbolTable = std.StringHashMapUnmanaged(TypeEntry);
 
     const Self = @This();
-    pub fn init() Self {
-        return Self{
-            .types = .empty,
+
+    pub fn init(allocator: std.mem.Allocator) !Self {
+        var self = Self{
+            .scopes = .empty,
         };
+        try self.enterScope(allocator);
+        return self;
+    }
+
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        for (self.scopes.items) |*scope| {
+            scope.deinit(allocator);
+        }
+        self.scopes.deinit(allocator);
+    }
+
+    pub fn enterScope(self: *Self, allocator: std.mem.Allocator) !void {
+        try self.scopes.append(allocator, .empty);
+    }
+
+    pub fn leaveScope(self: *Self, allocator: std.mem.Allocator) void {
+        var scope = self.scopes.pop() orelse unreachable;
+        scope.deinit(allocator);
     }
 
     pub fn declareIdentifier(self: *Self, allocator: std.mem.Allocator, identifier: []const u8, entry: TypeEntry) !void {
-        try self.types.put(allocator, identifier, entry);
+        const current = &self.scopes.items[self.scopes.items.len - 1];
+        try current.put(allocator, identifier, entry);
+    }
+
+    pub fn lookupCurrentScope(self: *Self, identifier: []const u8) ?TypeEntry {
+        const cur = self.scopes.items[self.scopes.items.len - 1];
+        return cur.get(identifier);
     }
 
     pub fn lookupIdentifier(self: *Self, identifier: []const u8) ?TypeEntry {
-        return self.types.get(identifier);
+        var i = self.scopes.items.len;
+        while (i > 0) {
+            i -= 1;
+            if (self.scopes.items[i].get(identifier)) |entry| {
+                return entry;
+            }
+        }
+        return null;
     }
 };

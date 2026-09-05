@@ -11,7 +11,7 @@ pub fn validateVariableDeclaration(
     allocator: std.mem.Allocator,
     v: *const ast.VariableDeclarationExpression,
 ) anyerror!?*typed_ast.TypedExpr {
-    if (sema.type_table.lookupIdentifier(v.identifier.value)) |i| {
+    if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
         const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
             .{
                 .note = .{

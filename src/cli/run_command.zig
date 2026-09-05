@@ -33,7 +33,8 @@ const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: Context) !void {
     const src =
-        \\ fn int add(a :: int, b :: int) {
+        \\ fn int add(a :: fin int, b :: int) {
+        \\      a = 70;
         \\      sum :: int = a + b;
         \\ }
     ;
