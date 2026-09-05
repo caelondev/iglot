@@ -77,6 +77,7 @@ pub const Expression = struct {
 pub const Statement = union(enum) {
     expression: ExpressionStatement,
     function_decl: FunctionDeclarationStatement,
+    return_stmt: ReturnStatement,
 };
 
 // EXPRESSIONS
@@ -142,4 +143,9 @@ pub const FunctionParameter = struct {
 
 pub const BlockStatement = struct {
     statements: []Statement,
+};
+
+pub const ReturnStatement = struct {
+    return_value: ?Expression,
+    span: tokens.Span,
 };

@@ -54,6 +54,7 @@ pub const CiscoSemanticAnalyzer = struct {
                     .function_decl = decl,
                 };
             },
+            else => unreachable,
         }
     }
 

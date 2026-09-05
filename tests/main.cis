@@ -1,4 +1,4 @@
 fn int add(a :: fin int, b :: int) {
-    a = 70;
-    sum :: int = a + b;
+    return;
+    return a + b;
 }

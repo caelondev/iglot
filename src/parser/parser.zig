@@ -127,6 +127,10 @@ pub const statements = [_]Statement{
         .token_kind = .@"fn",
         .callback = @import("statements/function_declaration.zig").parseFunctionDeclarationStatement,
     },
+    .{
+        .token_kind = .@"return",
+        .callback = @import("statements/return_statement.zig").parseReturnStatement,
+    },
 };
 
 pub const CiscoParser = struct {

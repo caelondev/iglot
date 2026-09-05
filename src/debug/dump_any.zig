@@ -36,6 +36,13 @@ pub fn dumpAny(writer: *std.Io.Writer, value: anytype, indent: usize) anyerror!v
                 try writer.print("{any}\n", .{value});
             }
         },
+        .optional => {
+            if (value) |payload| {
+                try dumpAny(writer, payload, indent);
+            } else {
+                try writer.writeAll("null\n");
+            }
+        },
         .@"enum" => try writer.print("{s}\n", .{@tagName(value)}),
         .int, .float, .bool => try writer.print("{any}\n", .{value}),
         else => try writer.print("{any}\n", .{value}),
