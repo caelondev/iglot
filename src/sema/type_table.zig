@@ -10,6 +10,7 @@ pub const SemaType = union(enum) {
     float,
     bool,
     double,
+    void,
 
     // special type used for error messages
     number,
@@ -25,6 +26,7 @@ pub const SemaType = union(enum) {
             .{ "float", .float },
             .{ "double", .double },
             .{ "bool", .bool },
+            .{ "void", .void },
         });
 
         return switch (type_expr.kind) {
@@ -47,6 +49,7 @@ pub const SemaType = union(enum) {
             .double => writer.print("double", .{}),
             .bool => writer.print("bool", .{}),
             .number => writer.print("number", .{}),
+            .void => writer.print("void", .{}),
         };
     }
 

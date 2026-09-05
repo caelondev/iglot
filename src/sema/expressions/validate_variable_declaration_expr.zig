@@ -39,6 +39,18 @@ pub fn validateVariableDeclaration(
     const var_type =
         tt.SemaType.fromTypeExpression(v.type) orelse return null;
 
+    if (var_type == .void) {
+        try sema.reportError(allocator, .{
+            .span = v.type.span,
+            .severity = .err,
+            .kind = .{
+                .VoidValueStorage = .{ .identifier = v.identifier.value },
+            },
+        });
+
+        return null;
+    }
+
     try sema.type_table.declareIdentifier(
         allocator,
         v.identifier.value,

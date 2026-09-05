@@ -52,6 +52,7 @@ pub const CiscoDiagnostic = struct {
         },
         UndefinedIdentifier: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
+        VoidValueStorage: struct { identifier: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -71,6 +72,7 @@ pub const CiscoDiagnostic = struct {
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
                 .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),
+                .VoidValueStorage => |v| try writer.print("cannot store a value of type \"void\" to \"{s}\"", .{v.identifier}),
             }
         }
     };

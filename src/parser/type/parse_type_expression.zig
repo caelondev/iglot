@@ -10,7 +10,10 @@ const parseStatement = @import("../statements/parseStatement.zig").parseStatemen
 const Precedence = @import("../precedence.zig").Precedence;
 const CiscoParser = @import("../parser.zig").CiscoParser;
 
-pub fn parseTypeExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.TypeExpression {
+pub fn parseTypeExpression(
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+) !?ast.TypeExpression {
     const tok = parser.advance();
 
     switch (tok.kind) {
@@ -31,6 +34,27 @@ pub fn parseTypeExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !
                 .kind = .{ .final = inner_ptr },
             };
         },
+
+        else => {
+            return parseType(parser, allocator, tok);
+        },
+    }
+}
+
+pub fn parseReturnTypeExpression(
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+) !?ast.TypeExpression {
+    const tok = parser.advance();
+    return parseType(parser, allocator, tok);
+}
+
+fn parseType(
+    parser: *CiscoParser,
+    allocator: std.mem.Allocator,
+    tok: tokens.Token,
+) !?ast.TypeExpression {
+    switch (tok.kind) {
         .identifier => {
             return .{
                 .span = tok.span,
