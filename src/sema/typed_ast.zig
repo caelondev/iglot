@@ -2,6 +2,32 @@ const ast = @import("../parser/ast.zig");
 const tt = @import("type_table.zig");
 const tokens = @import("../lexer/tokens.zig");
 
+pub const TypedIdentifier = struct {
+    value: []const u8,
+    is_final: bool,
+};
+
+pub const TypedBinaryExpr = struct {
+    left: *TypedExpr,
+    right: *TypedExpr,
+    operator: tokens.TokenKind,
+};
+
+pub const TypedUnaryExpr = struct {
+    rhs: *TypedExpr,
+    operator: tokens.TokenKind,
+};
+
+pub const TypedVariableDeclaration = struct {
+    identifier: ast.IdentifierExpression,
+    value: *TypedExpr,
+};
+
+pub const TypedAssignment = struct {
+    assignee: *TypedExpr,
+    value: *TypedExpr,
+};
+
 pub const TypedExpr = struct {
     span: tokens.Span,
     sem_type: tt.SemaType,
@@ -9,35 +35,39 @@ pub const TypedExpr = struct {
         integer: ast.IntegerExpression,
         float: ast.FloatExpression,
         string: ast.StringExpression,
-        identifier: struct {
-            value: []const u8,
-            is_final: bool,
-        },
-
-        binary: struct {
-            left: *TypedExpr,
-            right: *TypedExpr,
-            operator: tokens.TokenKind,
-        },
-        unary: struct {
-            rhs: *TypedExpr,
-            operator: tokens.TokenKind,
-        },
-        variable_declaration: struct {
-            identifier: ast.IdentifierExpression,
-            value: *TypedExpr,
-        },
-        assignment: struct {
-            assignee: *TypedExpr,
-            value: *TypedExpr,
-        },
+        identifier: TypedIdentifier,
+        binary: TypedBinaryExpr,
+        unary: TypedUnaryExpr,
+        variable_declaration: TypedVariableDeclaration,
+        assignment: TypedAssignment,
     },
 };
 
+pub const TypedExpressionStmt = struct {
+    typed: *TypedExpr,
+};
+
+pub const TypedFunctionParameter = struct {
+    identifier: ast.IdentifierExpression,
+    param_type: tt.SemaType,
+    span: tokens.Span,
+};
+
+pub const TypedBlockStatement = struct {
+    typed_stmts: []TypedStmt,
+};
+
+pub const TypedFunctionDeclarationStatement = struct {
+    identifier: ast.IdentifierExpression,
+    parameters: []TypedFunctionParameter,
+    body: TypedBlockStatement,
+    return_type: tt.SemaType,
+    span: tokens.Span,
+};
+
 pub const TypedStmt = union(enum) {
-    expression: struct {
-        typed: *TypedExpr,
-    },
+    expression: TypedExpressionStmt,
+    function_decl: TypedFunctionDeclarationStatement,
 };
 
 pub const TypedProgram = struct {
