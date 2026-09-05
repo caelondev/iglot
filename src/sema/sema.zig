@@ -46,6 +46,7 @@ pub const CiscoSemanticAnalyzer = struct {
                     .expression = .{ .typed = expr },
                 };
             },
+            else => return null,
         }
     }
 

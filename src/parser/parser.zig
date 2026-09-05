@@ -159,6 +159,11 @@ pub const CiscoParser = struct {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.isEof()) {
+            std.debug.print(
+                "[parseProgram] cur={} peek={} column_start={} line_start={} panic_mode={}\n",
+                .{ self.cur_tok.kind, self.peek_tok.kind, self.cur_tok.span.column_start, self.cur_tok.span.line_start, self.panic_mode },
+            );
+
             const s = try parseStatement(self, allocator);
 
             if (s) |stmt| {

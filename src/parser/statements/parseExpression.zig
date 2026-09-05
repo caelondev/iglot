@@ -42,7 +42,14 @@ const CiscoParser = p.CiscoParser;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseExpression(parser: *CiscoParser, allocator: std.mem.Allocator, precedence: u8) !?ast.Expression {
-    const nud = lookupNud(parser.cur_tok.kind) orelse return null;
+    const nud = lookupNud(parser.cur_tok.kind) orelse {
+        try parser.reportError(allocator, .{
+            .span = parser.cur_tok.span,
+            .kind = .{ .UnexpectedToken = .{ .found = parser.cur_tok.kind } },
+        });
+        return null;
+    };
+
     var left = try nud(parser, allocator) orelse return null;
 
     while (precedence < Precedence.ofToken(parser.cur_tok).toInt()) {
