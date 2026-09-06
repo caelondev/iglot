@@ -79,6 +79,17 @@ pub const CiscoIR = struct {
         for (decl.body.typed_stmts) |stmt| {
             try self.buildStmt(allocator, stmt);
         }
+
+        if (!self.current_block.isTerminated()) {
+            // sema guarantees that this function is void
+            try self.emit(allocator, .{
+                .op = .ret_void,
+                .sema_type = null,
+                .result = null,
+                .operands = &.{},
+                .data = .none,
+            });
+        }
     }
 
     fn buildReturn(self: *Self, allocator: std.mem.Allocator, r: typed_ast.TypedReturnStatement) !void {

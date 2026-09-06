@@ -19,4 +19,13 @@ pub const BasicBlock = struct {
     pub fn append(self: *Self, allocator: std.mem.Allocator, instr: Instruction) !void {
         try self.instructions.append(allocator, instr);
     }
+
+    pub fn isTerminated(self: *Self) bool {
+        if (self.instructions.items.len == 0) return false;
+        const last = self.instructions.items[self.instructions.items.len - 1];
+        return switch (last.op) {
+            .ret, .ret_void, .cond_br, .br => true,
+            else => false,
+        };
+    }
 };
