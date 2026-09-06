@@ -51,7 +51,7 @@ pub const CiscoSemanticAnalyzer = struct {
     pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
         switch (stmt.*) {
             .expression => |*e| {
-                const expr = try self.validateExpression(allocator, &e.expression, e.span) orelse return null;
+                const expr = try self.validateExpression(allocator, &e.expression, e.span, null) orelse return null;
                 return .{
                     .expression = .{ .typed = expr },
                 };
@@ -82,7 +82,13 @@ pub const CiscoSemanticAnalyzer = struct {
         return .{ .typed_stmts = try stmts.toOwnedSlice(allocator) };
     }
 
-    pub fn validateExpression(self: *Self, allocator: std.mem.Allocator, expr: *const ast.Expression, span: Span) !?*typed_ast.TypedExpr {
+    pub fn validateExpression(
+        self: *Self,
+        allocator: std.mem.Allocator,
+        expr: *const ast.Expression,
+        span: Span,
+        expected_type: ?tt.SemaType,
+    ) !?*typed_ast.TypedExpr {
         return switch (expr.expr) {
             .float => |f| blk: {
                 const node = try allocator.create(typed_ast.TypedExpr);
@@ -90,8 +96,14 @@ pub const CiscoSemanticAnalyzer = struct {
                 break :blk node;
             },
             .integer => |i| blk: {
+                const sem_type = try self.resolveIntegerType(allocator, i.value, span, expected_type) orelse return null;
                 const node = try allocator.create(typed_ast.TypedExpr);
-                node.* = .{ .span = span, .sem_type = .int, .kind = .{ .integer = i } };
+                node.* = .{ .span = span, .sem_type = sem_type, .kind = .{ .integer = i } };
+                break :blk node;
+            },
+            .wide_integer => |i| blk: {
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{ .span = span, .sem_type = .wideint, .kind = .{ .wide_integer = i } };
                 break :blk node;
             },
             .string => |s| blk: {
@@ -122,6 +134,38 @@ pub const CiscoSemanticAnalyzer = struct {
             .unary => |*u| validateUnaryExpression(self, allocator, u, span),
             .assignment => |*a| validateAssignmentExpression(self, allocator, a, span),
         };
+    }
+
+    fn resolveIntegerType(
+        self: *Self,
+        allocator: std.mem.Allocator,
+        value: i128,
+        span: Span,
+        expected_type: ?tt.SemaType,
+    ) !?tt.SemaType {
+        if (expected_type) |t| {
+            if (t == .wideint or t == .int) return t;
+        }
+
+        if (value < std.math.minInt(i64) or value > std.math.maxInt(i64)) {
+            const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+                .{
+                    .help = .{
+                        .message = "consider using a wideint by suffixing the literal with 'w' or using the \"wideint\" type",
+                    },
+                },
+            });
+
+            try self.reportError(allocator, .{
+                .span = span,
+                .severity = .err,
+                .kind = .IntegerOverflow,
+                .annotations = annotations,
+            });
+            return null;
+        }
+
+        return .int;
     }
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {

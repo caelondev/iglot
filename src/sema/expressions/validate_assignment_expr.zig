@@ -14,8 +14,8 @@ pub fn validateAssignmentExpr(
 ) anyerror!?*typed_ast.TypedExpr {
     switch (a.assignee.expr) {
         .identifier => {
-            const typed_assignee = try sema.validateExpression(allocator, a.assignee, a.assignee.span) orelse return null;
-            const typed_value = try sema.validateExpression(allocator, a.value, a.value.span) orelse return null;
+            const typed_assignee = try sema.validateExpression(allocator, a.assignee, a.assignee.span, null) orelse return null;
+            const typed_value = try sema.validateExpression(allocator, a.value, a.value.span, null) orelse return null;
 
             const symbol = typed_assignee.kind.identifier;
             if (symbol.is_final) {

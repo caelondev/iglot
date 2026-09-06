@@ -12,15 +12,15 @@ pub fn validateBinaryExpr(
     b: *const ast.BinaryExpression,
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
+    const left = try sema.validateExpression(allocator, b.left, b.left.span, null) orelse return null;
+    const right = try sema.validateExpression(allocator, b.right, b.right.span, null) orelse return null;
+
     return switch (b.operator) {
         .plus,
         .minus,
         .asterisk,
         .slash,
         => blk: {
-            const left = try sema.validateExpression(allocator, b.left, b.left.span) orelse return null;
-            const right = try sema.validateExpression(allocator, b.right, b.right.span) orelse return null;
-
             if (!left.sem_type.eql(right.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = Span.mergeFromSpans(b.left.span, b.right.span),
@@ -45,9 +45,6 @@ pub fn validateBinaryExpr(
         .less_equal_to,
         .greater_equal_to,
         => blk: {
-            const left = try sema.validateExpression(allocator, b.left, b.left.span) orelse return null;
-            const right = try sema.validateExpression(allocator, b.right, b.right.span) orelse return null;
-
             if (!left.sem_type.eql(right.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = Span.mergeFromSpans(b.left.span, b.right.span),
@@ -88,9 +85,6 @@ pub fn validateBinaryExpr(
         },
 
         .equal_to, .not_equal_to => blk: {
-            const left = try sema.validateExpression(allocator, b.left, b.left.span) orelse return null;
-            const right = try sema.validateExpression(allocator, b.right, b.right.span) orelse return null;
-
             if (!left.sem_type.eql(right.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = Span.mergeFromSpans(b.left.span, b.right.span),

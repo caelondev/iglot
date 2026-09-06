@@ -46,6 +46,10 @@ pub const nud_exprs = [_]NullDenotedExpr{
         .callback = nud_lit.parseInteger,
     },
     .{
+        .token_kind = .wideint,
+        .callback = nud_lit.parseWideInteger,
+    },
+    .{
         .token_kind = .float,
         .callback = nud_lit.parseFloat,
     },
@@ -140,6 +144,7 @@ pub const CiscoParser = struct {
 
     diagnostics: std.ArrayList(CiscoDiagnostic),
     panic_mode: bool,
+    advance_count: u32,
 
     const Self = @This();
 
@@ -156,6 +161,7 @@ pub const CiscoParser = struct {
             .peek_tok = peek_tok,
             .diagnostics = try .initCapacity(allocator, 15),
             .panic_mode = false,
+            .advance_count = 0,
         };
     }
 
@@ -163,10 +169,10 @@ pub const CiscoParser = struct {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.isEof()) {
-            const s = try parseStatement(self, allocator);
-
-            if (s) |stmt| {
+            if (try parseStatement(self, allocator)) |stmt| {
                 try stmts.append(allocator, stmt);
+            } else {
+                _ = self.advance();
             }
         }
 
@@ -179,8 +185,13 @@ pub const CiscoParser = struct {
 
         self.cur_tok = self.peek_tok;
         self.peek_tok = self.lexer.nextToken();
+        self.advance_count += 1;
 
         return cur;
+    }
+
+    pub fn madeProgress(self: *Self, since: u32) bool {
+        return self.advance_count != since;
     }
 
     pub fn isEof(self: *Self) bool {

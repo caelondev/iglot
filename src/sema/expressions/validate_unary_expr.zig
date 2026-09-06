@@ -12,7 +12,7 @@ pub fn validateUnaryExpr(
     u: *const ast.UnaryExpression,
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
-    const rhs = try sema.validateExpression(allocator, u.rhs, u.rhs.span) orelse return null;
+    const rhs = try sema.validateExpression(allocator, u.rhs, u.rhs.span, null) orelse return null;
     const result_type: tt.SemaType = switch (u.operator) {
         .bang => blk: {
             if (!rhs.sem_type.eql(.bool)) {

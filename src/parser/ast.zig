@@ -62,6 +62,7 @@ pub const Expression = struct {
     pub const ExpressionKind = union(enum) {
         // literals
         integer: IntegerExpression,
+        wide_integer: WideIntegerExpression,
         float: FloatExpression,
         string: StringExpression,
         identifier: IdentifierExpression,
@@ -81,6 +82,11 @@ pub const Statement = union(enum) {
 };
 
 // EXPRESSIONS
+
+pub const WideIntegerExpression = struct {
+    value: i128,
+};
+
 pub const IntegerExpression = struct {
     value: i128,
 };

@@ -20,7 +20,7 @@ pub fn validateReturnStatement(
     };
 
     const return_value: ?*typed_ast.TypedExpr = if (r.return_value) |val|
-        try sema.validateExpression(allocator, &val, val.span) orelse return null
+        try sema.validateExpression(allocator, &val, val.span, ctx.return_type) orelse return null
     else
         null;
 

@@ -61,7 +61,7 @@ pub fn validateVariableDeclaration(
         },
     );
 
-    const value = try sema.validateExpression(allocator, v.value, v.value.span) orelse return null;
+    const value = try sema.validateExpression(allocator, v.value, v.value.span, var_type) orelse return null;
     if (!var_type.eql(value.sem_type)) {
         try sema.reportError(allocator, .{
             .span = v.value.span,

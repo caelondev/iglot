@@ -1,7 +1,33 @@
-fn void main() {
+fn int inferBasic() {
+    return 10;
+}
+
+fn int inferOverflow() {
+    return 99999999999999999999;
+}
+
+fn wideint getSmallWide() {
+    return 10w;
+}
+
+fn void wideintContainer() {
+    x :: wideint = 10;
     return;
 }
 
-fn int anotherFunction() {
-    return 100;
+fn void intContainerOverflow() {
+    x :: int = 99999999999999999999;
+    return;
+}
+
+fn addOne() {
+    return 1 + 2;
+}
+
+fn bigNum() {
+    return 5000000000000000000w;
+}
+
+fn int addOneMismatch() {
+    return 10w;
 }

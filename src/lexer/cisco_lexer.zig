@@ -289,6 +289,12 @@ pub const CiscoLexer = struct {
                 if (std.mem.indexOfScalar(u8, lexeme, '.')) |_| {
                     return self.newToken(.float, lexeme);
                 }
+
+                if (self.cur() == 'w') {
+                    self.advance();
+                    return self.newToken(.wideint, lexeme);
+                }
+
                 return self.newToken(.integer, lexeme);
             },
 

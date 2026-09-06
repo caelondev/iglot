@@ -37,6 +37,7 @@ pub const TokenKind = enum {
     string,
     float,
     integer,
+    wideint,
     identifier,
 
     plus,

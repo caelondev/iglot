@@ -57,6 +57,7 @@ pub const CiscoDiagnostic = struct {
         UndefinedIdentifier: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
         VoidValueStorage: struct { identifier: []const u8 },
+        IntegerOverflow,
         IllegalReturn,
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
@@ -80,6 +81,7 @@ pub const CiscoDiagnostic = struct {
                 .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),
                 .VoidValueStorage => |v| try writer.print("cannot store a value of type \"void\" to \"{s}\"", .{v.identifier}),
                 .IllegalReturn => try writer.print("cannot return from outside a function", .{}),
+                .IntegerOverflow => try writer.print("integer value overflowed", .{}),
             }
         }
     };

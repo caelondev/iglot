@@ -47,6 +47,7 @@ pub const TypedExpr = struct {
     sem_type: tt.SemaType,
     kind: union(enum) {
         integer: ast.IntegerExpression,
+        wide_integer: ast.WideIntegerExpression,
         float: ast.FloatExpression,
         string: ast.StringExpression,
         identifier: TypedIdentifier,

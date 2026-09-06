@@ -12,6 +12,16 @@ pub fn parseFunctionDeclarationStatement(
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.advance();
+
+    if (parser.cur_tok.kind == .identifier and parser.peek_tok.kind == .left_parenthesis) {
+        try parser.reportError(allocator, .{
+            .span = parser.cur_tok.span,
+            .severity = .err,
+            .kind = .MissingType,
+        });
+        return null;
+    }
+
     const return_type =
         try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
     const fn_name = try parser.expect(allocator, .identifier) orelse return null;

@@ -11,9 +11,12 @@ pub fn parseBlockStatement(
 
     var stmts: std.ArrayList(ast.Statement) = .empty;
 
-    while (parser.cur_tok.kind != .right_brace) {
-        const stmt = try parseStatement(parser, allocator) orelse return null;
-        try stmts.append(allocator, stmt);
+    while (parser.cur_tok.kind != .right_brace and !parser.isEof()) {
+        if (try parseStatement(parser, allocator)) |stmt| {
+            try stmts.append(allocator, stmt);
+        } else {
+            _ = parser.advance();
+        }
     }
 
     _ = try parser.expect(allocator, .right_brace);
