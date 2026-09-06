@@ -7,6 +7,9 @@ const typed_ast = @import("../sema/typed_ast.zig");
 const ast = @import("../parser/ast.zig");
 const tt = @import("../sema/type_table.zig");
 
+const b_lit = @import("expressions/build_literals.zig");
+const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinaryExpr;
+
 pub const CiscoIR = struct {
     module: Module,
     current_fn: *Function = undefined,
@@ -50,8 +53,8 @@ pub const CiscoIR = struct {
 
     pub fn buildExpr(self: *Self, allocator: std.mem.Allocator, expr: typed_ast.TypedExpr) anyerror!inst.ValueRef {
         return switch (expr.kind) {
-            .integer => |i| try self.buildInteger(allocator, expr.sem_type, i),
-            .binary => |b| try self.buildBinaryExpr(allocator, expr.sem_type, b),
+            .integer => |i| try b_lit.buildInteger(self, allocator, expr.sem_type, i),
+            .binary => |b| try buildBinaryExpr(self, allocator, expr.sem_type, b),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
@@ -97,53 +100,6 @@ pub const CiscoIR = struct {
             .operands = try allocator.dupe(inst.ValueRef, &.{value}),
             .data = .none,
         });
-    }
-
-    pub fn buildInteger(self: *Self, allocator: std.mem.Allocator, sema_type: tt.SemaType, i: ast.IntegerExpression) !inst.ValueRef {
-        const result = self.current_fn.newValue();
-
-        const data: inst.Instruction.Data = switch (sema_type) {
-            .wideint => .{ .wideint_literal = i.value },
-            .int => .{ .int_literal = @intCast(i.value) },
-            else => unreachable,
-        };
-
-        try self.emit(allocator, .{
-            .op = if (sema_type == .wideint) .const_wideint else .const_int,
-            .sema_type = sema_type,
-            .result = result,
-            .operands = &.{},
-            .data = data,
-        });
-
-        return result;
-    }
-
-    pub fn buildBinaryExpr(self: *Self, allocator: std.mem.Allocator, sema_type: tt.SemaType, b: typed_ast.TypedBinaryExpr) !inst.ValueRef {
-        const left_ref = try self.buildExpr(allocator, b.left.*);
-        const right_ref = try self.buildExpr(allocator, b.right.*);
-        const dest = self.current_fn.newValue();
-
-        const op: inst.Opcode = switch (b.operator) {
-            .plus => .add,
-            .minus => .sub,
-            .asterisk => .mul,
-            .slash => .div,
-            else => unreachable,
-        };
-
-        try self.emit(allocator, .{
-            .op = op,
-            .sema_type = sema_type,
-            .result = dest,
-            .operands = try allocator.dupe(inst.ValueRef, &.{
-                left_ref,
-                right_ref,
-            }),
-            .data = .none,
-        });
-
-        return dest;
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {
