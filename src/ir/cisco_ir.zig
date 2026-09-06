@@ -9,6 +9,7 @@ const tt = @import("../sema/type_table.zig");
 
 const b_lit = @import("expressions/build_literals.zig");
 const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinaryExpr;
+const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 
 pub const CiscoIR = struct {
     module: Module,
@@ -47,7 +48,8 @@ pub const CiscoIR = struct {
     pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         switch (stmt) {
             .return_stmt => |r| try self.buildReturn(allocator, r),
-            .expression, .function_decl => @panic("TODO: not implemented yet"),
+            .expression => |e| _ = try self.buildExpr(allocator, e.typed.*),
+            .function_decl => @panic("TODO: not implemented yet"),
         }
     }
 
@@ -55,6 +57,7 @@ pub const CiscoIR = struct {
         return switch (expr.kind) {
             .integer => |i| try b_lit.buildInteger(self, allocator, expr.sem_type, i),
             .binary => |b| try buildBinaryExpr(self, allocator, expr.sem_type, b),
+            .variable_declaration => |v| try buildVariableDecl(self, allocator, expr.sem_type, v),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }

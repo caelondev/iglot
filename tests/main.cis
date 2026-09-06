@@ -1,21 +1,3 @@
-fn bool lt() {
-    return 100 < 6;
+fn void main() {
+   x :: int = 60+100;
 }
-fn bool gt() {
-    return 100 > 6;
-}
-
-fn bool le() {
-    return 100 <= 6;
-}
-fn bool ge() {
-    return 100 >= 6;
-}
-
-fn bool eq() {
-    return 100 == 6;
-}
-fn bool ne() {
-    return 100 != 6;
-}
-
