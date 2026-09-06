@@ -80,10 +80,20 @@ pub const CiscoIR = struct {
             try self.buildStmt(allocator, stmt);
         }
 
-        if (!self.current_block.isTerminated()) {
-            // sema guarantees that this function is void
+        if (self.current_block.isTerminated()) return;
+
+        if (decl.return_type == .void) {
             try self.emit(allocator, .{
                 .op = .ret_void,
+                .sema_type = null,
+                .result = null,
+                .operands = &.{},
+                .data = .none,
+            });
+        } else {
+            // sema guarantees unreachability
+            try self.emit(allocator, .{
+                .op = .@"unreachable",
                 .sema_type = null,
                 .result = null,
                 .operands = &.{},

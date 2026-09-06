@@ -28,6 +28,8 @@ pub const Opcode = enum {
     const_float,
     const_double,
     const_string,
+
+    @"unreachable",
 };
 
 pub const Instruction = struct {

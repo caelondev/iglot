@@ -37,8 +37,4 @@ pub const Function = struct {
     pub fn getBlock(self: *Function, idx: usize) *BasicBlock {
         return &self.blocks.items[idx];
     }
-
-    pub fn isTerminated(self: *Function) bool {
-        if (self.is) {}
-    }
 };
