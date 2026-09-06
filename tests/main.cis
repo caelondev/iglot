@@ -1,55 +1,7 @@
-fn int inferBasic() {
-    return 10;
+fn int main() {
+    return 10 * 100;
 }
 
-fn wideint bigLit() {
-    return 10w;
-}
-
-fn void groupedMath() {
-    x :: int = (1 + 2) * 3;
-    return;
-}
-
-fn void unaryOps() {
-    y :: int = -5;
-    z :: bool = !true;
-    return;
-}
-
-fn void reassign() {
-    x :: int = 1;
-    x = 2;
-    return;
-}
-
-fn void chainedBinary() {
-    x :: int = 1 + 2 - 3 * 4 / 2;
-    return;
-}
-
-fn void comparisons() {
-    x :: bool = 1 < 2;
-    y :: bool = 3 >= 3;
-    z :: bool = 1 == 1;
-    return;
-}
-
-fn addOne() {
-    return 1;
-}
-
-fn void missingSemicolon() {
-    x :: int = 5
-    return;
-}
-
-fn void missingRparen() {
-    x :: int = (1 + 2;
-    return;
-}
-
-fn void badLhsDecl() {
-    1 :: int = 5;
-    return;
+fn int longArithmetic() {
+    return (10 + 7) / (67 * 90) + 67;
 }

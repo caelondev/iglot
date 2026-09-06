@@ -48,9 +48,10 @@ pub const CiscoIR = struct {
         }
     }
 
-    pub fn buildExpr(self: *Self, allocator: std.mem.Allocator, expr: typed_ast.TypedExpr) !inst.ValueRef {
+    pub fn buildExpr(self: *Self, allocator: std.mem.Allocator, expr: typed_ast.TypedExpr) anyerror!inst.ValueRef {
         return switch (expr.kind) {
             .integer => |i| try self.buildInteger(allocator, expr.sem_type, i),
+            .binary => |b| try self.buildBinaryExpr(allocator, expr.sem_type, b),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
@@ -89,8 +90,6 @@ pub const CiscoIR = struct {
         const val_expr = r.return_value orelse unreachable;
         const value = try self.buildExpr(allocator, val_expr.*);
 
-        std.debug.print("RETURN VALUE = {}\n", .{value});
-
         try self.emit(allocator, .{
             .op = .ret,
             .sema_type = r.return_value_type,
@@ -118,6 +117,33 @@ pub const CiscoIR = struct {
         });
 
         return result;
+    }
+
+    pub fn buildBinaryExpr(self: *Self, allocator: std.mem.Allocator, sema_type: tt.SemaType, b: typed_ast.TypedBinaryExpr) !inst.ValueRef {
+        const left_ref = try self.buildExpr(allocator, b.left.*);
+        const right_ref = try self.buildExpr(allocator, b.right.*);
+        const dest = self.current_fn.newValue();
+
+        const op: inst.Opcode = switch (b.operator) {
+            .plus => .add,
+            .minus => .sub,
+            .asterisk => .mul,
+            .slash => .div,
+            else => unreachable,
+        };
+
+        try self.emit(allocator, .{
+            .op = op,
+            .sema_type = sema_type,
+            .result = dest,
+            .operands = try allocator.dupe(inst.ValueRef, &.{
+                left_ref,
+                right_ref,
+            }),
+            .data = .none,
+        });
+
+        return dest;
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {

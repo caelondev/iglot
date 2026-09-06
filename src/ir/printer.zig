@@ -12,11 +12,15 @@ pub fn printModule(writer: *std.Io.Writer, module: Module) !void {
 
 fn printFunction(writer: *std.Io.Writer, func: Function) !void {
     try writer.print("fn {f} {s}(", .{ func.return_type, func.name });
+
     for (func.params, 0..) |p, i| {
         try writer.print("{s}: {f}", .{ p.name, p.sema_type });
-        if (i != func.params.len - 1) try writer.writeAll(", ");
+        if (i != func.params.len - 1) {
+            try writer.writeAll(", ");
+        }
     }
-    try writer.print(") {{\n", .{});
+
+    try writer.writeAll(") {\n");
 
     for (func.blocks.items) |block| {
         try printBlock(writer, block);
@@ -27,6 +31,7 @@ fn printFunction(writer: *std.Io.Writer, func: Function) !void {
 
 fn printBlock(writer: *std.Io.Writer, block: BasicBlock) !void {
     try writer.print("{s}:\n", .{block.name});
+
     for (block.instructions.items) |instr| {
         try writer.writeAll("  ");
         try printInstruction(writer, instr);
@@ -35,7 +40,13 @@ fn printBlock(writer: *std.Io.Writer, block: BasicBlock) !void {
 
 fn printInstruction(writer: *std.Io.Writer, instr: Instruction) !void {
     if (instr.result) |r| {
-        try writer.print("%{d} = ", .{r.id});
+        try writer.print("[{d}]", .{r.id});
+
+        if (instr.sema_type) |ty| {
+            try writer.print(" :: {f}", .{ty});
+        }
+
+        try writer.writeAll(" = ");
     }
 
     try writer.writeAll(@tagName(instr.op));
@@ -48,13 +59,16 @@ fn printInstruction(writer: *std.Io.Writer, instr: Instruction) !void {
         .double_literal => |v| try writer.print(" {d}", .{v}),
         .string_literal => |v| try writer.print(" \"{s}\"", .{v}),
         .branch_target => |b| try writer.print(" @{d}", .{b.id}),
-        .cond_branch => |c| try writer.print(" @{d}, @{d}", .{ c.true_block.id, c.false_block.id }),
+        .cond_branch => |c| try writer.print(" @{d}, @{d}", .{
+            c.true_block.id,
+            c.false_block.id,
+        }),
         .call => |c| try writer.print(" {s}", .{c.callee}),
     }
 
     for (instr.operands, 0..) |op, i| {
         try writer.writeAll(if (i == 0) " " else ", ");
-        try writer.print("%{d}", .{op.id});
+        try writer.print("[{d}]", .{op.id});
     }
 
     try writer.writeByte('\n');
