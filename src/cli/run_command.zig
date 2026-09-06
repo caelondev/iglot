@@ -30,6 +30,7 @@ const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 const pathExists = @import("helpers/path_exists.zig").pathExists;
 const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
+const CiscoIR = @import("../ir/cisco_ir.zig").CiscoIR;
 
 /// Compiles and interprets a Cisco program.
 pub fn run(ctx: *Context) !void {
@@ -96,5 +97,14 @@ pub fn run(ctx: *Context) !void {
     } else {
         std.debug.print("typed ast:", .{});
         try dumpAny(writer, t_ast, 0);
+
+        var ir_builder: CiscoIR = .init();
+        defer ir_builder.deinit(allocator);
+
+        try ir_builder.buildProgram(allocator, t_ast);
+
+        try writer.writeByte('\n');
+        std.debug.print("ir module:", .{});
+        try dumpAny(writer, ir_builder.module, 0);
     }
 }
