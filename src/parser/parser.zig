@@ -152,42 +152,67 @@ pub const CiscoParser = struct {
         allocator: std.mem.Allocator,
         lexer: *CiscoLexer,
     ) !Self {
-        const cur_tok = lexer.nextToken();
-        const peek_tok = lexer.nextToken();
-
-        return .{
+        var p: Self = .{
             .lexer = lexer,
-            .cur_tok = cur_tok,
-            .peek_tok = peek_tok,
+            .cur_tok = undefined,
+            .peek_tok = undefined,
             .diagnostics = try .initCapacity(allocator, 15),
             .panic_mode = false,
             .advance_count = 0,
         };
+
+        // fill up cur_tok and peek_tok
+        p.nextToken();
+        p.nextToken();
+
+        return p;
     }
 
     pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !ast.Program {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
-        while (!self.isEof()) {
+        while (!self.curTokenIs(.eof)) {
             if (try parseStatement(self, allocator)) |stmt| {
                 try stmts.append(allocator, stmt);
-            } else {
-                _ = self.advance();
             }
+            self.nextToken();
         }
 
         const body = try stmts.toOwnedSlice(allocator);
         return .{ .body = body };
     }
 
-    pub fn advance(self: *Self) tokens.Token {
-        const cur = self.cur_tok;
-
+    pub fn nextToken(self: *Self) void {
         self.cur_tok = self.peek_tok;
         self.peek_tok = self.lexer.nextToken();
         self.advance_count += 1;
+    }
 
-        return cur;
+    pub fn curTokenIs(self: *Self, kind: tokens.TokenKind) bool {
+        return self.cur_tok.kind == kind;
+    }
+
+    pub fn peekTokenIs(self: *Self, kind: tokens.TokenKind) bool {
+        return self.peek_tok.kind == kind;
+    }
+
+    pub fn expectPeek(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) !bool {
+        if (self.peekTokenIs(expected_kind)) {
+            self.nextToken();
+            return true;
+        }
+
+        try self.reportError(allocator, .{
+            .span = self.peek_tok.span,
+            .kind = .{
+                .ExpectedToken = .{
+                    .expected = expected_kind,
+                    .found = self.peek_tok.kind,
+                },
+            },
+        });
+
+        return false;
     }
 
     pub fn madeProgress(self: *Self, since: u32) bool {
@@ -205,26 +230,8 @@ pub const CiscoParser = struct {
         try self.diagnostics.append(allocator, diagnostic);
     }
 
-    pub fn cur_precedence(self: *Self) u8 {
+    pub fn curPrecedence(self: *Self) u8 {
         return Precedence.ofToken(self.cur_tok).toInt();
-    }
-
-    pub fn expect(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) !?tokens.Token {
-        if (self.cur_tok.kind != expected_kind) {
-            try self.reportError(allocator, .{
-                .span = self.cur_tok.span,
-                .kind = .{
-                    .ExpectedToken = .{
-                        .expected = expected_kind,
-                        .found = self.cur_tok.kind,
-                    },
-                },
-            });
-
-            return null;
-        }
-
-        return self.advance();
     }
 
     pub fn synchronize(self: *CiscoParser) void {
@@ -233,7 +240,7 @@ pub const CiscoParser = struct {
         while (self.cur_tok.kind != .eof) {
             switch (self.cur_tok.kind) {
                 .semicolon => {
-                    _ = self.advance();
+                    self.nextToken();
                     break;
                 },
 
@@ -242,9 +249,7 @@ pub const CiscoParser = struct {
                 .right_bracket,
                 => break,
 
-                else => {
-                    _ = self.advance();
-                },
+                else => self.nextToken(),
             }
         }
 

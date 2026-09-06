@@ -29,8 +29,10 @@ const Span = @import("../../lexer/tokens.zig").Span;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseGroupingExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Expression {
-    _ = parser.advance();
+    parser.nextToken();
     const expression = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
-    _ = try parser.expect(allocator, .right_parenthesis) orelse return null;
+
+    if (!try parser.expectPeek(allocator, .right_parenthesis)) return null;
+
     return expression;
 }

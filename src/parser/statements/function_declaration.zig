@@ -11,7 +11,8 @@ pub fn parseFunctionDeclarationStatement(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
-    const keyword = parser.advance();
+    const keyword = parser.cur_tok;
+    parser.nextToken();
 
     if (parser.cur_tok.kind == .identifier and parser.peek_tok.kind == .left_parenthesis) {
         try parser.reportError(allocator, .{
@@ -24,9 +25,15 @@ pub fn parseFunctionDeclarationStatement(
 
     const return_type =
         try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
-    const fn_name = try parser.expect(allocator, .identifier) orelse return null;
+
+    if (!try parser.expectPeek(allocator, .identifier)) return null;
+    const fn_name = parser.cur_tok;
+
+    if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
     const fn_params = try parseFunctionParameters(parser, allocator) orelse return null;
     const fn_params_span = parser.cur_tok.span;
+
+    if (!try parser.expectPeek(allocator, .left_brace)) return null;
     const body = try parseBlockStatement(parser, allocator) orelse return null;
 
     return .{
@@ -46,15 +53,16 @@ fn parseFunctionParameters(
 ) !?[]ast.FunctionParameter {
     var params: std.ArrayList(ast.FunctionParameter) = .empty;
 
-    _ = try parser.expect(allocator, .left_parenthesis) orelse return null;
-
-    if (parser.cur_tok.kind == .right_parenthesis) {
-        _ = parser.advance();
+    if (parser.peek_tok.kind == .right_parenthesis) {
+        parser.nextToken();
         return try params.toOwnedSlice(allocator);
     }
 
-    const first_ident = try parser.expect(allocator, .identifier) orelse return null;
-    _ = try parser.expect(allocator, .box_colon);
+    parser.nextToken();
+
+    const first_ident = parser.cur_tok;
+    if (!try parser.expectPeek(allocator, .box_colon)) return null;
+    parser.nextToken(); // step onto the type token
     const first_ident_type = try pt.parseTypeExpression(parser, allocator) orelse return null;
     const first_param_span = Span.mergeFromSpans(first_ident.span, first_ident_type.span);
 
@@ -64,11 +72,13 @@ fn parseFunctionParameters(
         .param_type = first_ident_type,
     });
 
-    while (parser.cur_tok.kind == .comma) {
-        _ = parser.advance();
+    while (parser.peek_tok.kind == .comma) {
+        parser.nextToken();
+        parser.nextToken();
 
-        const ident = try parser.expect(allocator, .identifier) orelse return null;
-        _ = try parser.expect(allocator, .box_colon);
+        const ident = parser.cur_tok;
+        if (!try parser.expectPeek(allocator, .box_colon)) return null;
+        parser.nextToken();
         const ident_type = try pt.parseTypeExpression(parser, allocator) orelse return null;
         const param_span = Span.mergeFromSpans(ident.span, ident_type.span);
 
@@ -79,7 +89,7 @@ fn parseFunctionParameters(
         });
     }
 
-    _ = try parser.expect(allocator, .right_parenthesis) orelse return null;
+    if (!try parser.expectPeek(allocator, .right_parenthesis)) return null;
 
     return try params.toOwnedSlice(allocator);
 }

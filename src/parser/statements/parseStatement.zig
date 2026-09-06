@@ -41,35 +41,32 @@ pub fn parseStatement(
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     if (getStatement(parser.cur_tok.kind)) |callback| {
-        const s = try callback(parser, allocator) orelse {
+        return try callback(parser, allocator) orelse {
             parser.synchronize();
             return null;
         };
-        return s;
     }
 
-    const expression = try parseExpression(
+    const expr = try parseExpression(
         parser,
         allocator,
         Precedence.lowest.toInt(),
-    );
-
-    const expr = expression orelse {
+    ) orelse {
         parser.synchronize();
         return null;
     };
 
-    _ = try parser.expect(allocator, .semicolon) orelse {
+    if (!try parser.expectPeek(allocator, .semicolon)) {
         parser.synchronize();
         return null;
-    };
+    }
 
-    const stmt: ast.ExpressionStatement = .{
-        .expression = expr,
-        .span = expr.span,
+    return .{
+        .expression = .{
+            .expression = expr,
+            .span = expr.span,
+        },
     };
-
-    return .{ .expression = stmt };
 }
 
 fn getStatement(kind: TokenKind) ?p.StmtFn {

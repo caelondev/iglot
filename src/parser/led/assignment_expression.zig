@@ -11,7 +11,7 @@ pub fn parseAssignmentExpression(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
-    _ = parser.advance();
+    parser.nextToken();
     const rhs = try parseExpression(parser, allocator, Precedence.assignment.toInt() - 1) orelse return null;
     const left_ptr = try allocator.create(ast.Expression);
     const rhs_ptr = try allocator.create(ast.Expression);

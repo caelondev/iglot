@@ -52,8 +52,10 @@ pub fn parseExpression(parser: *CiscoParser, allocator: std.mem.Allocator, prece
 
     var left = try nud(parser, allocator) orelse return null;
 
-    while (precedence < Precedence.ofToken(parser.cur_tok).toInt()) {
-        const led = lookupLed(parser.cur_tok.kind) orelse break;
+    while (precedence < Precedence.ofToken(parser.peek_tok).toInt()) {
+        const led = lookupLed(parser.peek_tok.kind) orelse break;
+
+        parser.nextToken();
         left = try led(parser, allocator, left) orelse return null;
     }
 

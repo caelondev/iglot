@@ -38,13 +38,14 @@ pub fn parseBinaryExpression(
     left: ast.Expression,
 ) !?ast.Expression {
     const precedence = switch (parser.cur_tok.kind) {
-        .assign => parser.cur_precedence() - 1,
-        else => parser.cur_precedence(),
+        .assign => parser.curPrecedence() - 1,
+        else => parser.curPrecedence(),
     };
 
-    const op = parser.advance();
+    const op = parser.cur_tok;
+    parser.nextToken();
+    const full_span: Span = .mergeFromSpans(left.span, parser.cur_tok.span);
     const right = try parseExpression(parser, allocator, precedence) orelse return {
-        const full_span: Span = .mergeFromSpans(left.span, parser.cur_tok.span);
         try parser.reportError(allocator, .{
             .span = full_span,
             .kind = .MissingRightHandSideExpression,
@@ -52,8 +53,6 @@ pub fn parseBinaryExpression(
 
         return null;
     };
-
-    const full_span: Span = .mergeFromSpans(left.span, right.span);
 
     const left_ptr = try allocator.create(ast.Expression);
     left_ptr.* = left;

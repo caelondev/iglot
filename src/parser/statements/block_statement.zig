@@ -7,19 +7,16 @@ pub fn parseBlockStatement(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.BlockStatement {
-    _ = try parser.expect(allocator, .left_brace);
-
     var stmts: std.ArrayList(ast.Statement) = .empty;
 
-    while (parser.cur_tok.kind != .right_brace and !parser.isEof()) {
+    parser.nextToken();
+
+    while (!parser.curTokenIs(.right_brace) and !parser.curTokenIs(.eof)) {
         if (try parseStatement(parser, allocator)) |stmt| {
             try stmts.append(allocator, stmt);
-        } else {
-            _ = parser.advance();
         }
+        parser.nextToken();
     }
-
-    _ = try parser.expect(allocator, .right_brace);
 
     return .{ .statements = try stmts.toOwnedSlice(allocator) };
 }

@@ -10,7 +10,8 @@ pub fn parseUnaryExpression(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
-    const operator = parser.advance();
+    const operator = parser.cur_tok;
+    parser.nextToken();
 
     const rhs = try parseExpression(
         parser,

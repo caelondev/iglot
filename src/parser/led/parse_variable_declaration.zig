@@ -11,7 +11,6 @@ pub fn parseVariableDeclaration(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
-    _ = parser.advance();
     // NOTE: this check is super important. since the declaration is an expression,
     // the precedence also mess with the main pratt parser. without checking if
     // left is not an identifier, the parser will recurse indefinitely
@@ -24,9 +23,12 @@ pub fn parseVariableDeclaration(
         return null;
     }
 
+    parser.nextToken();
+
     const decl_type = try parseTypeExpression(parser, allocator) orelse return null;
 
-    _ = try parser.expect(allocator, .assign) orelse return null;
+    if (!try parser.expectPeek(allocator, .assign)) return null;
+    parser.nextToken();
 
     const value = try parseExpression(
         parser,

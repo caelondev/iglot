@@ -10,15 +10,18 @@ const parseStatement = @import("../statements/parseStatement.zig").parseStatemen
 const Precedence = @import("../precedence.zig").Precedence;
 const CiscoParser = @import("../parser.zig").CiscoParser;
 
+/// assumes cur_tok is already sitting on the type token when called
 pub fn parseTypeExpression(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
-    const tok = parser.advance();
+    const tok = parser.cur_tok;
 
     switch (tok.kind) {
         .final => {
+            parser.nextToken();
             const inner = try parseTypeExpression(parser, allocator) orelse return null;
+
             if (inner.kind == .final) {
                 try parser.reportError(allocator, .{
                     .span = inner.span,
@@ -27,17 +30,17 @@ pub fn parseTypeExpression(
                 });
                 return null;
             }
+
             const inner_ptr = try allocator.create(ast.TypeExpression);
             inner_ptr.* = inner;
+
             return .{
                 .span = tok.span,
                 .kind = .{ .final = inner_ptr },
             };
         },
 
-        else => {
-            return parseType(parser, allocator, tok);
-        },
+        else => return parseType(parser, allocator, tok),
     }
 }
 
@@ -45,8 +48,7 @@ pub fn parseReturnTypeExpression(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
-    const tok = parser.advance();
-    return parseType(parser, allocator, tok);
+    return parseType(parser, allocator, parser.cur_tok);
 }
 
 fn parseType(

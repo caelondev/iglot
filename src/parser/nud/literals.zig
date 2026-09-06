@@ -35,7 +35,7 @@ pub fn parseWideInteger(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
-    const lit_raw = parser.advance();
+    const lit_raw = parser.cur_tok;
 
     const integer = std.fmt.parseInt(i128, lit_raw.lexeme, 10) catch |err| {
         switch (err) {
@@ -69,7 +69,8 @@ pub fn parseInteger(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
-    const lit_raw = parser.advance();
+    const lit_raw = parser.cur_tok;
+
     const integer = std.fmt.parseInt(i128, lit_raw.lexeme, 10) catch |err| {
         switch (err) {
             error.Overflow => {
@@ -99,7 +100,7 @@ pub fn parseInteger(
 }
 
 pub fn parseFloat(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
-    const lit_raw = parser.advance();
+    const lit_raw = parser.cur_tok;
 
     const float = std.fmt.parseFloat(f64, lit_raw.lexeme) catch |err| {
         switch (err) {
@@ -118,7 +119,7 @@ pub fn parseFloat(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
 }
 
 pub fn parseIdentifier(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
-    const lit_raw = parser.advance();
+    const lit_raw = parser.cur_tok;
     const ident_expr: ast.IdentifierExpression = .{ .value = lit_raw.lexeme };
     return .{
         .expr = .{ .identifier = ident_expr },
@@ -127,7 +128,7 @@ pub fn parseIdentifier(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Express
 }
 
 pub fn parseString(parser: *CiscoParser, _: std.mem.Allocator) !?ast.Expression {
-    const lit_raw = parser.advance();
+    const lit_raw = parser.cur_tok;
     const str_expr: ast.StringExpression = .{ .value = lit_raw.lexeme };
     return .{
         .expr = .{ .string = str_expr },
