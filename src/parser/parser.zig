@@ -234,25 +234,24 @@ pub const CiscoParser = struct {
         return Precedence.ofToken(self.cur_tok).toInt();
     }
 
-    pub fn synchronize(self: *CiscoParser) void {
+    pub fn synchronize(self: *Self) void {
         if (!self.panic_mode) return;
 
         while (self.cur_tok.kind != .eof) {
-            switch (self.cur_tok.kind) {
-                .semicolon => {
-                    self.nextToken();
-                    break;
-                },
+            if (self.cur_tok.kind == .semicolon) break; // land ON it, like a successful parse would
+            if (self.cur_tok.kind == .right_brace) break; // let block-loops see the closing brace
+            if (isStatementStart(self.peek_tok.kind)) break; // peek, not cur — stop right before it
 
-                .right_brace,
-                .right_parenthesis,
-                .right_bracket,
-                => break,
-
-                else => self.nextToken(),
-            }
+            self.nextToken();
         }
 
         self.panic_mode = false;
+    }
+
+    fn isStatementStart(kind: tokens.TokenKind) bool {
+        for (statements) |stmt| {
+            if (stmt.token_kind == kind) return true;
+        }
+        return false;
     }
 };

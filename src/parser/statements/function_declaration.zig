@@ -5,7 +5,8 @@ const parseExpression = @import("parseExpression.zig").parseExpression;
 const parseBlockStatement = @import("block_statement.zig").parseBlockStatement;
 const pt = @import("../type/parse_type_expression.zig");
 const Precedence = @import("../precedence.zig").Precedence;
-const Span = @import("../../lexer/tokens.zig").Span;
+const tokens = @import("../../lexer/tokens.zig");
+const Span = tokens.Span;
 
 pub fn parseFunctionDeclarationStatement(
     parser: *CiscoParser,
@@ -14,20 +15,22 @@ pub fn parseFunctionDeclarationStatement(
     const keyword = parser.cur_tok;
     parser.nextToken();
 
+    var return_type: ast.TypeExpression = undefined;
+    var fn_name: tokens.Token = undefined;
+
     if (parser.cur_tok.kind == .identifier and parser.peek_tok.kind == .left_parenthesis) {
         try parser.reportError(allocator, .{
             .span = parser.cur_tok.span,
             .severity = .err,
             .kind = .MissingType,
         });
-        return null;
+        parser.panic_mode = false;
+        fn_name = parser.cur_tok;
+    } else {
+        return_type = try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
+        if (!try parser.expectPeek(allocator, .identifier)) return null;
+        fn_name = parser.cur_tok;
     }
-
-    const return_type =
-        try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
-
-    if (!try parser.expectPeek(allocator, .identifier)) return null;
-    const fn_name = parser.cur_tok;
 
     if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
     const fn_params = try parseFunctionParameters(parser, allocator) orelse return null;
