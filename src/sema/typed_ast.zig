@@ -77,5 +77,6 @@ pub const TypedFunctionDeclarationStatement = struct {
 
 pub const TypedReturnStatement = struct {
     return_value: ?*TypedExpr,
+    return_value_type: tt.SemaType,
     span: tokens.Span,
 };

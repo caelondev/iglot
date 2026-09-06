@@ -44,6 +44,7 @@ pub fn validateReturnStatement(
 
     return .{
         .span = r.span,
+        .return_value_type = found_type,
         .return_value = return_value,
     };
 }

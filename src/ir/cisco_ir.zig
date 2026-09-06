@@ -4,6 +4,8 @@ const Function = @import("function.zig").Function;
 const BasicBlock = @import("basic_block.zig").BasicBlock;
 const inst = @import("instruction.zig");
 const typed_ast = @import("../sema/typed_ast.zig");
+const ast = @import("../parser/ast.zig");
+const tt = @import("../sema/type_table.zig");
 
 pub const CiscoIR = struct {
     module: Module,
@@ -39,11 +41,18 @@ pub const CiscoIR = struct {
         }
     }
 
-    fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
+    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         switch (stmt) {
             .return_stmt => |r| try self.buildReturn(allocator, r),
             .expression, .function_decl => @panic("TODO: not implemented yet"),
         }
+    }
+
+    pub fn buildExpr(self: *Self, allocator: std.mem.Allocator, expr: typed_ast.TypedExpr) !inst.ValueRef {
+        return switch (expr.kind) {
+            .integer => |i| try self.buildInteger(allocator, expr.sem_type, i),
+            else => @panic("TODO: expr kind not implemented yet"),
+        };
     }
 
     pub fn buildFunction(self: *Self, allocator: std.mem.Allocator, decl: typed_ast.TypedFunctionDeclarationStatement) !void {
@@ -77,7 +86,38 @@ pub const CiscoIR = struct {
             return;
         }
 
-        @panic("TODO: return with a value not implemented yet");
+        const val_expr = r.return_value orelse unreachable;
+        const value = try self.buildExpr(allocator, val_expr.*);
+
+        std.debug.print("RETURN VALUE = {}\n", .{value});
+
+        try self.emit(allocator, .{
+            .op = .ret,
+            .sema_type = r.return_value_type,
+            .result = null,
+            .operands = try allocator.dupe(inst.ValueRef, &.{value}),
+            .data = .none,
+        });
+    }
+
+    pub fn buildInteger(self: *Self, allocator: std.mem.Allocator, sema_type: tt.SemaType, i: ast.IntegerExpression) !inst.ValueRef {
+        const result = self.current_fn.newValue();
+
+        const data: inst.Instruction.Data = switch (sema_type) {
+            .wideint => .{ .wideint_literal = i.value },
+            .int => .{ .int_literal = @intCast(i.value) },
+            else => unreachable,
+        };
+
+        try self.emit(allocator, .{
+            .op = if (sema_type == .wideint) .const_wideint else .const_int,
+            .sema_type = sema_type,
+            .result = result,
+            .operands = &.{},
+            .data = data,
+        });
+
+        return result;
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {

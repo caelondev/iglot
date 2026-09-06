@@ -1,3 +1,7 @@
 fn void main() {
     return;
 }
+
+fn int anotherFunction() {
+    return 100;
+}

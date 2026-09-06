@@ -2,6 +2,7 @@ const std = @import("std");
 const BasicBlock = @import("basic_block.zig").BasicBlock;
 const SemaType = @import("../sema/type_table.zig").SemaType;
 const BlockRef = @import("instruction.zig").BlockRef;
+const ValueRef = @import("instruction.zig").ValueRef;
 
 pub const Function = struct {
     name: []const u8,
@@ -24,6 +25,12 @@ pub const Function = struct {
         const block = BasicBlock.init(.{ .id = id }, name);
         try self.blocks.append(allocator, block);
 
+        return .{ .id = id };
+    }
+
+    pub fn newValue(self: *Function) ValueRef {
+        const id = self.next_value_id;
+        self.next_value_id += 1;
         return .{ .id = id };
     }
 
