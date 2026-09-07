@@ -49,6 +49,11 @@ pub const CiscoIR = struct {
         switch (stmt) {
             .return_stmt => |r| try self.buildReturn(allocator, r),
             .expression => |e| _ = try self.buildExpr(allocator, e.typed.*),
+            .block => |b| {
+                for (b.typed_stmts) |s| {
+                    try self.buildStmt(allocator, s);
+                }
+            },
             .function_decl => @panic("TODO: not implemented yet"),
         }
     }
@@ -76,9 +81,7 @@ pub const CiscoIR = struct {
         const entry = try self.current_fn.newBlock(allocator, "entry");
         self.current_block = self.current_fn.getBlock(entry.id);
 
-        for (decl.body.typed_stmts) |stmt| {
-            try self.buildStmt(allocator, stmt);
-        }
+        try self.buildStmt(allocator, .{ .block = decl.body });
 
         if (self.current_block.isTerminated()) return;
 

@@ -71,11 +71,41 @@ pub fn validateFunctionDeclaration(
 
     const body = try sema.validateBlockStatement(allocator, &f.body) orelse return null;
 
+    if (ret_sem_type != .void) {
+        if (!alwaysReturns(&.{ .block = body })) {
+            try sema.reportError(allocator, .{
+                .span = f.span,
+                .kind = .{
+                    .MissingReturn = .{
+                        .name = f.identifier.value,
+                    },
+                },
+                .annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+                    .{ .note = .{ .message = "not all control-flow paths returns a value" } },
+                }),
+            });
+        }
+    }
+
     return .{
         .identifier = f.identifier,
         .parameters = params,
         .body = body,
         .return_type = ret_sem_type,
         .span = f.span,
+    };
+}
+
+fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
+    return switch (stmt.*) {
+        .expression => false,
+        .return_stmt => true,
+        .function_decl => |f| alwaysReturns(&.{ .block = f.body }),
+        .block => |b| blk: {
+            for (b.typed_stmts) |*s| {
+                if (alwaysReturns(s)) break :blk true;
+            }
+            break :blk false;
+        },
     };
 }

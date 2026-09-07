@@ -10,6 +10,7 @@ pub const TypedStmt = union(enum) {
     expression: TypedExpressionStmt,
     function_decl: TypedFunctionDeclarationStatement,
     return_stmt: TypedReturnStatement,
+    block: TypedBlockStatement,
 };
 
 pub const TypedExpressionStmt = struct {

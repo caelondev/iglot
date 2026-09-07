@@ -57,6 +57,7 @@ pub const CiscoDiagnostic = struct {
         UndefinedIdentifier: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
         VoidValueStorage: struct { identifier: []const u8 },
+        MissingReturn: struct { name: []const u8 },
         IntegerOverflow,
         IllegalReturn,
 
@@ -82,6 +83,7 @@ pub const CiscoDiagnostic = struct {
                 .VoidValueStorage => |v| try writer.print("cannot store a value of type \"void\" to \"{s}\"", .{v.identifier}),
                 .IllegalReturn => try writer.print("cannot return from outside a function", .{}),
                 .IntegerOverflow => try writer.print("integer value overflowed", .{}),
+                .MissingReturn => |r| try writer.print("missing return in function \"{s}\"", .{r.name}),
             }
         }
     };

@@ -1,4 +1,3 @@
-fn void main() {
+fn int main() {
    x :: int = 60+100;
-   return;
 }
