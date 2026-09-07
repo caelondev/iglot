@@ -1,57 +1,5 @@
 fn main(a :: int, b :: int) int {
-    if a == 1: {
-        return 101;
+    if b == 0: {
+        return 0;
     }
-    if a == 2: return 102;
-
-    if a == 3: { return 103; } else { return 104; }
-    if a == 5: return 105; else return 106;
-    if a == 7: { return 107; } else return 108;
-    if a == 9: return 109; else { return 110; }
-
-    if a == 11: {
-        return 111;
-    } else if a == 12: {
-        return 112;
-    }
-
-    if a == 13: {
-        return 113;
-    } else if a == 14: {
-        return 114;
-    } else if a == 15: {
-        return 115;
-    } else {
-        return 116;
-    }
-
-    if a == 17: return 117;
-    else if a == 18: return 118;
-    else return 119;
-
-    if a == 20: {
-        if b == 1: {
-            return 120;
-        } else {
-            return 121;
-        }
-    }
-
-    if a == 22: if b == 2: {
-        return 122;
-    }
-    else {
-        return 123;
-    }
-
-    if a == 24: {
-        if b == 3: {
-            return 124;
-        }
-    }
-    else {
-        return 125;
-    }
-
-    return 0;
 }

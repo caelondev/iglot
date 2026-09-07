@@ -11,6 +11,7 @@ const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").v
 const validateAssignmentExpression = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
+const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -68,7 +69,22 @@ pub const FaruSemanticAnalyzer = struct {
                     .return_stmt = ret_stmt,
                 };
             },
-            else => return null,
+            .if_stmt => |f| {
+                const if_stmt = try validateIfStatement(self, allocator, &f) orelse return null;
+                return .{
+                    .if_stmt = if_stmt,
+                };
+            },
+            .scoped => |f| {
+                var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
+
+                for (f.statements) |*s| {
+                    const t_stmt = try self.validateStatement(allocator, s) orelse return null;
+                    try stmts.append(allocator, t_stmt);
+                }
+
+                return .{ .scoped = .{ .typed_stmts = try stmts.toOwnedSlice(allocator) } };
+            },
         }
     }
 

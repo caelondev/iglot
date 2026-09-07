@@ -55,6 +55,7 @@ pub const FaruIR = struct {
                 }
             },
             .function_decl => @panic("TODO: not implemented yet"),
+            else => unreachable,
         }
     }
 

@@ -11,6 +11,8 @@ pub const TypedStmt = union(enum) {
     function_decl: TypedFunctionDeclarationStatement,
     return_stmt: TypedReturnStatement,
     block: TypedBlockStatement,
+    scoped: TypedScopedStatement,
+    if_stmt: TypedIfStatement,
 };
 
 pub const TypedExpressionStmt = struct {
@@ -81,4 +83,14 @@ pub const TypedReturnStatement = struct {
     return_value: ?*TypedExpr,
     return_value_type: tt.SemaType,
     span: tokens.Span,
+};
+
+pub const TypedIfStatement = struct {
+    condition: *TypedExpr,
+    consequence: *TypedStmt,
+    alternative: ?*TypedStmt,
+};
+
+pub const TypedScopedStatement = struct {
+    typed_stmts: []TypedStmt,
 };

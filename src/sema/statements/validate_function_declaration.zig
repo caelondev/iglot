@@ -107,5 +107,15 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
             }
             break :blk false;
         },
+        .scoped => |s| blk: {
+            for (s.typed_stmts) |*st| {
+                if (alwaysReturns(st)) break :blk true;
+            }
+            break :blk false;
+        },
+        .if_stmt => |f| blk: {
+            if (f.alternative == null) break :blk false;
+            break :blk alwaysReturns(f.consequence) and alwaysReturns(f.alternative.?);
+        },
     };
 }
