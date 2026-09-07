@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
     }
 
     const exe = b.addExecutable(.{
-        .name = "cisco",
+        .name = "faru",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -42,7 +42,7 @@ pub fn build(b: *std.Build) void {
     const cisco_information = b.createModule(.{
         .root_source_file = b.path("build.zig.zon"),
     });
-    exe.root_module.addImport("cisco_information", cisco_information);
+    exe.root_module.addImport("faru_information", cisco_information);
 
     const build_time = b.createModule(.{
         .root_source_file = b.path(build_time_path),

@@ -1,6 +1,6 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const parseStatement = @import("parseStatement.zig").parseStatement;
 const parseScopedStatement = @import("scoped_statement.zig").parseScopedStatement;
@@ -9,7 +9,7 @@ const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseIfStatement(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     parser.nextToken();

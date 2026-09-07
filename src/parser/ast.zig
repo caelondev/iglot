@@ -14,7 +14,7 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
 //! This module defines the abstract syntax tree (AST) used to represent
-//! parsed Cisco source code.
+//! parsed Faru source code.
 //!
 //! `Node` is the common root of the AST and associates an expression or
 //! statement with its source span. Nodes retain their source-location

@@ -11,7 +11,7 @@ const b_lit = @import("expressions/build_literals.zig");
 const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinaryExpr;
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 
-pub const CiscoIR = struct {
+pub const FaruIR = struct {
     module: Module,
     current_fn: *Function = undefined,
     current_block: *BasicBlock = undefined,

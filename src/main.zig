@@ -14,7 +14,7 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const std = @import("std");
-const CiscoCLI = @import("cli/cli.zig").CiscoCLI;
+const FaruCLI = @import("cli/cli.zig").FaruCLI;
 
 pub fn main(init: std.process.Init) !void {
     const args =
@@ -22,12 +22,12 @@ pub fn main(init: std.process.Init) !void {
     defer init.gpa.free(args);
 
     const argsIter = init.minimal.args.iterate();
-    var cli = CiscoCLI.init(args, argsIter);
+    var cli = FaruCLI.init(args, argsIter);
 
     try cli.run(
         init.arena,
         init.gpa,
         init.io,
-        init.environ_map
+        init.environ_map,
     );
 }

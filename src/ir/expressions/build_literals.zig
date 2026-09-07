@@ -2,9 +2,9 @@ const std = @import("std");
 const inst = @import("../instruction.zig");
 const ast = @import("../../parser/ast.zig");
 const tt = @import("../../sema/type_table.zig");
-const CiscoIR = @import("../cisco_ir.zig").CiscoIR;
+const FaruIR = @import("../faru_ir.zig").FaruIR;
 
-pub fn buildInteger(ir: *CiscoIR, allocator: std.mem.Allocator, sema_type: tt.SemaType, i: ast.IntegerExpression) !inst.ValueRef {
+pub fn buildInteger(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: tt.SemaType, i: ast.IntegerExpression) !inst.ValueRef {
     const result = ir.current_fn.newValue();
 
     const data: inst.Instruction.Data = switch (sema_type) {

@@ -23,12 +23,12 @@
 const std = @import("std");
 
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const Span = @import("../../lexer/tokens.zig").Span;
 const Precedence = @import("../precedence.zig").Precedence;
 
-pub fn parseGroupingExpression(parser: *CiscoParser, allocator: std.mem.Allocator) !?ast.Expression {
+pub fn parseGroupingExpression(parser: *FaruParser, allocator: std.mem.Allocator) !?ast.Expression {
     parser.nextToken();
     const expression = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
 

@@ -1,13 +1,13 @@
 const std = @import("std");
-const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnostic;
 const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
-const CiscoSemanticAnalyzer = @import("../sema.zig").CiscoSemanticAnalyzer;
+const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
 
 pub fn validateUnaryExpr(
-    sema: *CiscoSemanticAnalyzer,
+    sema: *FaruSemanticAnalyzer,
     allocator: std.mem.Allocator,
     u: *const ast.UnaryExpression,
     span: Span,

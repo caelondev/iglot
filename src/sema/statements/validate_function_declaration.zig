@@ -1,18 +1,18 @@
 const std = @import("std");
-const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnostic;
 const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
-const CiscoSemanticAnalyzer = @import("../sema.zig").CiscoSemanticAnalyzer;
+const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
 
 pub fn validateFunctionDeclaration(
-    sema: *CiscoSemanticAnalyzer,
+    sema: *FaruSemanticAnalyzer,
     allocator: std.mem.Allocator,
     f: *const ast.FunctionDeclarationStatement,
 ) anyerror!?typed_ast.TypedFunctionDeclarationStatement {
     if (sema.type_table.lookupCurrentScope(f.identifier.value)) |i| {
-        const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+        const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
             .{
                 .note = .{
                     .message = "identifier declared here",
@@ -80,7 +80,7 @@ pub fn validateFunctionDeclaration(
                         .name = f.identifier.value,
                     },
                 },
-                .annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+                .annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
                     .{ .note = .{ .message = "not all control-flow paths returns a value" } },
                 }),
             });

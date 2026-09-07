@@ -1,7 +1,7 @@
 .{
-    .name = .cisco,
+    .name = .faru,
     .version = "0.0.0",
-    .fingerprint = 0x9bf4d0ad063b2519, // Changing this has security and trust implications.
+    .fingerprint = 0x4b7a48130b2cc8e5,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .inkdye = .{

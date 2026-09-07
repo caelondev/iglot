@@ -1,6 +1,6 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const parseBlockStatement = @import("block_statement.zig").parseBlockStatement;
 const pt = @import("../type/parse_type_expression.zig");
@@ -8,7 +8,7 @@ const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseReturnStatement(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.cur_tok;

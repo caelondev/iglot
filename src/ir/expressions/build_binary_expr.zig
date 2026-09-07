@@ -3,9 +3,9 @@ const inst = @import("../instruction.zig");
 const typed_ast = @import("../../sema/typed_ast.zig");
 const tokens = @import("../../lexer/tokens.zig");
 const tt = @import("../../sema/type_table.zig");
-const CiscoIR = @import("../cisco_ir.zig").CiscoIR;
+const FaruIR = @import("../faru_ir.zig").FaruIR;
 
-pub fn buildBinaryExpr(ir: *CiscoIR, allocator: std.mem.Allocator, sema_type: tt.SemaType, b: typed_ast.TypedBinaryExpr) !inst.ValueRef {
+pub fn buildBinaryExpr(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: tt.SemaType, b: typed_ast.TypedBinaryExpr) !inst.ValueRef {
     const left_ref = try ir.buildExpr(allocator, b.left.*);
     const right_ref = try ir.buildExpr(allocator, b.right.*);
     const dest = ir.current_fn.newValue();

@@ -1,10 +1,10 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseStatement = @import("parseStatement.zig").parseStatement;
 
 pub fn parseBlockStatement(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.BlockStatement {
     var stmts: std.ArrayList(ast.Statement) = .empty;

@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const ast = @import("../ast.zig");
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseUnaryExpression(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
     const operator = parser.cur_tok;

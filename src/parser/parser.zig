@@ -1,27 +1,27 @@
 const std = @import("std");
 
-const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
+const FaruLexer = @import("../lexer/faru_lexer.zig").FaruLexer;
 const tokens = @import("../lexer/tokens.zig");
 const ast = @import("ast.zig");
-const CiscoDiagnostic = @import("../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../diagnostics/diagnostics.zig").FaruDiagnostic;
 
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
 const Precedence = @import("precedence.zig").Precedence;
 
 pub const NudFn = *const fn (
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) anyerror!?ast.Expression;
 
 pub const LedFn = *const fn (
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) anyerror!?ast.Expression;
 
 pub const StmtFn = *const fn (
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) anyerror!?ast.Statement;
 
@@ -141,12 +141,12 @@ pub const statements = [_]Statement{
     },
 };
 
-pub const CiscoParser = struct {
-    lexer: *CiscoLexer,
+pub const FaruParser = struct {
+    lexer: *FaruLexer,
     cur_tok: tokens.Token,
     peek_tok: tokens.Token,
 
-    diagnostics: std.ArrayList(CiscoDiagnostic),
+    diagnostics: std.ArrayList(FaruDiagnostic),
     panic_mode: bool,
     advance_count: u32,
 
@@ -154,7 +154,7 @@ pub const CiscoParser = struct {
 
     pub fn init(
         allocator: std.mem.Allocator,
-        lexer: *CiscoLexer,
+        lexer: *FaruLexer,
     ) !Self {
         var p: Self = .{
             .lexer = lexer,
@@ -227,7 +227,7 @@ pub const CiscoParser = struct {
         return self.cur_tok.kind == .eof;
     }
 
-    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {
+    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: FaruDiagnostic) !void {
         if (self.panic_mode) return;
 
         self.panic_mode = true;

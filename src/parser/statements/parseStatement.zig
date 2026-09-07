@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Parses statements in the Cisco language.
+//! Parses statements in the Faru language.
 //!
 //! Statement parsing acts as the entry point for parsing a single statement.
 //! It determines which kind of statement can be parsed from the current
@@ -32,12 +32,12 @@ const ast = @import("../ast.zig");
 const p = @import("../parser.zig");
 const TokenKind = @import("../../lexer/tokens.zig").TokenKind;
 const statements = p.statements;
-const CiscoParser = p.CiscoParser;
+const FaruParser = p.FaruParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseStatement(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     if (getStatement(parser.cur_tok.kind)) |callback| {

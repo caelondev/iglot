@@ -13,15 +13,15 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Version command for cisco.
+//! Version command for faru.
 //!
-//! Prints the current cisco version along with the build date.
+//! Prints the current faru version along with the build date.
 
 const std = @import("std");
-const cisco = @import("cisco_information");
+const faru = @import("faru_information");
 const Context = @import("cli.zig").Context;
 
-/// Prints the cisco version and build date.
+/// Prints the faru version and build date.
 pub fn version(ctx: *Context) !void {
     var writer = std.Io.File.stdout().writerStreaming(ctx.io, &.{});
     const out = &writer.interface;
@@ -31,8 +31,8 @@ pub fn version(ctx: *Context) !void {
     const year_day = epoch_seconds.getEpochDay().calculateYearDay();
     const month_day = year_day.calculateMonthDay();
 
-    try out.print("cisco {s} ({d}-{d:0>2}-{d:0>2})\n", .{
-        cisco.version,
+    try out.print("faru {s} ({d}-{d:0>2}-{d:0>2})\n", .{
+        faru.version,
         year_day.year,
         month_day.month.numeric(),
         month_day.day_index + 1,

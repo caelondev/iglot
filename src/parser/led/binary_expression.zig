@@ -26,14 +26,14 @@
 
 const std = @import("std");
 
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const ast = @import("../ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseBinaryExpression(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {

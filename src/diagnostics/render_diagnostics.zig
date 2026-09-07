@@ -1,5 +1,5 @@
 const std = @import("std");
-const CiscoDiagnostic = @import("diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("diagnostics.zig").FaruDiagnostic;
 const Span = @import("../lexer/tokens.zig").Span;
 const InkDye = @import("inkdye");
 
@@ -11,7 +11,7 @@ pub fn renderDiagnostics(
     allocator: std.mem.Allocator,
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
-    diagnostic: CiscoDiagnostic,
+    diagnostic: FaruDiagnostic,
 ) !void {
     try formatSeverity(writer, dye, diagnostic.severity, diagnostic.kind);
     try writer.print(" {s} ", .{try dye.gray().bold().fmt("::", .{})});
@@ -281,8 +281,8 @@ fn spanWidth(span: Span) usize {
 fn formatSeverity(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,
-    severity: CiscoDiagnostic.Severity,
-    kind: CiscoDiagnostic.Kind,
+    severity: FaruDiagnostic.Severity,
+    kind: FaruDiagnostic.Kind,
 ) !void {
     switch (severity) {
         .err => {
@@ -299,7 +299,7 @@ fn formatAnnotation(
     allocator: std.mem.Allocator,
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
-    annotation: CiscoDiagnostic.Annotation,
+    annotation: FaruDiagnostic.Annotation,
 ) !void {
     const box_colon = try dye.gray().bold().fmt("::", .{});
     switch (annotation) {

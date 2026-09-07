@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const CiscoLexer = @import("../../lexer/cisco_lexer.zig").CiscoLexer;
+const FaruLexer = @import("../../lexer/faru_lexer.zig").FaruLexer;
 const tokens = @import("../../lexer/tokens.zig");
 const ast = @import("../ast.zig");
-const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnostic;
 
 const nud_lit = @import("../nud/literals.zig");
 const parseStatement = @import("../statements/parseStatement.zig").parseStatement;
 const Precedence = @import("../precedence.zig").Precedence;
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 
 /// assumes cur_tok is already sitting on the type token when called
 pub fn parseTypeExpression(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
     const tok = parser.cur_tok;
@@ -45,14 +45,14 @@ pub fn parseTypeExpression(
 }
 
 pub fn parseReturnTypeExpression(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
     return parseType(parser, allocator, parser.cur_tok);
 }
 
 fn parseType(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
     tok: tokens.Token,
 ) !?ast.TypeExpression {

@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Help command for cisco.
+//! Help command for faru.
 //!
 //! Prints the available commands and their descriptions in a formatted
 //! command-line help message.
@@ -21,7 +21,7 @@
 const std = @import("std");
 const Context = @import("cli.zig").Context;
 
-/// Prints the cisco command-line help message.
+/// Prints the faru command-line help message.
 pub fn help(ctx: *Context) !void {
     const options = [_][2][]const u8{
         .{ "help", "Show this help message" },
@@ -38,7 +38,7 @@ pub fn help(ctx: *Context) !void {
     var writer = std.Io.File.stdout().writerStreaming(ctx.io, &.{});
     const out = &writer.interface;
 
-    try out.writeAll("usage: cisco [command] [options]\n\n");
+    try out.writeAll("usage: faru [command] [options]\n\n");
     try out.writeAll("options:\n");
 
     inline for (options) |option| {

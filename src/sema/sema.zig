@@ -1,5 +1,5 @@
 const std = @import("std");
-const CiscoDiagnostic = @import("../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../diagnostics/diagnostics.zig").FaruDiagnostic;
 const tt = @import("type_table.zig");
 const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
@@ -16,9 +16,9 @@ const FunctionContext = struct {
     return_type: tt.SemaType,
 };
 
-pub const CiscoSemanticAnalyzer = struct {
+pub const FaruSemanticAnalyzer = struct {
     type_table: tt.TypeTable,
-    diagnostics: std.ArrayList(CiscoDiagnostic),
+    diagnostics: std.ArrayList(FaruDiagnostic),
 
     current_function_ctx: ?FunctionContext,
 
@@ -149,7 +149,7 @@ pub const CiscoSemanticAnalyzer = struct {
         }
 
         if (value < std.math.minInt(i64) or value > std.math.maxInt(i64)) {
-            const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+            const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
                 .{
                     .help = .{
                         .message = "consider using a wideint by suffixing the literal with 'w' or using the \"wideint\" type",
@@ -169,7 +169,7 @@ pub const CiscoSemanticAnalyzer = struct {
         return .int;
     }
 
-    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: CiscoDiagnostic) !void {
+    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: FaruDiagnostic) !void {
         try self.diagnostics.append(allocator, diagnostic);
     }
 };

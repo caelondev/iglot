@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! The Cisco parser uses Pratt parsing to parse expressions according to
+//! The Faru parser uses Pratt parsing to parse expressions according to
 //! their operator precedence and associativity.
 //!
 //! Precedence determines how strongly an operator binds to its operands.

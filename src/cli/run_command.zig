@@ -13,9 +13,9 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Run command for cisco.
+//! Run command for faru.
 //!
-//! Compiles and interprets a Cisco program.
+//! Compiles and interprets a Faru program.
 //!
 //! The run command is responsible for driving the language execution pipeline,
 //! from parsing the source into an intermediate representation through
@@ -23,17 +23,17 @@
 
 const std = @import("std");
 const Context = @import("cli.zig").Context;
-const CiscoLexer = @import("../lexer/cisco_lexer.zig").CiscoLexer;
+const FaruLexer = @import("../lexer/faru_lexer.zig").FaruLexer;
 const InkDye = @import("inkdye");
 const p = @import("../parser/parser.zig");
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 const pathExists = @import("helpers/path_exists.zig").pathExists;
-const CiscoSemanticAnalyzer = @import("../sema/sema.zig").CiscoSemanticAnalyzer;
-const CiscoIR = @import("../ir/cisco_ir.zig").CiscoIR;
+const FaruSemanticAnalyzer = @import("../sema/sema.zig").FaruSemanticAnalyzer;
+const FaruIR = @import("../ir/faru_ir.zig").FaruIR;
 const printModule = @import("../ir/printer.zig").printModule;
 
-/// Compiles and interprets a Cisco program.
+/// Compiles and interprets a Faru program.
 pub fn run(ctx: *Context) !void {
     const allocator = ctx.arena.*.allocator();
 
@@ -48,7 +48,7 @@ pub fn run(ctx: *Context) !void {
     const ewriter = &stderr.interface;
 
     const path = ctx.argsIter.next() orelse {
-        try ewriter.print("{s}: usage: cisco run <filepath>\n", .{e});
+        try ewriter.print("{s}: usage: faru run <filepath>\n", .{e});
         return;
     };
 
@@ -60,8 +60,8 @@ pub fn run(ctx: *Context) !void {
     const cwd = std.Io.Dir.cwd();
     const src = try cwd.readFileAlloc(ctx.io, path, allocator, .unlimited);
 
-    var lexer = CiscoLexer.init(src);
-    var parser = try p.CiscoParser.init(allocator, &lexer);
+    var lexer = FaruLexer.init(src);
+    var parser = try p.FaruParser.init(allocator, &lexer);
     const ast = try parser.parseProgram(allocator);
 
     var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
@@ -78,7 +78,7 @@ pub fn run(ctx: *Context) !void {
         try dumpAny(writer, ast, 0);
     } else return;
 
-    var sema: CiscoSemanticAnalyzer = .init();
+    var sema: FaruSemanticAnalyzer = .init();
     const t_ast = try sema.analyze(allocator, ast);
     if (sema.diagnostics.items.len != 0) {
         try writer.writeByte('\n');
@@ -99,7 +99,7 @@ pub fn run(ctx: *Context) !void {
         std.debug.print("typed ast:", .{});
         try dumpAny(writer, t_ast, 0);
 
-        var ir_builder: CiscoIR = .init();
+        var ir_builder: FaruIR = .init();
         defer ir_builder.deinit(allocator);
 
         try ir_builder.buildProgram(allocator, t_ast);

@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! The Cisco lexer converts a null-terminated source buffer into a stream
+//! The Faru lexer converts a null-terminated source buffer into a stream
 //! of lexical tokens.
 //!
 //! The lexer recognizes identifiers, keywords, numeric and string literals,
@@ -27,14 +27,14 @@
 //! Each token also carries source-location information describing its
 //! beginning and ending line and column.
 //!
-//! `CiscoLexer.nextToken` advances the lexer by one token on each call and
+//! `FaruLexer.nextToken` advances the lexer by one token on each call and
 //! eventually returns an `.eof` token once the source has been exhausted.
 //! Lexical errors are represented as `.error` tokens.
 
 const std = @import("std");
 const tokens = @import("tokens.zig");
 
-pub const CiscoLexer = struct {
+pub const FaruLexer = struct {
     source: []u8,
     cursor: usize,
 

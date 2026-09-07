@@ -1,6 +1,6 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const CiscoParser = @import("../parser.zig").CiscoParser;
+const FaruParser = @import("../parser.zig").FaruParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const parseBlockStatement = @import("block_statement.zig").parseBlockStatement;
 const pt = @import("../type/parse_type_expression.zig");
@@ -9,7 +9,7 @@ const tokens = @import("../../lexer/tokens.zig");
 const Span = tokens.Span;
 
 pub fn parseFunctionDeclarationStatement(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.cur_tok;
@@ -48,7 +48,7 @@ pub fn parseFunctionDeclarationStatement(
 }
 
 fn parseFunctionParameters(
-    parser: *CiscoParser,
+    parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?[]ast.FunctionParameter {
     var params: std.ArrayList(ast.FunctionParameter) = .empty;

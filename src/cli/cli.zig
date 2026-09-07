@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Command-line interface for cisco.
+//! Command-line interface for faru.
 //!
 //! Parses process arguments, dispatches them to the corresponding subcommand
 //! handler, and provides each command with a shared execution context.
@@ -47,8 +47,8 @@ const commands: std.StaticStringMap(*const Command) = .initComptime(.{
     .{ "run", &@import("run_command.zig").run },
 });
 
-/// Entry point for the cisco command-line interface.
-pub const CiscoCLI = struct {
+/// Entry point for the faru command-line interface.
+pub const FaruCLI = struct {
     args: []const []const u8,
     argsIter: std.process.Args.Iterator,
 
@@ -79,7 +79,7 @@ pub const CiscoCLI = struct {
         const writer = &stdout_writer.interface;
 
         const name = self.argsIter.next() orelse {
-            try writer.print("usage: cisco [command] (options)\ntry: cisco help\n", .{});
+            try writer.print("usage: faru [command] (options)\ntry: faru help\n", .{});
             return;
         };
 

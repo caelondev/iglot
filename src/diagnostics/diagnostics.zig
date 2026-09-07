@@ -2,7 +2,7 @@ const tokens = @import("../lexer/tokens.zig");
 const std = @import("std");
 const SemaType = @import("../sema/type_table.zig").SemaType;
 
-pub const CiscoDiagnostic = struct {
+pub const FaruDiagnostic = struct {
     span: tokens.Span,
     severity: Severity = .err,
     kind: Kind,

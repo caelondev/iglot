@@ -1,18 +1,18 @@
 const std = @import("std");
-const CiscoDiagnostic = @import("../../diagnostics/diagnostics.zig").CiscoDiagnostic;
+const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnostic;
 const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
-const CiscoSemanticAnalyzer = @import("../sema.zig").CiscoSemanticAnalyzer;
+const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
 
 pub fn validateVariableDeclaration(
-    sema: *CiscoSemanticAnalyzer,
+    sema: *FaruSemanticAnalyzer,
     allocator: std.mem.Allocator,
     v: *const ast.VariableDeclarationExpression,
 ) anyerror!?*typed_ast.TypedExpr {
     if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
-        const annotations = try allocator.dupe(CiscoDiagnostic.Annotation, &.{
+        const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
             .{
                 .note = .{
                     .message = "identifier declared here",
