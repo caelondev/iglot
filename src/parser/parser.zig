@@ -135,6 +135,10 @@ pub const statements = [_]Statement{
         .token_kind = .@"return",
         .callback = @import("statements/return_statement.zig").parseReturnStatement,
     },
+    .{
+        .token_kind = .@"if",
+        .callback = @import("statements/if_statement.zig").parseIfStatement,
+    },
 };
 
 pub const CiscoParser = struct {
@@ -253,5 +257,9 @@ pub const CiscoParser = struct {
             if (stmt.token_kind == kind) return true;
         }
         return false;
+    }
+
+    pub fn peekIs(self: *Self, kind: tokens.TokenKind) bool {
+        return self.peek_tok.kind == kind;
     }
 };

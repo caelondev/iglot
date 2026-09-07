@@ -79,6 +79,8 @@ pub const Statement = union(enum) {
     expression: ExpressionStatement,
     function_decl: FunctionDeclarationStatement,
     return_stmt: ReturnStatement,
+    if_stmt: IfStatement,
+    scoped: ScopedStatement,
 };
 
 // EXPRESSIONS
@@ -154,4 +156,14 @@ pub const BlockStatement = struct {
 pub const ReturnStatement = struct {
     return_value: ?Expression,
     span: tokens.Span,
+};
+
+pub const IfStatement = struct {
+    condition: *Expression,
+    consequence: *Statement,
+    alternative: ?*Statement,
+};
+
+pub const ScopedStatement = struct {
+    statements: []Statement,
 };

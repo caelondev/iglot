@@ -73,6 +73,8 @@ pub const TokenKind = enum {
     @"or",
     @"fn",
     @"return",
+    @"if",
+    @"else",
     final,
 };
 
@@ -150,5 +152,7 @@ pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "or", .@"or" },
     .{ "fn", .@"fn" },
     .{ "return", .@"return" },
+    .{ "if", .@"if" },
+    .{ "else", .@"else" },
     .{ "fin", .final },
 });

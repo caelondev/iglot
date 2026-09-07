@@ -68,6 +68,7 @@ pub const CiscoSemanticAnalyzer = struct {
                     .return_stmt = ret_stmt,
                 };
             },
+            else => return null,
         }
     }
 

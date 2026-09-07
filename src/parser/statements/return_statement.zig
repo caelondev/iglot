@@ -7,7 +7,6 @@ const pt = @import("../type/parse_type_expression.zig");
 const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
-/// assumes cur_tok is sitting on the 'return' keyword when called
 pub fn parseReturnStatement(
     parser: *CiscoParser,
     allocator: std.mem.Allocator,

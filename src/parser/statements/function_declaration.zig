@@ -28,8 +28,6 @@ pub fn parseFunctionDeclarationStatement(
             .severity = .err,
             .kind = .MissingType,
         });
-        // bogus value to avoid cascading error
-        return_type = .{ .span = parser.cur_tok.span, .kind = .{ .identifier = "void" } };
     } else {
         parser.nextToken();
         return_type = try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
