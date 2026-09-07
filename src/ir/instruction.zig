@@ -3,6 +3,7 @@ const SemaType = @import("../sema/type_table.zig").SemaType;
 
 pub const ValueRef = struct { id: u32 };
 pub const BlockRef = struct { id: u32 };
+pub const GlobalRef = struct { id: u32 };
 
 pub const Opcode = enum {
     add,
@@ -17,6 +18,7 @@ pub const Opcode = enum {
     cmp_ne,
     alloca,
     load,
+    load_global,
     store,
     br,
     cond_br,
@@ -42,17 +44,22 @@ pub const Instruction = struct {
 
     pub const Data = union(enum) {
         none: void,
-        int_literal: i64,
-        wideint_literal: i128,
-        float_literal: f32,
-        double_literal: f64,
-        string_literal: []const u8,
+        constant: ConstantValue,
         branch_target: BlockRef,
         index: usize,
+        global: GlobalRef,
         cond_branch: struct {
             true_block: BlockRef,
             false_block: BlockRef,
         },
         call: struct { callee: []const u8 },
     };
+};
+
+pub const ConstantValue = union(enum) {
+    int: i64,
+    wideint: i128,
+    float: f32,
+    double: f64,
+    string: []const u8,
 };

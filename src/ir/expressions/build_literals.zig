@@ -8,8 +8,8 @@ pub fn buildInteger(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: tt.Sem
     const result = ir.current_fn.newValue();
 
     const data: inst.Instruction.Data = switch (sema_type) {
-        .wideint => .{ .wideint_literal = i.value },
-        .int => .{ .int_literal = @intCast(i.value) },
+        .wideint => .{ .constant = .{ .wideint = i.value } },
+        .int => .{ .constant = .{ .int = @intCast(i.value) } },
         else => unreachable,
     };
 
