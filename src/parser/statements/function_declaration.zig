@@ -14,27 +14,26 @@ pub fn parseFunctionDeclarationStatement(
 ) !?ast.Statement {
     const keyword = parser.cur_tok;
     parser.nextToken();
+    const fn_name: tokens.Token = parser.cur_tok;
+
+    if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
+    const fn_params = try parseFunctionParameters(parser, allocator) orelse return null;
+    const fn_end_params_span = parser.cur_tok.span;
 
     var return_type: ast.TypeExpression = undefined;
-    var fn_name: tokens.Token = undefined;
 
-    if (parser.cur_tok.kind == .identifier and parser.peek_tok.kind == .left_parenthesis) {
+    if (parser.peek_tok.kind == .left_brace) {
         try parser.reportError(allocator, .{
             .span = parser.cur_tok.span,
             .severity = .err,
             .kind = .MissingType,
         });
-        parser.panic_mode = false;
-        fn_name = parser.cur_tok;
+        // bogus value to avoid cascading error
+        return_type = .{ .span = parser.cur_tok.span, .kind = .{ .identifier = "void" } };
     } else {
+        parser.nextToken();
         return_type = try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
-        if (!try parser.expectPeek(allocator, .identifier)) return null;
-        fn_name = parser.cur_tok;
     }
-
-    if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
-    const fn_params = try parseFunctionParameters(parser, allocator) orelse return null;
-    const fn_params_span = parser.cur_tok.span;
 
     if (!try parser.expectPeek(allocator, .left_brace)) return null;
     const body = try parseBlockStatement(parser, allocator) orelse return null;
@@ -45,7 +44,7 @@ pub fn parseFunctionDeclarationStatement(
             .return_type = return_type,
             .parameters = fn_params,
             .body = body,
-            .span = Span.mergeFromSpans(keyword.span, fn_params_span),
+            .span = Span.mergeFromSpans(keyword.span, fn_end_params_span),
         },
     };
 }
