@@ -63,6 +63,20 @@ pub const CiscoIR = struct {
             .integer => |i| try b_lit.buildInteger(self, allocator, expr.sem_type, i),
             .binary => |b| try buildBinaryExpr(self, allocator, expr.sem_type, b),
             .variable_declaration => |v| try buildVariableDecl(self, allocator, expr.sem_type, v),
+            .identifier => |i| blk: {
+                const slot = self.locals.get(i.value) orelse unreachable; // sema guarantees availability
+                const dest = self.current_fn.newValue();
+
+                try self.emit(allocator, .{
+                    .op = .load,
+                    .sema_type = expr.sem_type,
+                    .result = dest,
+                    .operands = try allocator.dupe(inst.ValueRef, &.{slot}),
+                    .data = .none,
+                });
+
+                break :blk dest;
+            },
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
@@ -81,6 +95,38 @@ pub const CiscoIR = struct {
         const entry = try self.current_fn.newBlock(allocator, "entry");
         self.current_block = self.current_fn.getBlock(entry.id);
 
+        self.locals.clearRetainingCapacity();
+
+        for (decl.parameters, 0..) |p, i| {
+            const param_val = self.current_fn.newValue();
+            try self.emit(allocator, .{
+                .op = .param,
+                .sema_type = p.param_type,
+                .operands = &.{},
+                .result = param_val,
+                .data = .{ .index = i },
+            });
+
+            const slot = self.current_fn.newValue();
+            try self.emit(allocator, .{
+                .op = .alloca,
+                .sema_type = p.param_type,
+                .operands = &.{},
+                .result = slot,
+                .data = .none,
+            });
+
+            try self.emit(allocator, .{
+                .op = .store,
+                .sema_type = p.param_type,
+                .operands = try allocator.dupe(inst.ValueRef, &.{ slot, param_val }),
+                .result = null,
+                .data = .none,
+            });
+
+            try self.locals.put(p.identifier.value, slot);
+        }
+
         try self.buildStmt(allocator, .{ .block = decl.body });
 
         if (self.current_block.isTerminated()) return;
@@ -94,7 +140,6 @@ pub const CiscoIR = struct {
                 .data = .none,
             });
         } else {
-            // sema guarantees unreachability
             try self.emit(allocator, .{
                 .op = .@"unreachable",
                 .sema_type = null,

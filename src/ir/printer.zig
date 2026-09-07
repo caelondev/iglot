@@ -64,6 +64,7 @@ fn printInstruction(writer: *std.Io.Writer, instr: Instruction) !void {
             c.false_block.id,
         }),
         .call => |c| try writer.print(" {s}", .{c.callee}),
+        .index => |i| try writer.print(" {d}", .{i}),
     }
 
     for (instr.operands, 0..) |op, i| {

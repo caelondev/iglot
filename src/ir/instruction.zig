@@ -23,6 +23,7 @@ pub const Opcode = enum {
     ret,
     ret_void,
     call,
+    param,
     const_int,
     const_wideint,
     const_float,
@@ -47,6 +48,7 @@ pub const Instruction = struct {
         double_literal: f64,
         string_literal: []const u8,
         branch_target: BlockRef,
+        index: usize,
         cond_branch: struct {
             true_block: BlockRef,
             false_block: BlockRef,
