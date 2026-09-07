@@ -62,9 +62,12 @@ pub fn parseStatement(
     }
 
     return .{
-        .expression = .{
-            .expression = expr,
-            .span = expr.span,
+        .span = expr.span,
+        .kind = .{
+            .expression = .{
+                .expression = expr,
+                .span = expr.span,
+            },
         },
     };
 }

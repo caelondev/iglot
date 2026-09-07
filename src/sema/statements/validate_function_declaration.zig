@@ -99,8 +99,8 @@ pub fn validateFunctionDeclaration(
 fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
     return switch (stmt.*) {
         .expression => false,
+        .function_decl => false,
         .return_stmt => true,
-        .function_decl => |f| alwaysReturns(&.{ .block = f.body }),
         .block => |b| blk: {
             for (b.typed_stmts) |*s| {
                 if (alwaysReturns(s)) break :blk true;

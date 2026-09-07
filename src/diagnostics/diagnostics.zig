@@ -60,6 +60,8 @@ pub const FaruDiagnostic = struct {
         MissingReturn: struct { name: []const u8 },
         IntegerOverflow,
         IllegalReturn,
+        IllegalTopLevelStatement,
+        NestedFunctionDeclaration,
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -84,6 +86,8 @@ pub const FaruDiagnostic = struct {
                 .IllegalReturn => try writer.print("cannot return from outside a function", .{}),
                 .IntegerOverflow => try writer.print("integer value overflowed", .{}),
                 .MissingReturn => |r| try writer.print("missing return in function \"{s}\"", .{r.name}),
+                .IllegalTopLevelStatement => try writer.print("statement not allowed at top level", .{}),
+                .NestedFunctionDeclaration => try writer.print("function declaration not allowed inside a function", .{}),
             }
         }
     };

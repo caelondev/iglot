@@ -178,9 +178,7 @@ fn writeSingleLineSpan(
     const end = @min(visualCol(raw_line, span.column_end - 1) -| left_trim, line.len);
 
     try writer.writeAll(line[0..start]);
-    try writer.writeAll(try dye.redBright().fmt(">", .{}));
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..end]}));
-    try writer.writeAll(try dye.redBright().fmt("<", .{}));
     try writer.writeAll(line[end..]);
 }
 
@@ -196,7 +194,6 @@ fn writeMultilineFirstLine(
     const start = @min(visualCol(raw_line, span.column_start - 1) -| left_trim, line.len);
 
     try writer.writeAll(line[0..start]);
-    try writer.writeAll(try dye.redBright().fmt(">", .{}));
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..]}));
 }
 
@@ -212,7 +209,6 @@ fn writeMultilineLastLine(
     const end = @min(visualCol(raw_line, span.column_end - 1) -| left_trim, line.len);
 
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[0..end]}));
-    try writer.writeAll(try dye.redBright().fmt("<", .{}));
     try writer.writeAll(line[end..]);
 }
 

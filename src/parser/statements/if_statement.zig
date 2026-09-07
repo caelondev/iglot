@@ -12,8 +12,14 @@ pub fn parseIfStatement(
     parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
+    const keyword = parser.cur_tok;
     parser.nextToken();
-    const cond = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+
+    const cond = try parseExpression(
+        parser,
+        allocator,
+        Precedence.lowest.toInt(),
+    ) orelse return null;
 
     if (!try parser.expectPeek(allocator, .colon)) return null;
 
@@ -21,7 +27,15 @@ pub fn parseIfStatement(
 
     if (parser.peekIs(.left_brace)) {
         parser.nextToken();
-        if_body = .{ .scoped = try parseScopedStatement(parser, allocator) orelse return null };
+
+        const stmt = try parseScopedStatement(parser, allocator) orelse return null;
+
+        if_body = .{
+            .span = stmt.span,
+            .kind = .{
+                .scoped = stmt,
+            },
+        };
     } else {
         parser.nextToken();
         if_body = try parseStatement(parser, allocator) orelse return null;
@@ -34,11 +48,16 @@ pub fn parseIfStatement(
     consequence_ptr.* = if_body;
 
     if (!parser.peekIs(.@"else")) {
-        return .{ .if_stmt = .{
-            .condition = cond_ptr,
-            .consequence = consequence_ptr,
-            .alternative = null,
-        } };
+        return .{
+            .span = Span.mergeFromSpans(keyword.span, if_body.span),
+            .kind = .{
+                .if_stmt = .{
+                    .condition = cond_ptr,
+                    .consequence = consequence_ptr,
+                    .alternative = null,
+                },
+            },
+        };
     }
 
     parser.nextToken();
@@ -50,7 +69,15 @@ pub fn parseIfStatement(
         else_body = try parseIfStatement(parser, allocator) orelse return null;
     } else if (parser.peekIs(.left_brace)) {
         parser.nextToken();
-        else_body = .{ .scoped = try parseScopedStatement(parser, allocator) orelse return null };
+
+        const stmt = try parseScopedStatement(parser, allocator) orelse return null;
+
+        else_body = .{
+            .span = stmt.span,
+            .kind = .{
+                .scoped = stmt,
+            },
+        };
     } else {
         parser.nextToken();
         else_body = try parseStatement(parser, allocator) orelse return null;
@@ -59,9 +86,14 @@ pub fn parseIfStatement(
     const alternative_ptr = try allocator.create(ast.Statement);
     alternative_ptr.* = else_body;
 
-    return .{ .if_stmt = .{
-        .condition = cond_ptr,
-        .consequence = consequence_ptr,
-        .alternative = alternative_ptr,
-    } };
+    return .{
+        .span = Span.mergeFromSpans(keyword.span, else_body.span),
+        .kind = .{
+            .if_stmt = .{
+                .condition = cond_ptr,
+                .consequence = consequence_ptr,
+                .alternative = alternative_ptr,
+            },
+        },
+    };
 }

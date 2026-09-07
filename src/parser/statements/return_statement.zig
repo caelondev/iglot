@@ -17,9 +17,12 @@ pub fn parseReturnStatement(
 
     if (parser.curTokenIs(.semicolon)) {
         return .{
-            .return_stmt = .{
-                .return_value = null,
-                .span = keyword.span,
+            .span = keyword.span,
+            .kind = .{
+                .return_stmt = .{
+                    .return_value = null,
+                    .span = keyword.span,
+                },
             },
         };
     }
@@ -29,9 +32,12 @@ pub fn parseReturnStatement(
     if (!try parser.expectPeek(allocator, .semicolon)) return null;
 
     return .{
-        .return_stmt = .{
-            .return_value = value,
-            .span = Span.mergeFromSpans(keyword.span, value.span),
+        .span = keyword.span,
+        .kind = .{
+            .return_stmt = .{
+                .return_value = value,
+                .span = Span.mergeFromSpans(keyword.span, value.span),
+            },
         },
     };
 }

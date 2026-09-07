@@ -1,5 +1,9 @@
-fn main(a :: int, b :: int) int {
-    if b == 0: {
-        return 0;
+x :: int = 0;
+
+if true: {}
+
+fn main() void {
+    fn add(a :: int, b :: int) int {
+        return a + b;
     }
 }

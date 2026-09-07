@@ -38,21 +38,23 @@ pub const FaruSemanticAnalyzer = struct {
 
         var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
         for (program.body) |*stmt| {
-            const typed = try self.validateStatement(allocator, stmt) orelse continue;
+            const typed = try self.scanTopLevelStatement(allocator, stmt) orelse continue;
             try body.append(allocator, typed);
         }
         return .{ .body = try body.toOwnedSlice(allocator) };
     }
 
-    pub fn initBuiltinIdentifiers(self: *Self, allocator: std.mem.Allocator) !void {
-        try self.type_table.declareIdentifier(allocator, "true", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
-        try self.type_table.declareIdentifier(allocator, "false", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
-    }
-
-    pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
-        switch (stmt.*) {
+    fn scanTopLevelStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
+        switch (stmt.kind) {
             .expression => |*e| {
                 const expr = try self.validateExpression(allocator, &e.expression, e.span, null) orelse return null;
+                if (expr.kind != .variable_declaration) {
+                    try self.reportError(allocator, .{
+                        .kind = .IllegalTopLevelStatement,
+                        .span = stmt.span,
+                    });
+                }
+
                 return .{
                     .expression = .{ .typed = expr },
                 };
@@ -62,6 +64,38 @@ pub const FaruSemanticAnalyzer = struct {
                 return .{
                     .function_decl = decl,
                 };
+            },
+            else => {
+                try self.reportError(allocator, .{
+                    .kind = .IllegalTopLevelStatement,
+                    .span = stmt.span,
+                });
+
+                return null;
+            },
+        }
+    }
+
+    pub fn initBuiltinIdentifiers(self: *Self, allocator: std.mem.Allocator) !void {
+        try self.type_table.declareIdentifier(allocator, "true", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
+        try self.type_table.declareIdentifier(allocator, "false", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
+    }
+
+    pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
+        switch (stmt.kind) {
+            .expression => |*e| {
+                const expr = try self.validateExpression(allocator, &e.expression, e.span, null) orelse return null;
+                return .{
+                    .expression = .{ .typed = expr },
+                };
+            },
+            .function_decl => {
+                try self.reportError(allocator, .{
+                    .kind = .NestedFunctionDeclaration,
+                    .span = stmt.span,
+                });
+
+                return null;
             },
             .return_stmt => |r| {
                 const ret_stmt = try validateReturnStatement(self, allocator, &r) orelse return null;

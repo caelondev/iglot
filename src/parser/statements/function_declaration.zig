@@ -37,12 +37,15 @@ pub fn parseFunctionDeclarationStatement(
     const body = try parseBlockStatement(parser, allocator) orelse return null;
 
     return .{
-        .function_decl = .{
-            .identifier = .{ .value = fn_name.lexeme },
-            .return_type = return_type,
-            .parameters = fn_params,
-            .body = body,
-            .span = Span.mergeFromSpans(keyword.span, fn_end_params_span),
+        .span = Span.mergeFromSpans(keyword.span, body.span),
+        .kind = .{
+            .function_decl = .{
+                .identifier = .{ .value = fn_name.lexeme },
+                .return_type = return_type,
+                .parameters = fn_params,
+                .body = body,
+                .span = Span.mergeFromSpans(keyword.span, fn_end_params_span),
+            },
         },
     };
 }
@@ -62,7 +65,7 @@ fn parseFunctionParameters(
 
     const first_ident = parser.cur_tok;
     if (!try parser.expectPeek(allocator, .box_colon)) return null;
-    parser.nextToken(); // step onto the type token
+    parser.nextToken();
     const first_ident_type = try pt.parseTypeExpression(parser, allocator) orelse return null;
     const first_param_span = Span.mergeFromSpans(first_ident.span, first_ident_type.span);
 

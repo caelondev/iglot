@@ -75,12 +75,15 @@ pub const Expression = struct {
     };
 };
 
-pub const Statement = union(enum) {
-    expression: ExpressionStatement,
-    function_decl: FunctionDeclarationStatement,
-    return_stmt: ReturnStatement,
-    if_stmt: IfStatement,
-    scoped: ScopedStatement,
+pub const Statement = struct {
+    span: tokens.Span,
+    kind: union(enum) {
+        expression: ExpressionStatement,
+        function_decl: FunctionDeclarationStatement,
+        return_stmt: ReturnStatement,
+        if_stmt: IfStatement,
+        scoped: ScopedStatement,
+    },
 };
 
 // EXPRESSIONS
@@ -150,6 +153,7 @@ pub const FunctionParameter = struct {
 };
 
 pub const BlockStatement = struct {
+    span: tokens.Span,
     statements: []Statement,
 };
 
@@ -165,5 +169,6 @@ pub const IfStatement = struct {
 };
 
 pub const ScopedStatement = struct {
+    span: tokens.Span,
     statements: []Statement,
 };
