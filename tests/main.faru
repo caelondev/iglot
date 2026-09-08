@@ -1,7 +1,7 @@
 fn isZero(num :: int) bool {
-    if (num): {
-        return false;
+    if (x): {
+        return true;
     }
 
-    return true;
+    return false;
 }

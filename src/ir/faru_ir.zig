@@ -12,6 +12,8 @@ const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinary
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 const buildAssignmentExpr = @import("expressions/build_assignment_expr.zig").buildAssignmentExpr;
 const buildUnaryExpr = @import("expressions/build_unary_expr.zig").buildUnaryExpr;
+const buildFunction = @import("statements/build_function_decl.zig").buildFunction;
+const buildReturn = @import("statements/build_return_stmt.zig").buildReturn;
 
 pub const FaruIR = struct {
     module: Module,
@@ -46,7 +48,7 @@ pub const FaruIR = struct {
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         switch (stmt) {
-            .function_decl => |f| try self.buildFunction(allocator, f),
+            .function_decl => |f| try buildFunction(self, allocator, f),
             .expression => |e| {
                 switch (e.typed.kind) {
                     .variable_declaration => |v| try self.buildGlobalVariableDecl(allocator, e.typed.sem_type, v),
@@ -59,7 +61,7 @@ pub const FaruIR = struct {
 
     pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         switch (stmt) {
-            .return_stmt => |r| try self.buildReturn(allocator, r),
+            .return_stmt => |r| try buildReturn(self, allocator, r),
             .expression => |e| _ = try self.buildExpr(allocator, e.typed.*),
             .block => |b| {
                 for (b.typed_stmts) |s| {
@@ -110,99 +112,6 @@ pub const FaruIR = struct {
             .data = .none,
         });
         return dest;
-    }
-
-    pub fn buildFunction(self: *Self, allocator: std.mem.Allocator, decl: typed_ast.TypedFunctionDeclarationStatement) !void {
-        const params = try allocator.alloc(Function.Param, decl.parameters.len);
-        for (decl.parameters, 0..) |p, i| {
-            params[i] = .{ .name = p.identifier.value, .sema_type = p.param_type };
-        }
-
-        const function = Function.init(decl.identifier.value, params, decl.return_type);
-        try self.module.functions.append(allocator, function);
-
-        self.current_fn = self.module.currentFunction();
-
-        const entry = try self.current_fn.newBlock(allocator, "entry");
-        self.current_block = self.current_fn.getBlock(entry.id);
-
-        self.locals.clearRetainingCapacity();
-
-        for (decl.parameters, 0..) |p, i| {
-            const param_val = self.current_fn.newValue();
-            try self.emit(allocator, .{
-                .op = .param,
-                .sema_type = p.param_type,
-                .operands = &.{},
-                .result = param_val,
-                .data = .{ .index = i },
-            });
-
-            const slot = self.current_fn.newValue();
-            try self.emit(allocator, .{
-                .op = .alloca,
-                .sema_type = p.param_type,
-                .operands = &.{},
-                .result = slot,
-                .data = .none,
-            });
-
-            try self.emit(allocator, .{
-                .op = .store,
-                .sema_type = p.param_type,
-                .operands = try allocator.dupe(inst.ValueRef, &.{ slot, param_val }),
-                .result = null,
-                .data = .none,
-            });
-
-            try self.locals.put(p.identifier.value, slot);
-        }
-
-        try self.buildStmt(allocator, .{ .block = decl.body });
-
-        if (self.current_block.isTerminated()) return;
-
-        if (decl.return_type == .void) {
-            try self.emit(allocator, .{
-                .op = .ret_void,
-                .sema_type = null,
-                .result = null,
-                .operands = &.{},
-                .data = .none,
-            });
-        } else {
-            try self.emit(allocator, .{
-                .op = .@"unreachable",
-                .sema_type = null,
-                .result = null,
-                .operands = &.{},
-                .data = .none,
-            });
-        }
-    }
-
-    fn buildReturn(self: *Self, allocator: std.mem.Allocator, r: typed_ast.TypedReturnStatement) !void {
-        if (r.return_value == null) {
-            try self.emit(allocator, .{
-                .op = .ret_void,
-                .sema_type = null,
-                .result = null,
-                .operands = &.{},
-                .data = .none,
-            });
-            return;
-        }
-
-        const val_expr = r.return_value orelse unreachable;
-        const value = try self.buildExpr(allocator, val_expr.*);
-
-        try self.emit(allocator, .{
-            .op = .ret,
-            .sema_type = r.return_value_type,
-            .result = null,
-            .operands = try allocator.dupe(inst.ValueRef, &.{value}),
-            .data = .none,
-        });
     }
 
     fn buildGlobalVariableDecl(
