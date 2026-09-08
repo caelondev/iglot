@@ -26,7 +26,7 @@ fn printFunction(writer: *std.Io.Writer, globals: []const Module.GlobalVariable,
     try writer.print("fn {f} {s}(", .{ func.return_type, func.name });
 
     for (func.params, 0..) |p, i| {
-        try writer.print("{s}: {f}", .{ p.name, p.sema_type });
+        try writer.print("{s} :: {f}", .{ p.name, p.sema_type });
         if (i != func.params.len - 1) {
             try writer.writeAll(", ");
         }
@@ -41,8 +41,8 @@ fn printFunction(writer: *std.Io.Writer, globals: []const Module.GlobalVariable,
     try writer.writeAll("}\n");
 }
 
-fn printBlock(writer: *std.Io.Writer, globals: []const Module.GlobalVariable, block: BasicBlock) !void {
-    try writer.print("{s}:\n", .{block.name});
+fn printBlock(writer: *std.Io.Writer, globals: []const Module.GlobalVariable, block: *BasicBlock) !void {
+    try writer.print("@{s} ({d}):\n", .{ block.name, block.id.id });
 
     for (block.instructions.items) |instr| {
         try writer.writeAll("  ");
@@ -57,6 +57,7 @@ fn printConstant(writer: *std.Io.Writer, c: inst.ConstantValue) !void {
         .float => |v| try writer.print("{d}", .{v}),
         .double => |v| try writer.print("{d}", .{v}),
         .string => |v| try writer.print("\"{s}\"", .{v}),
+        .bool => |v| try writer.print("{}", .{v}),
     }
 }
 

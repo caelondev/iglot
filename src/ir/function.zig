@@ -8,7 +8,7 @@ pub const Function = struct {
     name: []const u8,
     params: []const Param,
     return_type: SemaType,
-    blocks: std.ArrayList(BasicBlock),
+    blocks: std.ArrayList(*BasicBlock),
     next_value_id: u32 = 0,
     next_block_id: u32 = 0,
 
@@ -22,7 +22,8 @@ pub const Function = struct {
         const id = self.next_block_id;
         self.next_block_id += 1;
 
-        const block = BasicBlock.init(.{ .id = id }, name);
+        const block = try allocator.create(BasicBlock);
+        block.* = BasicBlock.init(.{ .id = id }, name);
         try self.blocks.append(allocator, block);
 
         return .{ .id = id };
@@ -35,6 +36,6 @@ pub const Function = struct {
     }
 
     pub fn getBlock(self: *Function, idx: usize) *BasicBlock {
-        return &self.blocks.items[idx];
+        return self.blocks.items[idx];
     }
 };

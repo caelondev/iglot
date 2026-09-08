@@ -12,8 +12,10 @@ const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinary
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 const buildAssignmentExpr = @import("expressions/build_assignment_expr.zig").buildAssignmentExpr;
 const buildUnaryExpr = @import("expressions/build_unary_expr.zig").buildUnaryExpr;
+
 const buildFunction = @import("statements/build_function_decl.zig").buildFunction;
 const buildReturn = @import("statements/build_return_stmt.zig").buildReturn;
+const buildIfStatement = @import("statements/build_if_stmt.zig").buildIfStatement;
 
 pub const FaruIR = struct {
     module: Module,
@@ -41,9 +43,28 @@ pub const FaruIR = struct {
         self.locals = .init(allocator);
         self.globals = .init(allocator);
 
+        try self.initBuiltinGlobals(allocator);
+
         for (program.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt);
         }
+    }
+
+    fn initBuiltinGlobals(self: *Self, allocator: std.mem.Allocator) !void {
+        const true_ref = try self.module.addGlobal(allocator, .{
+            .name = "true",
+            .sema_type = .bool,
+            .initializer = .{ .bool = true },
+        });
+
+        const false_ref = try self.module.addGlobal(allocator, .{
+            .name = "false",
+            .sema_type = .bool,
+            .initializer = .{ .bool = false },
+        });
+
+        try self.globals.put("true", true_ref);
+        try self.globals.put("false", false_ref);
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
@@ -59,7 +80,7 @@ pub const FaruIR = struct {
         }
     }
 
-    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
+    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) anyerror!void {
         switch (stmt) {
             .return_stmt => |r| try buildReturn(self, allocator, r),
             .expression => |e| _ = try self.buildExpr(allocator, e.typed.*),
@@ -68,7 +89,12 @@ pub const FaruIR = struct {
                     try self.buildStmt(allocator, s);
                 }
             },
-            .function_decl => unreachable,
+            .scoped => |s| {
+                for (s.typed_stmts) |st| {
+                    try self.buildStmt(allocator, st);
+                }
+            },
+            .if_stmt => |i| try buildIfStatement(self, allocator, i),
             else => unreachable,
         }
     }
@@ -166,5 +192,9 @@ pub const FaruIR = struct {
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {
         try self.current_block.append(allocator, instruction);
+    }
+
+    pub fn goToBlock(self: *Self, block: *BasicBlock) void {
+        self.current_block = block;
     }
 };

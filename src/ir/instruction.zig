@@ -65,6 +65,7 @@ pub const ConstantValue = union(enum) {
     float: f32,
     double: f64,
     string: []const u8,
+    bool: bool,
 };
 
 pub const Place = union(enum) {

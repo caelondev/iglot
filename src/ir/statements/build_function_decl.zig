@@ -16,7 +16,7 @@ pub fn buildFunction(ir: *FaruIR, allocator: std.mem.Allocator, decl: typed_ast.
     ir.current_fn = ir.module.currentFunction();
 
     const entry = try ir.current_fn.newBlock(allocator, "entry");
-    ir.current_block = ir.current_fn.getBlock(entry.id);
+    ir.goToBlock(ir.current_fn.getBlock(entry.id));
 
     ir.locals.clearRetainingCapacity();
 
@@ -72,4 +72,3 @@ pub fn buildFunction(ir: *FaruIR, allocator: std.mem.Allocator, decl: typed_ast.
         });
     }
 }
-
