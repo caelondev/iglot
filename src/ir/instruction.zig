@@ -29,6 +29,8 @@ pub const Opcode = enum {
     param,
     neg,
     not,
+    @"and",
+    @"or",
     const_int,
     const_wideint,
     const_float,

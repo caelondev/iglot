@@ -36,6 +36,9 @@ fn operatorToOpcode(op: tokens.TokenKind) inst.Opcode {
         .greater_equal_to => .cmp_ge,
         .equal_to => .cmp_eq,
         .not_equal_to => .cmp_ne,
+
+        .@"and" => .@"and",
+        .@"or" => .@"or",
         else => unreachable,
     };
 }
