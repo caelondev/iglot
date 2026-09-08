@@ -124,6 +124,14 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .token_kind = .not_equal_to,
         .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
+    .{
+        .token_kind = .@"and",
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
+    .{
+        .token_kind = .@"or",
+        .callback = @import("led/binary_expression.zig").parseBinaryExpression,
+    },
 };
 
 pub const statements = [_]Statement{

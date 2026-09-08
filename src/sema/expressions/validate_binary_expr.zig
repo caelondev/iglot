@@ -15,17 +15,27 @@ pub fn validateBinaryExpr(
     const left = try sema.validateExpression(allocator, b.left, b.left.span, null) orelse return null;
     const right = try sema.validateExpression(allocator, b.right, b.right.span, null) orelse return null;
 
+    if (!left.sem_type.eql(right.sem_type)) {
+        try sema.reportError(allocator, .{
+            .span = Span.mergeFromSpans(b.left.span, b.right.span),
+            .kind = .{
+                .InvalidBinaryExpressionType = .{ .left = left.sem_type, .right = right.sem_type, .operator = b.operator },
+            },
+        });
+        return null;
+    }
+
     return switch (b.operator) {
         .plus,
         .minus,
         .asterisk,
         .slash,
         => blk: {
-            if (!left.sem_type.eql(right.sem_type)) {
+            if (!left.sem_type.is_numerical()) {
                 try sema.reportError(allocator, .{
                     .span = Span.mergeFromSpans(b.left.span, b.right.span),
                     .kind = .{
-                        .InvalidBinaryExpressionType = .{ .left = left.sem_type, .right = right.sem_type, .operator = b.operator },
+                        .TypeMismatch = .{ .expected = .number, .found = left.sem_type },
                     },
                 });
                 return null;
@@ -45,20 +55,6 @@ pub fn validateBinaryExpr(
         .less_equal_to,
         .greater_equal_to,
         => blk: {
-            if (!left.sem_type.eql(right.sem_type)) {
-                try sema.reportError(allocator, .{
-                    .span = Span.mergeFromSpans(b.left.span, b.right.span),
-                    .kind = .{
-                        .InvalidBinaryExpressionType = .{
-                            .left = left.sem_type,
-                            .right = right.sem_type,
-                            .operator = b.operator,
-                        },
-                    },
-                });
-                return null;
-            }
-
             if (!left.sem_type.is_numerical()) {
                 try sema.reportError(allocator, .{
                     .span = Span.mergeFromSpans(b.left.span, b.right.span),
@@ -85,16 +81,6 @@ pub fn validateBinaryExpr(
         },
 
         .equal_to, .not_equal_to => blk: {
-            if (!left.sem_type.eql(right.sem_type)) {
-                try sema.reportError(allocator, .{
-                    .span = Span.mergeFromSpans(b.left.span, b.right.span),
-                    .kind = .{
-                        .ImpossibleComparison = .{ .left = left.sem_type, .right = right.sem_type, .operator = b.operator },
-                    },
-                });
-                return null;
-            }
-
             const node = try allocator.create(typed_ast.TypedExpr);
             node.* = .{
                 .span = span,
@@ -104,6 +90,15 @@ pub fn validateBinaryExpr(
             break :blk node;
         },
 
+        .@"and", .@"or" => blk: {
+            const node = try allocator.create(typed_ast.TypedExpr);
+            node.* = .{
+                .span = span,
+                .sem_type = .bool,
+                .kind = .{ .binary = .{ .left = left, .right = right, .operator = b.operator } },
+            };
+            break :blk node;
+        },
         else => unreachable,
     };
 }
