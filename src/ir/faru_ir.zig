@@ -10,6 +10,7 @@ const tt = @import("../sema/type_table.zig");
 const b_lit = @import("expressions/build_literals.zig");
 const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinaryExpr;
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
+const buildAssignmentExpr = @import("expressions/build_assignment_expr.zig").buildAssignmentExpr;
 
 pub const FaruIR = struct {
     module: Module,
@@ -92,6 +93,7 @@ pub const FaruIR = struct {
 
                 break :blk dest;
             },
+            .assignment => |a| try buildAssignmentExpr(self, allocator, expr.sem_type, a),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
@@ -221,8 +223,33 @@ pub const FaruIR = struct {
     fn evalConstant(self: *Self, expr: typed_ast.TypedExpr) !inst.ConstantValue {
         _ = self;
         return switch (expr.kind) {
-            .integer => |i| .{ .int = @intCast(i.value) },
+            .integer => |i| switch (expr.sem_type) {
+                .wideint => .{ .wideint = i.value },
+                .int => .{ .int = @intCast(i.value) },
+                else => unreachable,
+            },
+            .wide_integer => |i| .{ .wideint = i.value },
+            .float => |f| switch (expr.sem_type) {
+                .float => .{ .float = @floatCast(f.value) },
+                .double => .{ .double = f.value },
+                else => unreachable,
+            },
+            .string => |s| .{ .string = s.value },
             else => @panic("TODO: non-constant global initializer"),
+        };
+    }
+
+    pub fn buildPlace(self: *Self, expr: typed_ast.TypedExpr) !inst.Place {
+        return switch (expr.kind) {
+            .identifier => |i| blk: {
+                if (self.locals.get(i.value)) |slot| {
+                    break :blk .{ .local = slot };
+                }
+
+                const global_ref = self.globals.get(i.value) orelse unreachable;
+                break :blk .{ .global = global_ref };
+            },
+            else => @panic("TODO: non-identifier assignment target"),
         };
     }
 

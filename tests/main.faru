@@ -1,5 +1,6 @@
 x :: int = 0;
 
 fn main() int {
+  x = 100 + 6;
   return x;
 }

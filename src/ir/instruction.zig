@@ -20,6 +20,7 @@ pub const Opcode = enum {
     load,
     load_global,
     store,
+    store_global,
     br,
     cond_br,
     ret,
@@ -62,4 +63,9 @@ pub const ConstantValue = union(enum) {
     float: f32,
     double: f64,
     string: []const u8,
+};
+
+pub const Place = union(enum) {
+    local: ValueRef,
+    global: GlobalRef,
 };
