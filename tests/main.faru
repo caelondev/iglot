@@ -1,7 +1,7 @@
-fn toggle(x :: bool) bool {
-    return !x;
-}
+fn isZero(num :: int) bool {
+    if (num): {
+        return false;
+    }
 
-fn negate(x :: int) int {
-    return -x;
+    return true;
 }

@@ -12,6 +12,14 @@ pub fn validateIfStatement(
     f: *const ast.IfStatement,
 ) anyerror!?typed_ast.TypedIfStatement {
     const cond = try sema.validateExpression(allocator, f.condition, f.condition.span, null) orelse return null;
+
+    if (cond.sem_type != .bool) {
+        try sema.reportError(allocator, .{
+            .kind = .{ .TypeMismatch = .{ .expected = .bool, .found = cond.sem_type } },
+            .span = cond.span,
+        });
+    }
+
     const conseq = try sema.validateStatement(allocator, f.consequence) orelse return null;
 
     const conseq_ptr = try allocator.create(typed_ast.TypedStmt);
