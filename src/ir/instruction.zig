@@ -27,6 +27,8 @@ pub const Opcode = enum {
     ret_void,
     call,
     param,
+    neg,
+    not,
     const_int,
     const_wideint,
     const_float,

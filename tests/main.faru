@@ -1,6 +1,7 @@
-x :: int = 0;
+fn toggle(x :: bool) bool {
+    return !x;
+}
 
-fn main() int {
-  x = 100 + 6;
-  return x;
+fn negate(x :: int) int {
+    return -x;
 }

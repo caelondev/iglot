@@ -11,6 +11,7 @@ const b_lit = @import("expressions/build_literals.zig");
 const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinaryExpr;
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 const buildAssignmentExpr = @import("expressions/build_assignment_expr.zig").buildAssignmentExpr;
+const buildUnaryExpr = @import("expressions/build_unary_expr.zig").buildUnaryExpr;
 
 pub const FaruIR = struct {
     module: Module,
@@ -94,6 +95,7 @@ pub const FaruIR = struct {
                 break :blk dest;
             },
             .assignment => |a| try buildAssignmentExpr(self, allocator, expr.sem_type, a),
+            .unary => |u| try buildUnaryExpr(self, allocator, expr.sem_type, u),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
