@@ -35,7 +35,25 @@ pub fn validateFunctionDeclaration(
         return null;
     }
 
-    const ret_sem_type: tt.SemaType = tt.SemaType.fromTypeExpression(f.return_type) orelse return null;
+    const ret_sem_type: tt.SemaType = try tt.SemaType.fromTypeExpression(allocator, f.return_type) orelse return null;
+    const ret_ptr = try allocator.create(tt.SemaType);
+    ret_ptr.* = ret_sem_type;
+
+    var param_sem_types = try allocator.alloc(*tt.SemaType, f.parameters.len);
+    var param_sem_types_flat = try allocator.alloc(tt.SemaType, f.parameters.len);
+
+    for (f.parameters, 0..) |param, i| {
+        const param_sem_type = try tt.SemaType.fromTypeExpression(allocator, param.param_type) orelse return null;
+        param_sem_types_flat[i] = param_sem_type;
+        param_sem_types[i] = &param_sem_types_flat[i];
+    }
+
+    const function_sem_type: tt.SemaType = .{
+        .function = .{
+            .parameters = param_sem_types,
+            .return_type = ret_ptr,
+        },
+    };
 
     const prev_ctx = sema.current_function_ctx;
     sema.current_function_ctx = .{ .return_type = ret_sem_type };
@@ -43,9 +61,8 @@ pub fn validateFunctionDeclaration(
 
     try sema.type_table.declareIdentifier(allocator, f.identifier.value, .{
         .span = f.span,
-        .sem_type = ret_sem_type,
+        .sem_type = function_sem_type,
         .is_final = false,
-        .is_function = true,
     });
 
     try sema.type_table.enterScope(allocator);
@@ -53,18 +70,15 @@ pub fn validateFunctionDeclaration(
 
     var params = try allocator.alloc(typed_ast.TypedFunctionParameter, f.parameters.len);
     for (f.parameters, 0..) |param, i| {
-        const param_sem_type = tt.SemaType.fromTypeExpression(param.param_type) orelse return null;
-
         try sema.type_table.declareIdentifier(allocator, param.identifier.value, .{
             .span = param.span,
-            .sem_type = param_sem_type,
+            .sem_type = param_sem_types_flat[i],
             .is_final = param.param_type.kind == .final,
-            .is_function = false,
         });
 
         params[i] = .{
             .identifier = param.identifier,
-            .param_type = param_sem_type,
+            .param_type = param_sem_types_flat[i],
             .span = param.span,
         };
     }

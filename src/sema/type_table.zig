@@ -12,12 +12,18 @@ pub const SemaType = union(enum) {
     double,
     void,
 
+    function: struct {
+        parameters: []*SemaType,
+        return_type: *SemaType,
+    },
+
     // special type used for error messages
     number,
 
     pub fn fromTypeExpression(
+        allocator: std.mem.Allocator,
         type_expr: TypeExpression,
-    ) ?SemaType {
+    ) !?SemaType {
         const types: std.StaticStringMap(SemaType) = .initComptime(.{
             .{ "string", .string },
             .{ "char", .char },
@@ -31,7 +37,29 @@ pub const SemaType = union(enum) {
 
         return switch (type_expr.kind) {
             .identifier => |i| types.get(i),
-            .final => |f| fromTypeExpression(f.*),
+            .final => |f| try fromTypeExpression(allocator, f.*),
+            .function => |f| blk: {
+                var params: std.ArrayList(*SemaType) = .empty;
+
+                for (f.parameters) |te| {
+                    const sema = try fromTypeExpression(allocator, te.*) orelse return null;
+                    const sema_ptr = try allocator.create(SemaType);
+                    sema_ptr.* = sema;
+
+                    try params.append(allocator, sema_ptr);
+                }
+
+                const ret_sema = try fromTypeExpression(allocator, f.return_type.*) orelse return null;
+                const ret_ptr = try allocator.create(SemaType);
+                ret_ptr.* = ret_sema;
+
+                break :blk .{
+                    .function = .{
+                        .parameters = try params.toOwnedSlice(allocator),
+                        .return_type = ret_ptr,
+                    },
+                };
+            },
         };
     }
 
@@ -50,11 +78,40 @@ pub const SemaType = union(enum) {
             .bool => writer.print("bool", .{}),
             .number => writer.print("number", .{}),
             .void => writer.print("void", .{}),
+            .function => |f| {
+                try writer.writeAll("fn (");
+
+                for (f.parameters, 0..) |p, i| {
+                    try writeSymbolString(writer, p.*);
+
+                    if (f.parameters.len != i + 1)
+                        try writer.writeAll(", ");
+                }
+
+                try writer.writeAll(") ");
+                try writeSymbolString(writer, f.return_type.*);
+            },
         };
     }
 
     pub fn eql(self: SemaType, other: SemaType) bool {
-        return std.meta.activeTag(self) == std.meta.activeTag(other);
+        if (std.meta.activeTag(self) != std.meta.activeTag(other)) return false;
+
+        return switch (self) {
+            .function => |sf| blk: {
+                const of = other.function;
+
+                if (sf.parameters.len != of.parameters.len) break :blk false;
+
+                for (sf.parameters, of.parameters) |sp, op| {
+                    if (!sp.eql(op.*)) break :blk false;
+                }
+
+                break :blk sf.return_type.eql(of.return_type.*);
+            },
+
+            else => true,
+        };
     }
 
     pub fn is_numerical(self: SemaType) bool {
@@ -69,7 +126,6 @@ pub const TypeEntry = struct {
     sem_type: SemaType,
     span: Span,
     is_final: bool,
-    is_function: bool = false,
 };
 
 pub const TypeTable = struct {

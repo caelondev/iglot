@@ -123,6 +123,24 @@ fn renderSnippet(
 
     try writeGutterBlank(writer, bar, span_label.width);
 
+    const whole_span = blk: {
+        if (lines.raw.items.len == 0) break :blk false;
+
+        const first_raw = lines.raw.items[0];
+        const first_expanded = lines.expanded.items[0];
+        const first_left_trim = @min(lines.common_trim, first_expanded.len);
+        const first_line = std.mem.trimEnd(u8, first_expanded[first_left_trim..], " \r");
+        const first_start = @min(visualCol(first_raw, span.column_start - 1) -| first_left_trim, first_line.len);
+
+        const last_raw = lines.raw.items[lines.raw.items.len - 1];
+        const last_expanded = lines.expanded.items[lines.expanded.items.len - 1];
+        const last_left_trim = @min(lines.common_trim, last_expanded.len);
+        const last_line = std.mem.trimEnd(u8, last_expanded[last_left_trim..], " \r");
+        const last_end = @min(visualCol(last_raw, span.column_end - 1) -| last_left_trim, last_line.len);
+
+        break :blk first_start == 0 and last_end == last_line.len;
+    };
+
     for (lines.raw.items, lines.expanded.items, 0..) |raw_line, expanded, i| {
         const line_number = span.line_start + i;
         const is_first = line_number == span.line_start;
@@ -138,11 +156,11 @@ fn renderSnippet(
         const line = std.mem.trimEnd(u8, expanded[left_trim..], " \r");
 
         if (span.line_start == span.line_end) {
-            try writeSingleLineSpan(writer, dye, line, raw_line, span, left_trim);
+            try writeSingleLineSpan(writer, dye, line, raw_line, span, left_trim, whole_span);
         } else if (is_first) {
-            try writeMultilineFirstLine(writer, dye, line, raw_line, span, left_trim);
+            try writeMultilineFirstLine(writer, dye, line, raw_line, span, left_trim, whole_span);
         } else if (is_last) {
-            try writeMultilineLastLine(writer, dye, line, raw_line, span, left_trim);
+            try writeMultilineLastLine(writer, dye, line, raw_line, span, left_trim, whole_span);
         } else {
             try writeMultilineMiddleLine(writer, dye, line);
         }
@@ -173,12 +191,17 @@ fn writeSingleLineSpan(
     raw_line: []const u8,
     span: Span,
     left_trim: usize,
+    whole_span: bool,
 ) !void {
     const start = @min(visualCol(raw_line, span.column_start - 1) -| left_trim, line.len);
     const end = @min(visualCol(raw_line, span.column_end - 1) -| left_trim, line.len);
 
+    const show_cursor = !whole_span;
+
     try writer.writeAll(line[0..start]);
+    if (show_cursor) try writer.writeAll(try dye.red().bold().fmt(">", .{}));
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..end]}));
+    if (show_cursor) try writer.writeAll(try dye.red().bold().fmt("<", .{}));
     try writer.writeAll(line[end..]);
 }
 
@@ -190,10 +213,12 @@ fn writeMultilineFirstLine(
     raw_line: []const u8,
     span: Span,
     left_trim: usize,
+    whole_span: bool,
 ) !void {
     const start = @min(visualCol(raw_line, span.column_start - 1) -| left_trim, line.len);
 
     try writer.writeAll(line[0..start]);
+    if (!whole_span) try writer.writeAll(try dye.red().bold().fmt(">", .{}));
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[start..]}));
 }
 
@@ -205,14 +230,17 @@ fn writeMultilineLastLine(
     raw_line: []const u8,
     span: Span,
     left_trim: usize,
+    whole_span: bool,
 ) !void {
     const end = @min(visualCol(raw_line, span.column_end - 1) -| left_trim, line.len);
 
     try writer.writeAll(try dye.bgRed().bold().fmt("{s}", .{line[0..end]}));
+    if (!whole_span) try writer.writeAll(try dye.red().bold().fmt("<", .{}));
     try writer.writeAll(line[end..]);
 }
 
-/// renders a line fully covered by a multi-line span.
+/// renders a line fully covered by a multi-line span. always an "inner"
+/// line with no boundary in view, so it never gets a cursor marker.
 fn writeMultilineMiddleLine(
     writer: *std.Io.Writer,
     dye: *InkDye.RuntimeChameleon,

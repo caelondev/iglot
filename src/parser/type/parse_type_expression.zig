@@ -55,12 +55,55 @@ fn parseType(
     parser: *FaruParser,
     allocator: std.mem.Allocator,
     tok: tokens.Token,
-) !?ast.TypeExpression {
+) anyerror!?ast.TypeExpression {
     switch (tok.kind) {
         .identifier => {
             return .{
                 .span = tok.span,
                 .kind = .{ .identifier = tok.lexeme },
+            };
+        },
+
+        .@"fn" => {
+            if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
+
+            var params: std.ArrayList(*ast.TypeExpression) = .empty;
+
+            if (!parser.peekIs(.right_parenthesis)) {
+                parser.nextToken();
+
+                const first = try parseTypeExpression(parser, allocator) orelse return null;
+                const first_ptr = try allocator.create(ast.TypeExpression);
+                first_ptr.* = first;
+                try params.append(allocator, first_ptr);
+
+                while (parser.peekIs(.comma)) {
+                    parser.nextToken();
+                    parser.nextToken();
+
+                    const param = try parseTypeExpression(parser, allocator) orelse return null;
+                    const param_ptr = try allocator.create(ast.TypeExpression);
+                    param_ptr.* = param;
+                    try params.append(allocator, param_ptr);
+                }
+            }
+
+            if (!try parser.expectPeek(allocator, .right_parenthesis)) return null;
+
+            parser.nextToken();
+
+            const ret = try parseTypeExpression(parser, allocator) orelse return null;
+            const ret_ptr = try allocator.create(ast.TypeExpression);
+            ret_ptr.* = ret;
+
+            return .{
+                .span = tokens.Span.mergeFromSpans(tok.span, ret.span),
+                .kind = .{
+                    .function = .{
+                        .parameters = try params.toOwnedSlice(allocator),
+                        .return_type = ret_ptr,
+                    },
+                },
             };
         },
 

@@ -52,6 +52,10 @@ pub const TypeExpression = struct {
     kind: union(enum) {
         identifier: []const u8,
         final: *TypeExpression,
+        function: struct {
+            parameters: []*TypeExpression,
+            return_type: *TypeExpression,
+        },
     },
 };
 

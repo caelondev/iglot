@@ -1,3 +1,7 @@
-fn main() bool {
-  main(100, 1+1, a, b);
+fn add(a :: int, b :: int) int {
+    return a + b;
+}
+
+fn main() void {
+    sumFn :: fn (int, int) bool = add;
 }

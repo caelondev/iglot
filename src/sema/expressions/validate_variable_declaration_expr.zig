@@ -37,7 +37,7 @@ pub fn validateVariableDeclaration(
 
     // TODO: add type inferrence instead of returning null
     const var_type =
-        tt.SemaType.fromTypeExpression(v.type) orelse return null;
+        try tt.SemaType.fromTypeExpression(allocator, v.type) orelse return null;
 
     if (var_type == .void) {
         try sema.reportError(allocator, .{
