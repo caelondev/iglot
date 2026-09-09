@@ -72,6 +72,7 @@ pub const Expression = struct {
         unary: UnaryExpression,
         variable_declaration: VariableDeclarationExpression,
         assignment: AssignmentExpression,
+        call: CallExpression,
     };
 };
 
@@ -129,6 +130,11 @@ pub const VariableDeclarationExpression = struct {
 pub const UnaryExpression = struct {
     operator: tokens.TokenKind,
     rhs: *Expression,
+};
+
+pub const CallExpression = struct {
+    callee: *Expression,
+    arguments: []*Expression,
 };
 
 // STATEMENTS

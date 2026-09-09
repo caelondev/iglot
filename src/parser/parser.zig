@@ -132,6 +132,10 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .token_kind = .@"or",
         .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
+    .{
+        .token_kind = .left_parenthesis,
+        .callback = @import("led/call_expression.zig").parseCallExpression,
+    },
 };
 
 pub const statements = [_]Statement{

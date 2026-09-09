@@ -184,6 +184,7 @@ pub const FaruSemanticAnalyzer = struct {
             .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
             .unary => |*u| validateUnaryExpression(self, allocator, u, span),
             .assignment => |*a| validateAssignmentExpression(self, allocator, a, span),
+            else => null,
         };
     }
 
