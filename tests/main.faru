@@ -3,5 +3,5 @@ fn add(a :: int, b :: int) int {
 }
 
 fn main() void {
-    sumFn :: fn (int, int) bool = add;
+    sumFn :: int = add(100, 50);
 }

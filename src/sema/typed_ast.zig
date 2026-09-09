@@ -58,7 +58,14 @@ pub const TypedExpr = struct {
         unary: TypedUnaryExpr,
         variable_declaration: TypedVariableDeclaration,
         assignment: TypedAssignment,
+        call: TypedCallExpr,
     },
+};
+
+pub const TypedCallExpr = struct {
+    callee: *TypedExpr,
+    arguments: []*TypedExpr,
+    sema_type: tt.SemaType,
 };
 
 pub const TypedFunctionParameter = struct {

@@ -5,13 +5,14 @@ const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
-const validateBinaryExpression = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
+const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
 const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
-const validateUnaryExpression = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
-const validateAssignmentExpression = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
+const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
+const validateAssignmentExpr = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
+const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -113,7 +114,7 @@ pub const FaruSemanticAnalyzer = struct {
                 var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
 
                 for (f.statements) |*s| {
-                    const t_stmt = try self.validateStatement(allocator, s) orelse return null;
+                    const t_stmt = try self.validateStatement(allocator, s) orelse continue;
                     try stmts.append(allocator, t_stmt);
                 }
 
@@ -126,7 +127,7 @@ pub const FaruSemanticAnalyzer = struct {
         var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
 
         for (block.statements) |*stmt| {
-            const t_stmt = try self.validateStatement(allocator, stmt) orelse return null;
+            const t_stmt = try self.validateStatement(allocator, stmt) orelse continue;
             try stmts.append(allocator, t_stmt);
         }
 
@@ -180,11 +181,11 @@ pub const FaruSemanticAnalyzer = struct {
                 };
                 break :blk node;
             },
-            .binary => |*b| validateBinaryExpression(self, allocator, b, span),
+            .binary => |*b| validateBinaryExpr(self, allocator, b, span),
             .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
-            .unary => |*u| validateUnaryExpression(self, allocator, u, span),
-            .assignment => |*a| validateAssignmentExpression(self, allocator, a, span),
-            else => null,
+            .unary => |*u| validateUnaryExpr(self, allocator, u, span),
+            .assignment => |*a| validateAssignmentExpr(self, allocator, a, span),
+            .call => |*c| validateCallExpr(self, allocator, c, span),
         };
     }
 

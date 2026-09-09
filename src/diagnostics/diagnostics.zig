@@ -62,6 +62,9 @@ pub const FaruDiagnostic = struct {
         IllegalReturn,
         IllegalTopLevelStatement,
         NestedFunctionDeclaration,
+        NonCallableCallee: struct { callee_type: SemaType },
+        TooFewArguments: struct { expected: usize, found: usize },
+        TooManyArguments: struct { expected: usize, found: usize },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -88,6 +91,9 @@ pub const FaruDiagnostic = struct {
                 .MissingReturn => |r| try writer.print("missing return in function \"{s}\"", .{r.name}),
                 .IllegalTopLevelStatement => try writer.print("statement not allowed at top level", .{}),
                 .NestedFunctionDeclaration => try writer.print("function declaration not allowed inside a function", .{}),
+                .NonCallableCallee => |n| try writer.print("cannot call value of type \"{f}\"", .{n.callee_type}),
+                .TooManyArguments => |t| try writer.print("too many arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
+                .TooFewArguments => |t| try writer.print("too few arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
             }
         }
     };
