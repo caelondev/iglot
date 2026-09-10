@@ -23,7 +23,7 @@ fn printGlobal(writer: *std.Io.Writer, g: Module.GlobalVariable) !void {
 }
 
 fn printFunction(writer: *std.Io.Writer, globals: []const Module.GlobalVariable, func: Function) !void {
-    try writer.print("fn {f} {s}(", .{ func.return_type, func.name });
+    try writer.print("fn #{d} {s}(", .{ func.id.id, func.name });
 
     for (func.params, 0..) |p, i| {
         try writer.print("{s} :: {f}", .{ p.name, p.sema_type });
@@ -32,7 +32,7 @@ fn printFunction(writer: *std.Io.Writer, globals: []const Module.GlobalVariable,
         }
     }
 
-    try writer.writeAll(") {\n");
+    try writer.print(") {f} {{\n", .{func.return_type});
 
     for (func.blocks.items) |block| {
         try printBlock(writer, globals, block);
@@ -58,6 +58,7 @@ fn printConstant(writer: *std.Io.Writer, c: inst.ConstantValue) !void {
         .double => |v| try writer.print("{d}", .{v}),
         .string => |v| try writer.print("\"{s}\"", .{v}),
         .bool => |v| try writer.print("{}", .{v}),
+        .func => |f| try writer.print("{d}", .{f.id}),
     }
 }
 
@@ -87,7 +88,7 @@ fn printInstruction(writer: *std.Io.Writer, globals: []const Module.GlobalVariab
             c.true_block.id,
             c.false_block.id,
         }),
-        .call => |c| try writer.print(" {s}", .{c.callee}),
+        .call => |c| try writer.print(" #{d}", .{c.callee.id}),
     }
 
     for (instr.operands, 0..) |op, i| {

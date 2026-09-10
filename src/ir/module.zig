@@ -22,7 +22,6 @@ pub const Module = struct {
 
     pub fn deinit(self: *Module, allocator: std.mem.Allocator) void {
         self.functions.deinit(allocator);
-        self.globals.deinit(allocator);
     }
 
     pub fn currentFunction(self: *Module) *Function {
@@ -34,5 +33,11 @@ pub const Module = struct {
         const id: u32 = @intCast(self.globals.items.len);
         try self.globals.append(allocator, global);
         return .{ .id = id };
+    }
+
+    pub fn newFunction(self: *Module) inst.FunctionRef {
+        return inst.FunctionRef{
+            .id = @intCast(self.functions.items.len),
+        };
     }
 };

@@ -16,33 +16,34 @@ const buildUnaryExpr = @import("expressions/build_unary_expr.zig").buildUnaryExp
 const buildFunction = @import("statements/build_function_decl.zig").buildFunction;
 const buildReturn = @import("statements/build_return_stmt.zig").buildReturn;
 const buildIfStatement = @import("statements/build_if_stmt.zig").buildIfStatement;
+const buildCallExpr = @import("expressions/build_call_expr.zig").buildCallExpr;
 
 pub const FaruIR = struct {
     module: Module,
     current_fn: *Function = undefined,
     current_block: *BasicBlock = undefined,
-    locals: std.StringHashMap(inst.ValueRef),
-    globals: std.StringHashMap(inst.GlobalRef),
+    locals: std.StringHashMapUnmanaged(inst.ValueRef),
+    globals: std.StringHashMapUnmanaged(inst.GlobalRef),
+    functions: std.StringHashMapUnmanaged(inst.FunctionRef),
 
     const Self = @This();
     pub fn init() Self {
         return .{
             .module = .init(),
-            .locals = undefined,
-            .globals = undefined,
+            .locals = .empty,
+            .globals = .empty,
+            .functions = .empty,
         };
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.module.deinit(allocator);
-        self.locals.deinit();
-        self.globals.deinit();
+        self.functions.deinit(allocator);
+        self.locals.deinit(allocator);
+        self.globals.deinit(allocator);
     }
 
     pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, program: typed_ast.TypedProgram) !void {
-        self.locals = .init(allocator);
-        self.globals = .init(allocator);
-
         try self.initBuiltinGlobals(allocator);
 
         for (program.body) |stmt| {
@@ -63,8 +64,8 @@ pub const FaruIR = struct {
             .initializer = .{ .bool = false },
         });
 
-        try self.globals.put("true", true_ref);
-        try self.globals.put("false", false_ref);
+        try self.globals.put(allocator, "true", true_ref);
+        try self.globals.put(allocator, "false", false_ref);
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
@@ -109,21 +110,32 @@ pub const FaruIR = struct {
                     break :blk try self.emitLoad(allocator, slot, expr.sem_type);
                 }
 
-                const global_ref = self.globals.get(i.value) orelse unreachable; // sema guarantees availability
+                if (self.globals.get(i.value)) |global_ref| {
+                    const dest = self.current_fn.newValue();
+                    try self.emit(allocator, .{
+                        .op = .load_global,
+                        .sema_type = expr.sem_type,
+                        .result = dest,
+                        .operands = &.{},
+                        .data = .{ .global = global_ref },
+                    });
+                    break :blk dest;
+                }
 
+                const function_ref = self.functions.get(i.value) orelse unreachable; // sema guarantees availability
                 const dest = self.current_fn.newValue();
                 try self.emit(allocator, .{
-                    .op = .load_global,
+                    .op = .const_fn,
                     .sema_type = expr.sem_type,
                     .result = dest,
                     .operands = &.{},
-                    .data = .{ .global = global_ref },
+                    .data = .{ .constant = .{ .func = function_ref } },
                 });
-
                 break :blk dest;
             },
             .assignment => |a| try buildAssignmentExpr(self, allocator, expr.sem_type, a),
             .unary => |u| try buildUnaryExpr(self, allocator, expr.sem_type, u),
+            .call => |c| try buildCallExpr(self, allocator, expr.sem_type, c),
             else => @panic("TODO: expr kind not implemented yet"),
         };
     }
@@ -154,7 +166,7 @@ pub const FaruIR = struct {
             .initializer = const_val,
         });
 
-        try self.globals.put(v.identifier.value, global_ref);
+        try self.globals.put(allocator, v.identifier.value, global_ref);
     }
 
     fn evalConstant(self: *Self, expr: typed_ast.TypedExpr) !inst.ConstantValue {

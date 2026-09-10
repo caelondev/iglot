@@ -25,6 +25,6 @@ pub fn buildVariableDecl(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: t
         .result = null,
     });
 
-    try ir.locals.put(v.identifier.value, slot);
+    try ir.locals.put(allocator, v.identifier.value, slot);
     return rhs_ref;
 }

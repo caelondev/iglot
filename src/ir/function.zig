@@ -3,8 +3,10 @@ const BasicBlock = @import("basic_block.zig").BasicBlock;
 const SemaType = @import("../sema/type_table.zig").SemaType;
 const BlockRef = @import("instruction.zig").BlockRef;
 const ValueRef = @import("instruction.zig").ValueRef;
+const FunctionRef = @import("instruction.zig").FunctionRef;
 
 pub const Function = struct {
+    id: FunctionRef,
     name: []const u8,
     params: []const Param,
     return_type: SemaType,
@@ -14,8 +16,14 @@ pub const Function = struct {
 
     pub const Param = struct { name: []const u8, sema_type: SemaType };
 
-    pub fn init(name: []const u8, params: []const Param, return_type: SemaType) Function {
-        return .{ .name = name, .params = params, .return_type = return_type, .blocks = .empty };
+    pub fn init(id: FunctionRef, name: []const u8, params: []const Param, return_type: SemaType) Function {
+        return .{
+            .id = id,
+            .name = name,
+            .params = params,
+            .return_type = return_type,
+            .blocks = .empty,
+        };
     }
 
     pub fn newBlock(self: *Function, allocator: std.mem.Allocator, name: []const u8) !BlockRef {

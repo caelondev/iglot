@@ -10,8 +10,10 @@ pub fn buildFunction(ir: *FaruIR, allocator: std.mem.Allocator, decl: typed_ast.
         params[i] = .{ .name = p.identifier.value, .sema_type = p.param_type };
     }
 
-    const function = Function.init(decl.identifier.value, params, decl.return_type);
+    const function_ref = ir.module.newFunction();
+    const function = Function.init(function_ref, decl.identifier.value, params, decl.return_type);
     try ir.module.functions.append(allocator, function);
+    try ir.functions.put(allocator, decl.identifier.value, function_ref);
 
     ir.current_fn = ir.module.currentFunction();
 
@@ -47,7 +49,7 @@ pub fn buildFunction(ir: *FaruIR, allocator: std.mem.Allocator, decl: typed_ast.
             .data = .none,
         });
 
-        try ir.locals.put(p.identifier.value, slot);
+        try ir.locals.put(allocator, p.identifier.value, slot);
     }
 
     try ir.buildStmt(allocator, .{ .block = decl.body });
