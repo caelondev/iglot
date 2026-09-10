@@ -1,40 +1,24 @@
-<img> <>
+<div align="center">
+  <img src="assets/faru-icon.svg" alt="faru icon" width="180">
 
-# faru
+  <h1><strong>faru</strong></h1>
 
-A statically-typed programming language designed for clarity and control.
+  <br>
 
-faru prioritizes **simplicity**, **explicitness**, and **readability**.
+[Repository](https://codeberg.org/caelondev/faru) · [Issues](https://codeberg.org/caelondev/faru/issues)
+</div>
 
-> **Status**: Work in progress. Core language features are under active development.
+Faru is a statically-typed programming language built around clarity and control.
 
-## Quick Example
+> **Status:** Work in progress. The language and compiler are still changing quite a bit.
 
-```faru
-fn add(a :: int, b :: int) int {
-    return a + b;
-}
+## Quick Start
 
-fn main() int {
-    value :: fin int = 1000 * 5;
-    return value;
-}
-```
-
-## Features
-
-- **Static typing**
-- **Explicit syntax**
-- **No operator overloading**
-- **Zero ambiguity**
-
-## Getting Started
-
-### Prerequisites
+### Requirements
 
 - [Zig](https://ziglang.org/) 0.16.0 or newer
 
-### Building from Source
+### Build from source
 
 ```bash
 git clone https://codeberg.org/caelondev/faru.git
@@ -42,58 +26,53 @@ cd faru
 zig build
 ```
 
-### Running faru
+Run a Faru program with:
 
 ```bash
 ./zig-cache/bin/faru run yourfile.faru
 ```
 
-## Language Tour
+## What is Faru?
 
-### Variables and Types
+Faru is a statically-typed programming language designed for everyday use, from quick scripts and small utilities to larger programs.
 
-```faru
-// Mutable binding
-x :: int = 42;
+It is built around three simple goals: fast, type-safe, and boring.
 
-// Final (const) binding
-value :: fin int = 100;
-```
+Faru favors explicit behavior, predictable semantics, and a small amount of language magic. The syntax is intended to stay simple and readable without getting in the way of writing real programs.
 
-### Functions
+Although scripting and small utilities are an important use case, Faru is not intended to be limited to them. The language and runtime are being designed to grow into something capable of handling day-to-day programming more broadly.
+
+## Examples
 
 ```faru
-fn greet(name :: string) string {
-    return "Hello, " + name;
+fn add(a :: int, b :: int) int {
+  return a + b;
+}
+
+fn main() int {
+  value :: fin int = 1000 * 5;
+  return value;
 }
 ```
 
-### Control Flow
+## Development
 
-```faru
-fn check(n :: int) string {
-    if n > 0: {
-        return "positive";
-    } else if n < 0: {
-        return "negative";
-    } else {
-        return "zero";
-    }
-}
-```
+Faru is actively developed and is still a work in progress. The language, compiler, and runtime are evolving as the project grows.
+
+The architecture is intentionally kept modular to leave room for future optimizations, runtime features, and compilation backends.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue first to discuss major changes.
+Bug reports, ideas, and pull requests are welcome.
 
-1. Fork the repository
-2. Create your feature branch
-3. Submit a pull request
+For larger changes, opening an issue first is a good way to discuss the idea and approach before writing a bunch of code.
 
 ## License
 
-This project is licensed under the [LICENSE](./LICENSE) file.
+Faru is licensed under the [GNU Affero General Public License v3.0](./LICENSE).
 
 ---
 
-Built with [Zig](https://ziglang.org/).
+<div align="center">
+  Built with <a href="https://ziglang.org/">Zig</a>.
+</div>
