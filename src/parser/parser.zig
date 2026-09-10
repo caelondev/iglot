@@ -151,6 +151,10 @@ pub const statements = [_]Statement{
         .token_kind = .@"if",
         .callback = @import("statements/if_statement.zig").parseIfStatement,
     },
+    .{
+        .token_kind = .loop,
+        .callback = @import("statements/loop_statement.zig").parseLoopStatement,
+    },
 };
 
 pub const FaruParser = struct {

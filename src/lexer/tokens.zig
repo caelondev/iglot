@@ -75,6 +75,7 @@ pub const TokenKind = enum {
     @"return",
     @"if",
     @"else",
+    loop,
     final,
 };
 
@@ -155,4 +156,5 @@ pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "if", .@"if" },
     .{ "else", .@"else" },
     .{ "fin", .final },
+    .{ "loop", .loop }
 });

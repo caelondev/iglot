@@ -131,5 +131,8 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
             if (f.alternative == null) break :blk false;
             break :blk alwaysReturns(f.consequence) and alwaysReturns(f.alternative.?);
         },
+        .loop => blk: {
+            break :blk true;
+        },
     };
 }

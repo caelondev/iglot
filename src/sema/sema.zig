@@ -13,6 +13,7 @@ const validateFunctionDeclaration = @import("statements/validate_function_declar
 const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
+const validateLoopStatement = @import("statements/validate_loop_statement.zig").validateLoopStatement;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -110,15 +111,15 @@ pub const FaruSemanticAnalyzer = struct {
                     .if_stmt = if_stmt,
                 };
             },
-            .scoped => |f| {
-                var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
-
-                for (f.statements) |*s| {
-                    const t_stmt = try self.validateStatement(allocator, s) orelse continue;
-                    try stmts.append(allocator, t_stmt);
-                }
-
-                return .{ .scoped = .{ .typed_stmts = try stmts.toOwnedSlice(allocator) } };
+            .loop => |l| {
+                const loop = try validateLoopStatement(self, allocator, &l) orelse return null;
+                return .{
+                    .loop = loop,
+                };
+            },
+            .scoped => |s| {
+                const scoped = try self.validateScopedStatement(allocator, &s) orelse return null;
+                return .{ .scoped = scoped };
             },
         }
     }
@@ -132,6 +133,23 @@ pub const FaruSemanticAnalyzer = struct {
         }
 
         return .{ .typed_stmts = try stmts.toOwnedSlice(allocator) };
+    }
+
+    pub fn validateScopedStatement(
+        self: *Self,
+        allocator: std.mem.Allocator,
+        scoped: *const ast.ScopedStatement,
+    ) anyerror!?typed_ast.TypedScopedStatement {
+        var stmts: std.ArrayList(typed_ast.TypedStmt) = .empty;
+
+        for (scoped.statements) |*stmt| {
+            const typed = try self.validateStatement(allocator, stmt) orelse continue;
+            try stmts.append(allocator, typed);
+        }
+
+        return .{
+            .typed_stmts = try stmts.toOwnedSlice(allocator),
+        };
     }
 
     pub fn validateExpression(

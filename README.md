@@ -1,3 +1,5 @@
+<img> <>
+
 # faru
 
 A statically-typed programming language designed for clarity and control.
