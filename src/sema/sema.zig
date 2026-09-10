@@ -121,6 +121,7 @@ pub const FaruSemanticAnalyzer = struct {
                 const scoped = try self.validateScopedStatement(allocator, &s) orelse return null;
                 return .{ .scoped = scoped };
             },
+            else => return null,
         }
     }
 

@@ -2,7 +2,7 @@ fn main() int {
     i :: int = 0;
 
     loop {
-        if i == 10: return i;
+        if i == 10: break;
         i = i + 1;
     }
 }

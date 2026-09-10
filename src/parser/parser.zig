@@ -155,6 +155,10 @@ pub const statements = [_]Statement{
         .token_kind = .loop,
         .callback = @import("statements/loop_statement.zig").parseLoopStatement,
     },
+    .{
+        .token_kind = .@"break",
+        .callback = @import("statements/break_statement.zig").parseBreakStatement,
+    },
 };
 
 pub const FaruParser = struct {
