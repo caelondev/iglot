@@ -88,6 +88,7 @@ pub const Statement = struct {
         return_stmt: ReturnStatement,
         if_stmt: IfStatement,
         scoped: ScopedStatement,
+        loop: LoopStatement,
     },
 };
 
@@ -181,4 +182,8 @@ pub const IfStatement = struct {
 pub const ScopedStatement = struct {
     span: tokens.Span,
     statements: []Statement,
+};
+
+pub const LoopStatement = struct {
+    body: ScopedStatement,
 };

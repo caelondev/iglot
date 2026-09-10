@@ -13,6 +13,7 @@ pub const TypedStmt = union(enum) {
     block: TypedBlockStatement,
     scoped: TypedScopedStatement,
     if_stmt: TypedIfStatement,
+    loop: TypedLoopStatement,
 };
 
 pub const TypedExpressionStmt = struct {
@@ -100,4 +101,8 @@ pub const TypedIfStatement = struct {
 
 pub const TypedScopedStatement = struct {
     typed_stmts: []TypedStmt,
+};
+
+pub const TypedLoopStatement = struct {
+    body: TypedScopedStatement,
 };

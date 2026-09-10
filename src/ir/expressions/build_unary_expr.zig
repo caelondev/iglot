@@ -7,6 +7,7 @@ const FaruIR = @import("../faru_ir.zig").FaruIR;
 
 pub fn buildUnaryExpr(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: tt.SemaType, u: typed_ast.TypedUnaryExpr) !inst.ValueRef {
     const rhs = try ir.buildExpr(allocator, u.rhs.*);
+    const dest = ir.current_fn.newValue();
 
     const op: inst.Opcode = switch (u.operator) {
         .minus => .neg,
@@ -17,7 +18,7 @@ pub fn buildUnaryExpr(ir: *FaruIR, allocator: std.mem.Allocator, sema_type: tt.S
     try ir.emit(allocator, .{
         .op = op,
         .operands = try allocator.dupe(inst.ValueRef, &.{rhs}),
-        .result = null,
+        .result = dest,
         .data = .none,
         .sema_type = sema_type,
     });
