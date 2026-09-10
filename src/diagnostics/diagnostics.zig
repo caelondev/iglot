@@ -61,6 +61,7 @@ pub const FaruDiagnostic = struct {
         IntegerOverflow,
         IllegalReturn,
         IllegalTopLevelStatement,
+        IllegalBreak,
         NestedFunctionDeclaration,
         NonCallableCallee: struct { callee_type: SemaType },
         TooFewArguments: struct { expected: usize, found: usize },
@@ -94,6 +95,7 @@ pub const FaruDiagnostic = struct {
                 .NonCallableCallee => |n| try writer.print("cannot call value of type \"{f}\"", .{n.callee_type}),
                 .TooManyArguments => |t| try writer.print("too many arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
                 .TooFewArguments => |t| try writer.print("too few arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
+                .IllegalBreak => try writer.print("cannot break outside a loop", .{}),
             }
         }
     };

@@ -14,6 +14,7 @@ const validateReturnStatement = @import("statements/validate_return_statement.zi
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
 const validateLoopStatement = @import("statements/validate_loop_statement.zig").validateLoopStatement;
+const validateBreakStatement = @import("statements/validate_break_stmt.zig").validateBreakStatement;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -24,6 +25,7 @@ pub const FaruSemanticAnalyzer = struct {
     diagnostics: std.ArrayList(FaruDiagnostic),
 
     current_function_ctx: ?FunctionContext,
+    is_in_loop: bool,
 
     const Self = @This();
     pub fn init() Self {
@@ -31,6 +33,7 @@ pub const FaruSemanticAnalyzer = struct {
             .type_table = undefined,
             .diagnostics = .empty,
             .current_function_ctx = null,
+            .is_in_loop = false,
         };
     }
 
@@ -121,7 +124,10 @@ pub const FaruSemanticAnalyzer = struct {
                 const scoped = try self.validateScopedStatement(allocator, &s) orelse return null;
                 return .{ .scoped = scoped };
             },
-            else => return null,
+            .break_stmt => |b| {
+                const st = try validateBreakStatement(self, allocator, &b) orelse return null;
+                return .{ .break_stmt = st };
+            },
         }
     }
 

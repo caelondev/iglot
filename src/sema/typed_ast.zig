@@ -14,6 +14,7 @@ pub const TypedStmt = union(enum) {
     scoped: TypedScopedStatement,
     if_stmt: TypedIfStatement,
     loop: TypedLoopStatement,
+    break_stmt: ast.BreakStatement,
 };
 
 pub const TypedExpressionStmt = struct {

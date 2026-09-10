@@ -2,7 +2,15 @@ fn main() int {
     i :: int = 0;
 
     loop {
-        if i == 10: break;
+        if i == 10: {}
         i = i + 1;
+    }
+
+    break;
+}
+
+fn anotherFn() int {
+    loop {
+        break;
     }
 }

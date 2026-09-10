@@ -109,12 +109,20 @@ pub fn validateFunctionDeclaration(
         .span = f.span,
     };
 }
+fn loopCanBreak(body: *const typed_ast.TypedScopedStatement) bool {
+    for (body.typed_stmts) |*stmt| {
+        if (stmtCanBreak(stmt)) return true;
+    }
+
+    return false;
+}
 
 fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
     return switch (stmt.*) {
+        .return_stmt => true,
+        .break_stmt => false,
         .expression => false,
         .function_decl => false,
-        .return_stmt => true,
         .block => |b| blk: {
             for (b.typed_stmts) |*s| {
                 if (alwaysReturns(s)) break :blk true;
@@ -131,8 +139,45 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
             if (f.alternative == null) break :blk false;
             break :blk alwaysReturns(f.consequence) and alwaysReturns(f.alternative.?);
         },
-        .loop => blk: {
-            break :blk true;
+        .loop => |l| !loopCanBreak(&l.body),
+    };
+}
+
+fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
+    return switch (stmt.*) {
+        .break_stmt => true,
+
+        .block => |b| {
+            for (b.typed_stmts) |*s| {
+                if (stmtCanBreak(s)) return true;
+            }
+            return false;
         },
+
+        .scoped => |s| {
+            for (s.typed_stmts) |*st| {
+                if (stmtCanBreak(st)) return true;
+            }
+            return false;
+        },
+
+        .if_stmt => |f| blk: {
+            if (stmtCanBreak(f.consequence)) break :blk true;
+
+            if (f.alternative) |alternative| {
+                if (stmtCanBreak(alternative)) break :blk true;
+            }
+
+            break :blk false;
+        },
+
+        // A break inside this loop belongs to this inner loop,
+        // not the loop we're currently analyzing.
+        .loop => false,
+
+        .expression,
+        .function_decl,
+        .return_stmt,
+        => false,
     };
 }
