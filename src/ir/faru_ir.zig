@@ -12,11 +12,13 @@ const buildBinaryExpr = @import("expressions/build_binary_expr.zig").buildBinary
 const buildVariableDecl = @import("expressions/build_variable_decl.zig").buildVariableDecl;
 const buildAssignmentExpr = @import("expressions/build_assignment_expr.zig").buildAssignmentExpr;
 const buildUnaryExpr = @import("expressions/build_unary_expr.zig").buildUnaryExpr;
+const buildCallExpr = @import("expressions/build_call_expr.zig").buildCallExpr;
 
 const buildFunction = @import("statements/build_function_decl.zig").buildFunction;
 const buildReturn = @import("statements/build_return_stmt.zig").buildReturn;
 const buildIfStatement = @import("statements/build_if_stmt.zig").buildIfStatement;
-const buildCallExpr = @import("expressions/build_call_expr.zig").buildCallExpr;
+const buildLoopStatement = @import("statements/build_loop_stmt.zig").buildLoopStatement;
+const buildBreakStatement = @import("statements/build_break_stmt.zig").buildBreakStatement;
 
 pub const FaruIR = struct {
     module: Module,
@@ -85,6 +87,7 @@ pub const FaruIR = struct {
         switch (stmt) {
             .return_stmt => |r| try buildReturn(self, allocator, r),
             .expression => |e| _ = try self.buildExpr(allocator, e.typed.*),
+            .function_decl => unreachable,
             .block => |b| {
                 for (b.typed_stmts) |s| {
                     try self.buildStmt(allocator, s);
@@ -96,7 +99,8 @@ pub const FaruIR = struct {
                 }
             },
             .if_stmt => |i| try buildIfStatement(self, allocator, i),
-            else => unreachable,
+            .loop => |l| try buildLoopStatement(self, allocator, l),
+            .break_stmt => |b| try buildBreakStatement(self, allocator, b),
         }
     }
 

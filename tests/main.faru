@@ -5,12 +5,9 @@ fn main() int {
         if i == 10: {}
         i = i + 1;
     }
-
-    break;
 }
 
 fn anotherFn() int {
     loop {
-        break;
     }
 }
