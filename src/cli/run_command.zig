@@ -23,15 +23,15 @@
 
 const std = @import("std");
 const Context = @import("cli.zig").Context;
-const FaruLexer = @import("../lexer/faru_lexer.zig").FaruLexer;
+const FaruLexer = @import("../frontend/lexer/faru_lexer.zig").FaruLexer;
 const InkDye = @import("inkdye");
-const p = @import("../parser/parser.zig");
+const p = @import("../frontend/parser/parser.zig");
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 const pathExists = @import("helpers/path_exists.zig").pathExists;
-const FaruSemanticAnalyzer = @import("../sema/sema.zig").FaruSemanticAnalyzer;
-const FaruIR = @import("../ir/faru_ir.zig").FaruIR;
-const printModule = @import("../ir/printer.zig").printModule;
+const FaruSemanticAnalyzer = @import("../frontend/sema/sema.zig").FaruSemanticAnalyzer;
+const FaruIR = @import("../middle_end/ir/faru_ir.zig").FaruIR;
+const printModule = @import("../middle_end/ir/printer.zig").printModule;
 
 /// Compiles and interprets a Faru program.
 pub fn run(ctx: *Context) !void {

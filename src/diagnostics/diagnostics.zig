@@ -1,6 +1,6 @@
-const tokens = @import("../lexer/tokens.zig");
+const tokens = @import("../frontend/lexer/tokens.zig");
 const std = @import("std");
-const SemaType = @import("../sema/type_table.zig").SemaType;
+const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
 
 pub const FaruDiagnostic = struct {
     span: tokens.Span,

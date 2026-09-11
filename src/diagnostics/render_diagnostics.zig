@@ -1,6 +1,6 @@
 const std = @import("std");
 const FaruDiagnostic = @import("diagnostics.zig").FaruDiagnostic;
-const Span = @import("../lexer/tokens.zig").Span;
+const Span = @import("../frontend/lexer/tokens.zig").Span;
 const InkDye = @import("inkdye");
 
 const TAB_WIDTH: usize = 4;

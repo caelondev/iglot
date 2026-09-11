@@ -1,0 +1,89 @@
+const std = @import("std");
+const FaruDiagnostic = @import("../../../diagnostics/diagnostics.zig").FaruDiagnostic;
+const tt = @import("../type_table.zig");
+const ast = @import("../../parser/ast.zig");
+const typed_ast = @import("../typed_ast.zig");
+const Span = @import("../../lexer/tokens.zig").Span;
+const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
+
+pub fn validateVariableDeclaration(
+    sema: *FaruSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    v: *const ast.VariableDeclarationExpression,
+) anyerror!?*typed_ast.TypedExpr {
+    if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
+        const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
+            .{
+                .note = .{
+                    .message = "identifier declared here",
+                    .span = i.span,
+                },
+            },
+        });
+
+        try sema.reportError(allocator, .{
+            .span = v.span,
+            .severity = .err,
+            .kind = .{
+                .IdentifierAlreadyExist = .{
+                    .identifier = v.identifier.value,
+                },
+            },
+            .annotations = annotations,
+        });
+
+        return null;
+    }
+
+    // TODO: add type inferrence instead of returning null
+    const var_type =
+        try tt.SemaType.fromTypeExpression(allocator, v.type) orelse return null;
+
+    if (var_type == .void) {
+        try sema.reportError(allocator, .{
+            .span = v.type.span,
+            .severity = .err,
+            .kind = .{
+                .VoidValueStorage = .{ .identifier = v.identifier.value },
+            },
+        });
+
+        return null;
+    }
+
+    try sema.type_table.declareIdentifier(
+        allocator,
+        v.identifier.value,
+        .{
+            .span = v.span,
+            .sem_type = var_type,
+            .is_final = v.type.kind == .final,
+        },
+    );
+
+    const value = try sema.validateExpression(allocator, v.value, v.value.span, var_type) orelse return null;
+    if (!var_type.eql(value.sem_type)) {
+        try sema.reportError(allocator, .{
+            .span = v.value.span,
+            .severity = .err,
+            .kind = .{
+                .TypeMismatch = .{ .expected = var_type, .found = value.sem_type },
+            },
+        });
+
+        return null;
+    }
+
+    const node = try allocator.create(typed_ast.TypedExpr);
+    node.* = .{
+        .span = v.span,
+        .sem_type = var_type,
+        .kind = .{
+            .variable_declaration = .{
+                .identifier = v.identifier,
+                .value = value,
+            },
+        },
+    };
+    return node;
+}
