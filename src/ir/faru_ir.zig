@@ -20,6 +20,10 @@ const buildIfStatement = @import("statements/build_if_stmt.zig").buildIfStatemen
 const buildLoopStatement = @import("statements/build_loop_stmt.zig").buildLoopStatement;
 const buildBreakStatement = @import("statements/build_break_stmt.zig").buildBreakStatement;
 
+const LoopContext = struct {
+    break_block: inst.BlockRef,
+};
+
 pub const FaruIR = struct {
     module: Module,
     current_fn: *Function = undefined,
@@ -27,6 +31,7 @@ pub const FaruIR = struct {
     locals: std.StringHashMapUnmanaged(inst.ValueRef),
     globals: std.StringHashMapUnmanaged(inst.GlobalRef),
     functions: std.StringHashMapUnmanaged(inst.FunctionRef),
+    loop_stack: std.ArrayList(LoopContext),
 
     const Self = @This();
     pub fn init() Self {
@@ -35,6 +40,7 @@ pub const FaruIR = struct {
             .locals = .empty,
             .globals = .empty,
             .functions = .empty,
+            .loop_stack = .empty,
         };
     }
 
@@ -43,6 +49,7 @@ pub const FaruIR = struct {
         self.functions.deinit(allocator);
         self.locals.deinit(allocator);
         self.globals.deinit(allocator);
+        self.loop_stack.deinit(allocator);
     }
 
     pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, program: typed_ast.TypedProgram) !void {
@@ -204,6 +211,21 @@ pub const FaruIR = struct {
             },
             else => @panic("TODO: non-identifier assignment target"),
         };
+    }
+
+    pub fn pushLoop(self: *Self, allocator: std.mem.Allocator, ctx: LoopContext) !void {
+        try self.loop_stack.append(allocator, ctx);
+    }
+
+    pub fn popLoop(self: *Self) void {
+        // faster than popping with ArrayList
+        if (self.loop_stack.items.len - 1 >= 0) {
+            self.loop_stack.items.len -= 1;
+        }
+    }
+
+    pub fn topLoopContext(self: *Self) LoopContext {
+        return self.loop_stack.getLast();
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {

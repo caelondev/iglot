@@ -7,7 +7,7 @@ pub fn buildIfStatement(ir: *FaruIR, allocator: std.mem.Allocator, i: typed_ast.
     const cond_ref = try ir.buildExpr(allocator, i.condition.*);
     const true_block = try ir.current_fn.newBlock(allocator, "if.then");
     const false_block = try ir.current_fn.newBlock(allocator, "if.else");
-    const end_block = try ir.current_fn.newBlock(allocator, "end");
+    const end_block = try ir.current_fn.newBlock(allocator, "if.end");
 
     try ir.emit(allocator, .{
         .sema_type = null,

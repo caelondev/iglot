@@ -2,9 +2,11 @@ fn main() int {
     i :: int = 0;
 
     loop {
-        if i == 10: {}
+        if i == 10: { break; }
         i = i + 1;
     }
+
+    return 0;
 }
 
 fn anotherFn() int {
