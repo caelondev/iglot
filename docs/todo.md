@@ -1,1 +1,0 @@
-- [x] Fix `loop` handling in `validateFunctionDeclaration`: sema currently blindly treats `loop` as `alwaysReturns`; update this after `break` is implemented so loops are only considered non-fallthrough when no `break` can exit them

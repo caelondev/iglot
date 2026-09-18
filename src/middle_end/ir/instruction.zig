@@ -22,6 +22,7 @@ pub const Opcode = enum {
     load_global,
     store,
     store_global,
+    phi,
     br,
     cond_br,
     ret,
@@ -42,6 +43,11 @@ pub const Opcode = enum {
     @"unreachable",
 };
 
+pub const PhiIncoming = struct {
+    block: BlockRef,
+    value: ValueRef,
+};
+
 pub const Instruction = struct {
     op: Opcode,
     sema_type: ?SemaType,
@@ -60,6 +66,7 @@ pub const Instruction = struct {
             false_block: BlockRef,
         },
         call: struct { callee: ValueRef },
+        // phi: []const PhiIncoming,
     };
 };
 
