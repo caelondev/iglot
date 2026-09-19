@@ -1,58 +1,66 @@
 const std = @import("std");
 const SemaType = @import("../../frontend/sema/type_table.zig").SemaType;
 
-pub const ValueRef = struct { id: u32 };
+pub const VReg = struct { id: u32 };
+
 pub const BlockRef = struct { id: u32 };
 pub const GlobalRef = struct { id: u32 };
 pub const FunctionRef = struct { id: u32 };
 
 pub const Opcode = enum {
+    // arithmetic
     add,
     sub,
     mul,
     div,
+    mod,
+    neg,
+
+    // logical
+    not,
+    @"and",
+    @"or",
+
+    // comparisons
     cmp_lt,
-    cmp_gt,
     cmp_le,
+    cmp_gt,
     cmp_ge,
     cmp_eq,
     cmp_ne,
-    alloca,
-    load,
+
+    // data movement
+    mov,
     load_global,
-    store,
     store_global,
-    phi,
+
+    // control flow
     br,
     cond_br,
     ret,
     ret_void,
+
+    // calls
     call,
     param,
-    neg,
-    not,
-    @"and",
-    @"or",
+
+    // constants
     const_int,
     const_wideint,
     const_float,
     const_double,
     const_string,
+    const_bool,
     const_fn,
 
     @"unreachable",
 };
 
-pub const PhiIncoming = struct {
-    block: BlockRef,
-    value: ValueRef,
-};
-
 pub const Instruction = struct {
     op: Opcode,
     sema_type: ?SemaType,
-    result: ?ValueRef,
-    operands: []const ValueRef,
+    result: ?VReg,
+    operands: []const VReg,
     data: Data,
 
     pub const Data = union(enum) {
@@ -65,8 +73,7 @@ pub const Instruction = struct {
             true_block: BlockRef,
             false_block: BlockRef,
         },
-        call: struct { callee: ValueRef },
-        // phi: []const PhiIncoming,
+        call: struct { callee: VReg },
     };
 };
 
@@ -81,6 +88,7 @@ pub const ConstantValue = union(enum) {
 };
 
 pub const Place = union(enum) {
-    local: ValueRef,
+    local: VReg,
     global: GlobalRef,
 };
+

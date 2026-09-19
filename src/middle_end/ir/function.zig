@@ -1,0 +1,33 @@
+const std = @import("std");
+const BasicBlock = @import("basic_block.zig").BasicBlock;
+const inst = @import("instruction.zig");
+
+pub const Function = struct {
+    function_name: []const u8,
+    function_id: u32,
+    blocks: std.ArrayList(BasicBlock),
+    next_block_id: u32,
+
+    const Self = @This();
+    pub fn init(name: []const u8, id: u32) Self {
+        return .{
+            .function_name = name,
+            .function_id = id,
+            .next_block_id = 0,
+        };
+    }
+
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        self.blocks.deinit(allocator);
+    }
+
+    pub fn newBlock(self: *Self, name: []const u8) BasicBlock {
+        const b: BasicBlock = .init(name, .{ .id = self.next_block_id });
+        self.next_block_id += 1;
+        return b;
+    }
+
+    pub fn getBlock(self: *Self, ref: inst.BlockRef) BasicBlock {
+        return self.blocks.items[ref.id];
+    }
+};
