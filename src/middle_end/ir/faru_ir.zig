@@ -7,6 +7,8 @@ const typed_ast = @import("../../frontend/sema/typed_ast.zig");
 const ast = @import("../../frontend/parser/ast.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
+const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
+
 pub const FaruIR = struct {
     type_table: tt.TypeTable,
     module: Module,
@@ -32,8 +34,28 @@ pub const FaruIR = struct {
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
+        switch (stmt) {
+            .function_decl => |f| try buildFunctionDecl(self, allocator, f),
+            else => |s| {
+                const msg = try std.fmt.allocPrint(allocator, "illegal top level stmt {s}", .{@tagName(s)});
+                @panic(msg);
+            },
+        }
+    }
+
+    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         _ = self;
         _ = allocator;
         _ = stmt;
+    }
+
+    pub fn buildBodyStmt(self: *Self, allocator: std.mem.Allocator, block: typed_ast.TypedBlockStatement) !void {
+        for (block.typed_stmts) |stmt| {
+            try self.buildStmt(allocator, stmt);
+        }
+    }
+
+    pub fn goToBlock(self: *Self, block: *BasicBlock) void {
+        self.current_block = block;
     }
 };
