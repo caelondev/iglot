@@ -9,7 +9,9 @@ const tt = @import("../../frontend/sema/type_table.zig");
 
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
 const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
+
 const lit = @import("expressions/literal.zig");
+const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
 
 pub const FaruIR = struct {
     type_table: tt.TypeTable,
@@ -60,7 +62,7 @@ pub const FaruIR = struct {
         }
     }
 
-    pub fn buildExpression(self: *Self, allocator: std.mem.Allocator, expr: *const typed_ast.TypedExpr) !?inst.VReg {
+    pub fn buildExpression(self: *Self, allocator: std.mem.Allocator, expr: *const typed_ast.TypedExpr) anyerror!?inst.VReg {
         const sema_type = expr.sem_type;
 
         return switch (expr.kind) {
@@ -68,6 +70,8 @@ pub const FaruIR = struct {
             .wide_integer => |*i| try lit.buildWideIntegerLit(self, allocator, i, sema_type),
             .float => |*f| try lit.buildFloatLit(self, allocator, f, sema_type),
             .string => |*s| try lit.buildStringLit(self, allocator, s, sema_type),
+
+            .binary => |*b| try buildBinaryExpr(self, allocator, b),
             else => |e| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build expr {s}", .{@tagName(e)});
                 @panic(msg);
