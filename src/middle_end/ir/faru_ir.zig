@@ -25,17 +25,21 @@ pub const FaruIR = struct {
         };
     }
 
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        self.type_table.deinit(allocator);
+    }
+
     pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !void {
-        self.type_table = .init(allocator);
+        self.type_table = try .init(allocator);
 
         for (t_ast.body) |stmt| {
-            self.buildTopLevelStmt(allocator, stmt);
+            try self.buildTopLevelStmt(allocator, stmt);
         }
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
         switch (stmt) {
-            .function_decl => |f| try buildFunctionDecl(self, allocator, f),
+            .function_decl => |*f| try buildFunctionDecl(self, allocator, f),
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "illegal top level stmt {s}", .{@tagName(s)});
                 @panic(msg);
