@@ -1,2 +1,19 @@
-fn main() void {
+fn main() int {
+    return 10;
+}
+
+fn test1() wideint {
+    return 100w;
+}
+
+fn test2() float {
+    return 6.17;
+}
+
+fn test3() double {
+    return 100.56;
+}
+
+fn test4() string {
+    return "";
 }

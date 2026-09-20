@@ -168,8 +168,9 @@ pub const FaruSemanticAnalyzer = struct {
     ) !?*typed_ast.TypedExpr {
         return switch (expr.expr) {
             .float => |f| blk: {
+                const sem_type = self.resolveFloatType(f.value, expected_type);
                 const node = try allocator.create(typed_ast.TypedExpr);
-                node.* = .{ .span = span, .sem_type = .float, .kind = .{ .float = f } };
+                node.* = .{ .span = span, .sem_type = sem_type, .kind = .{ .float = f } };
                 break :blk node;
             },
             .integer => |i| blk: {
@@ -244,6 +245,19 @@ pub const FaruSemanticAnalyzer = struct {
         }
 
         return .int;
+    }
+
+    fn resolveFloatType(self: *Self, value: f64, expected_type: ?tt.SemaType) tt.SemaType {
+        _ = self;
+        if (expected_type) |t| {
+            if (t == .float or t == .double) return t;
+        }
+
+        if (value < -std.math.floatMax(f32) or value > std.math.floatMax(f32)) {
+            return .double;
+        }
+
+        return .float;
     }
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: FaruDiagnostic) !void {
