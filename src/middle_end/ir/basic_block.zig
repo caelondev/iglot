@@ -14,4 +14,14 @@ pub const BasicBlock = struct {
             .instructions = .empty,
         };
     }
+
+    pub fn isTerminated(self: *Self) bool {
+        if (self.instructions.items.len == 0) return false;
+
+        const last_inst = self.instructions.items[self.instructions.items.len - 1];
+        return switch (last_inst.op) {
+            .br, .cond_br, .ret, .ret_void => true,
+            else => false,
+        };
+    }
 };

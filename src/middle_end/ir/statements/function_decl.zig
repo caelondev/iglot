@@ -10,4 +10,16 @@ pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ty
     ir.current_fn = func;
     ir.goToBlock(entry_bb);
     try ir.buildBodyStmt(allocator, f.body) orelse return null;
+
+    if (!ir.current_block.isTerminated()) {
+        // Sema guarantees only void functions can be unterminated,
+        // so we implicitly inject ret_void when there's no explicit return.
+        try ir.emit(allocator, .{
+            .op = .ret_void,
+            .sema_type = .void,
+            .data = .none,
+            .operands = &.{},
+            .result = null,
+        });
+    }
 }
