@@ -8,6 +8,7 @@ const ast = @import("../../frontend/parser/ast.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
+const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 
 pub const FaruIR = struct {
     type_table: tt.TypeTable,
@@ -33,13 +34,13 @@ pub const FaruIR = struct {
         self.type_table = try .init(allocator);
 
         for (t_ast.body) |stmt| {
-            try self.buildTopLevelStmt(allocator, stmt);
+            try self.buildTopLevelStmt(allocator, stmt) orelse continue;
         }
     }
 
-    pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
+    pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
-            .function_decl => |*f| try buildFunctionDecl(self, allocator, f),
+            .function_decl => |*f| try buildFunctionDecl(self, allocator, f) orelse return null,
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "illegal top level stmt {s}", .{@tagName(s)});
                 @panic(msg);
@@ -47,16 +48,32 @@ pub const FaruIR = struct {
         }
     }
 
-    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !void {
-        _ = self;
-        _ = allocator;
-        _ = stmt;
+    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
+        switch (stmt) {
+            .return_stmt => |*r| try buildReturnStmt(self, allocator, r) orelse return null,
+
+            else => |s| {
+                const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});
+                @panic(msg);
+            },
+        }
     }
 
-    pub fn buildBodyStmt(self: *Self, allocator: std.mem.Allocator, block: typed_ast.TypedBlockStatement) !void {
+    pub fn buildExpression(self: *Self, allocator: std.mem.Allocator, expr: *const typed_ast.TypedExpr) !?inst.VReg {
+        _ = self;
+        _ = allocator;
+        _ = expr;
+        return null;
+    }
+
+    pub fn buildBodyStmt(self: *Self, allocator: std.mem.Allocator, block: typed_ast.TypedBlockStatement) !?void {
         for (block.typed_stmts) |stmt| {
-            try self.buildStmt(allocator, stmt);
+            try self.buildStmt(allocator, stmt) orelse return null;
         }
+    }
+
+    pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {
+        try self.current_block.instructions.append(allocator, instruction);
     }
 
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {

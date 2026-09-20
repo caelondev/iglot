@@ -21,7 +21,7 @@ pub fn printFunction(writer: *std.Io.Writer, func: Function) !void {
 pub fn printBlock(writer: *std.Io.Writer, block: BasicBlock) !void {
     try writer.print("@{s} ({d}):\n", .{ block.name, block.id.id });
     for (block.instructions.items) |instr| {
-        try writer.writeAll("  ");
+        try writer.writeAll("    ");
         try printInstruction(writer, instr);
     }
 }

@@ -9,6 +9,7 @@ pub const Function = struct {
     ret_type: tt.SemaType,
     blocks: std.ArrayList(*BasicBlock),
     next_block_id: u32,
+    next_vreg_id: u32,
 
     const Self = @This();
     pub fn init(ref: inst.FunctionRef, name: []const u8, ret_type: tt.SemaType) Self {
@@ -18,6 +19,7 @@ pub const Function = struct {
             .ret_type = ret_type,
             .blocks = .empty,
             .next_block_id = 0,
+            .next_vreg_id = 0,
         };
     }
 
@@ -32,6 +34,12 @@ pub const Function = struct {
         try self.blocks.append(allocator, b);
 
         return b;
+    }
+
+    pub fn newVReg(self: *Self) inst.VReg {
+        const vreg: inst.VReg = .{ .id = self.next_vreg_id };
+        self.next_vreg_id += 1;
+        return vreg;
     }
 
     pub fn getBlock(self: *Self, ref: inst.BlockRef) *BasicBlock {
