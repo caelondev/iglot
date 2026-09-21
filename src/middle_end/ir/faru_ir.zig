@@ -19,6 +19,8 @@ pub const FaruIR = struct {
     current_fn: *Function,
     current_block: *BasicBlock,
 
+    global_symtab: std.StringHashMapUnmanaged(inst.GlobalRef),
+
     const Self = @This();
     pub fn init() Self {
         return .{
@@ -26,19 +28,27 @@ pub const FaruIR = struct {
             .type_table = undefined,
             .current_fn = undefined,
             .current_block = undefined,
+            .global_symtab = .empty,
         };
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.type_table.deinit(allocator);
+        self.global_symtab.deinit(allocator);
     }
 
     pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !void {
         self.type_table = try .init(allocator);
+        try self.initFaruBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt) orelse continue;
         }
+    }
+
+    pub fn initFaruBuiltins(self: *Self, allocator: std.mem.Allocator) !void {
+        _ = try self.addGlobal(allocator, "true", .bool, .{ .bool = true });
+        _ = try self.addGlobal(allocator, "false", .bool, .{ .bool = false });
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
@@ -70,8 +80,10 @@ pub const FaruIR = struct {
             .wide_integer => |*i| try lit.buildWideIntegerLit(self, allocator, i, sema_type),
             .float => |*f| try lit.buildFloatLit(self, allocator, f, sema_type),
             .string => |*s| try lit.buildStringLit(self, allocator, s, sema_type),
+            .identifier => |*i| try self.resolveIdentifier(allocator, i, sema_type),
 
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
+
             else => |e| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build expr {s}", .{@tagName(e)});
                 @panic(msg);
@@ -85,8 +97,30 @@ pub const FaruIR = struct {
         }
     }
 
+    pub fn resolveIdentifier(self: *Self, allocator: std.mem.Allocator, i: *const typed_ast.TypedIdentifier, sema_type: tt.SemaType) !?inst.VReg {
+        const ref = self.global_symtab.get(i.value) orelse unreachable;
+        const dest = self.current_fn.newVReg();
+
+        try self.emit(allocator, .{
+            .data = .{ .global = ref },
+            .op = .load_global,
+            .operands = &.{},
+            .sema_type = sema_type,
+            .result = dest,
+        });
+        return dest;
+    }
+
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {
         try self.current_block.instructions.append(allocator, instruction);
+    }
+
+    pub fn addGlobal(self: *Self, allocator: std.mem.Allocator, name: []const u8, sema_type: tt.SemaType, initializer: inst.ConstantValue) !inst.GlobalRef {
+        const id: u32 = @intCast(self.module.globals.items.len);
+        try self.module.globals.append(allocator, .{ .name = name, .sema_type = sema_type, .initializer = initializer });
+        const ref = inst.GlobalRef{ .id = id };
+        try self.global_symtab.put(allocator, name, ref);
+        return ref;
     }
 
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {

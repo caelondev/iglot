@@ -92,3 +92,8 @@ pub const Place = union(enum) {
     global: GlobalRef,
 };
 
+pub const Global = struct {
+    name: []const u8,
+    sema_type: SemaType,
+    initializer: ConstantValue,
+};

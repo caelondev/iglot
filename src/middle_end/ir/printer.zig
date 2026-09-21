@@ -5,9 +5,19 @@ const Function = @import("function.zig").Function;
 const Module = @import("module.zig").Module;
 
 pub fn printModule(writer: *std.Io.Writer, module: Module) !void {
+    try printGlobals(writer, module);
     for (module.functions.items) |function| {
         try printFunction(writer, function.*);
     }
+}
+
+pub fn printGlobals(writer: *std.Io.Writer, module: Module) !void {
+    for (module.globals.items, 0..) |global, id| {
+        try writer.print("global @{d} {s} : {f} = ", .{ id, global.name, global.sema_type });
+        try printConstant(writer, global.initializer);
+        try writer.writeAll("\n");
+    }
+    if (module.globals.items.len > 0) try writer.writeAll("\n");
 }
 
 pub fn printFunction(writer: *std.Io.Writer, func: Function) !void {

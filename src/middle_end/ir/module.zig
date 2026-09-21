@@ -4,20 +4,28 @@ const inst = @import("instruction.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
 pub const Module = struct {
-    functions: std.ArrayListUnmanaged(*Function) = .empty,
-    function_names: std.StringHashMapUnmanaged(u32) = .empty, // name -> FunctionRef.id
-    next_function_id: u32 = 0,
+    functions: std.ArrayListUnmanaged(*Function),
+    function_names: std.StringHashMapUnmanaged(u32),
+    globals: std.ArrayList(inst.Global),
+    next_function_id: u32,
 
     pub fn init() Module {
-        return .{};
+        return .{
+            .functions = .empty,
+            .globals = .empty,
+            .function_names = .empty,
+            .next_function_id = 0,
+        };
     }
 
     pub fn deinit(self: *Module, allocator: std.mem.Allocator) void {
         for (self.functions.items) |function| {
             allocator.destroy(function);
         }
+
         self.functions.deinit(allocator);
         self.function_names.deinit(allocator);
+        self.globals.deinit(allocator);
     }
 
     pub fn getFunction(self: *Module, ref: inst.FunctionRef) *Function {
