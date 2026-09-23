@@ -1,7 +1,6 @@
-fn main() bool {
-    return true;
-}
+fn main() int {
+  a :: int = 10;
+  b :: int = 67;
 
-fn b() bool {
-    return false;
+  return b + a;
 }

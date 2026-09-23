@@ -9,6 +9,9 @@ pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ty
     const entry_bb = try func.newBlock(allocator, "entry");
     ir.current_fn = func;
     ir.goToBlock(entry_bb);
+
+    try ir.current_scope.push(allocator);
+    defer ir.current_scope.pop(allocator);
     try ir.buildBodyStmt(allocator, f.body) orelse return null;
 
     if (!ir.current_block.isTerminated()) {

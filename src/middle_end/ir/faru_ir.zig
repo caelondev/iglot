@@ -2,6 +2,7 @@ const std = @import("std");
 const Module = @import("module.zig").Module;
 const Function = @import("function.zig").Function;
 const BasicBlock = @import("basic_block.zig").BasicBlock;
+const ScopeStack = @import("scope_table.zig").ScopeStack;
 const inst = @import("instruction.zig");
 const typed_ast = @import("../../frontend/sema/typed_ast.zig");
 const ast = @import("../../frontend/parser/ast.zig");
@@ -12,12 +13,14 @@ const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 
 const lit = @import("expressions/literal.zig");
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
+const buildExpressionStmt = @import("statements/expression.zig").buildExpressionStmt;
 
 pub const FaruIR = struct {
-    type_table: tt.TypeTable,
     module: Module,
+
     current_fn: *Function,
     current_block: *BasicBlock,
+    current_scope: *ScopeStack,
 
     global_symtab: std.StringHashMapUnmanaged(inst.GlobalRef),
 
@@ -25,20 +28,25 @@ pub const FaruIR = struct {
     pub fn init() Self {
         return .{
             .module = .init(),
-            .type_table = undefined,
+
+            .current_scope = undefined,
             .current_fn = undefined,
             .current_block = undefined,
+
             .global_symtab = .empty,
         };
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        self.type_table.deinit(allocator);
         self.global_symtab.deinit(allocator);
+        self.current_scope.deinit(allocator);
     }
 
     pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !void {
-        self.type_table = try .init(allocator);
+        const scope_stack = try allocator.create(ScopeStack);
+        scope_stack.* = .init();
+        self.current_scope = scope_stack;
+
         try self.initFaruBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
@@ -64,6 +72,7 @@ pub const FaruIR = struct {
     pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
             .return_stmt => |*r| try buildReturnStmt(self, allocator, r) orelse return null,
+            .expression => |*e| try buildExpressionStmt(self, allocator, e) orelse return null,
 
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});
@@ -98,6 +107,10 @@ pub const FaruIR = struct {
     }
 
     pub fn resolveIdentifier(self: *Self, allocator: std.mem.Allocator, i: *const typed_ast.TypedIdentifier, sema_type: tt.SemaType) !?inst.VReg {
+        if (self.current_scope.resolve(i.value)) |reg| {
+            return reg;
+        }
+
         const ref = self.global_symtab.get(i.value) orelse unreachable;
         const dest = self.current_fn.newVReg();
 
@@ -115,15 +128,17 @@ pub const FaruIR = struct {
         try self.current_block.instructions.append(allocator, instruction);
     }
 
-    pub fn addGlobal(self: *Self, allocator: std.mem.Allocator, name: []const u8, sema_type: tt.SemaType, initializer: inst.ConstantValue) !inst.GlobalRef {
+    pub fn addGlobal(self: *Self, allocator: std.mem.Allocator, global_name: []const u8, sema_type: tt.SemaType, initializer: inst.ConstantValue) !inst.GlobalRef {
         const id: u32 = @intCast(self.module.globals.items.len);
-        try self.module.globals.append(allocator, .{ .name = name, .sema_type = sema_type, .initializer = initializer });
+        try self.module.globals.append(allocator, .{ .name = global_name, .sema_type = sema_type, .initializer = initializer });
         const ref = inst.GlobalRef{ .id = id };
-        try self.global_symtab.put(allocator, name, ref);
+        try self.global_symtab.put(allocator, global_name, ref);
         return ref;
     }
 
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {
         self.current_block = block;
     }
+
+    pub fn name() !void {}
 };
