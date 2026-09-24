@@ -40,6 +40,11 @@ pub fn parseStatement(
     parser: *FaruParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
+    if (parser.curTokenIs(.identifier) and parser.peekTokenIs(.box_colon)) {
+        const stmt = try @import("variable_declaration.zig").parseVariableDeclaration(parser, allocator) orelse return null;
+        return stmt;
+    }
+
     if (getStatement(parser.cur_tok.kind)) |callback| {
         return try callback(parser, allocator) orelse {
             parser.synchronize();

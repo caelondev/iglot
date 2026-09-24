@@ -120,9 +120,7 @@ fn loopCanBreak(body: *const typed_ast.TypedScopedStatement) bool {
 fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
     return switch (stmt.*) {
         .return_stmt => true,
-        .break_stmt => false,
-        .expression => false,
-        .function_decl => false,
+        .break_stmt, .expression, .variable_declaration, .function_decl => false,
         .block => |b| blk: {
             for (b.typed_stmts) |*s| {
                 if (alwaysReturns(s)) break :blk true;
@@ -175,9 +173,10 @@ fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
         // not the loop we're currently analyzing.
         .loop => false,
 
+        .return_stmt => true,
         .expression,
+        .variable_declaration,
         .function_decl,
-        .return_stmt,
         => false,
     };
 }

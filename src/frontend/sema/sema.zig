@@ -6,10 +6,11 @@ const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
 const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
-const validateVariableDeclaration = @import("expressions/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 const validateAssignmentExpr = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
+
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
+const validateVariableDeclaration = @import("statements/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
@@ -51,17 +52,10 @@ pub const FaruSemanticAnalyzer = struct {
 
     fn scanTopLevelStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {
         switch (stmt.kind) {
-            .expression => |*e| {
-                const expr = try self.validateExpression(allocator, &e.expression, e.span, null) orelse return null;
-                if (expr.kind != .variable_declaration) {
-                    try self.reportError(allocator, .{
-                        .kind = .IllegalTopLevelStatement,
-                        .span = stmt.span,
-                    });
-                }
-
+            .variable_declaration => |*v| {
+                const decl = try validateVariableDeclaration(self, allocator, v) orelse return null;
                 return .{
-                    .expression = .{ .typed = expr },
+                    .variable_declaration = decl,
                 };
             },
             .function_decl => |f| {
@@ -106,6 +100,12 @@ pub const FaruSemanticAnalyzer = struct {
                 const ret_stmt = try validateReturnStatement(self, allocator, &r) orelse return null;
                 return .{
                     .return_stmt = ret_stmt,
+                };
+            },
+            .variable_declaration => |*v| {
+                const decl = try validateVariableDeclaration(self, allocator, v) orelse return null;
+                return .{
+                    .variable_declaration = decl,
                 };
             },
             .if_stmt => |f| {
@@ -208,7 +208,6 @@ pub const FaruSemanticAnalyzer = struct {
                 break :blk node;
             },
             .binary => |*b| validateBinaryExpr(self, allocator, b, span),
-            .variable_declaration => |*v| validateVariableDeclaration(self, allocator, v),
             .unary => |*u| validateUnaryExpr(self, allocator, u, span),
             .assignment => |*a| validateAssignmentExpr(self, allocator, a, span),
             .call => |*c| validateCallExpr(self, allocator, c, span),

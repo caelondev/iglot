@@ -9,20 +9,9 @@ const Precedence = @import("../precedence.zig").Precedence;
 pub fn parseVariableDeclaration(
     parser: *FaruParser,
     allocator: std.mem.Allocator,
-    left: ast.Expression,
-) !?ast.Expression {
-    // NOTE: this check is super important. since the declaration is an expression,
-    // the precedence also mess with the main pratt parser. without checking if
-    // left is not an identifier, the parser will recurse indefinitely
-    if (left.expr != .identifier) {
-        try parser.reportError(allocator, .{
-            .span = left.span,
-            .kind = .InvalidLeftHandSideDeclaration,
-        });
-        parser.synchronize();
-        return null;
-    }
-
+) !?ast.Statement {
+    const var_name = parser.cur_tok;
+    parser.nextToken();
     parser.nextToken();
 
     const decl_type = try parseTypeExpression(parser, allocator) orelse return null;
@@ -36,16 +25,18 @@ pub fn parseVariableDeclaration(
         Precedence.lowest.toInt(),
     ) orelse return null;
 
+    if (!try parser.expectPeek(allocator, .semicolon)) return null;
+
     const val_ptr = try allocator.create(ast.Expression);
     val_ptr.* = value;
 
-    const span = Span.mergeFromSpans(left.span, value.span);
+    const span = Span.mergeFromSpans(var_name.span, value.span);
 
     return .{
         .span = span,
-        .expr = .{
+        .kind = .{
             .variable_declaration = .{
-                .identifier = left.expr.identifier,
+                .identifier = .{ .value = var_name.lexeme },
                 .type = decl_type,
                 .value = val_ptr,
                 .span = span,

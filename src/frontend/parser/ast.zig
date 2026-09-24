@@ -74,7 +74,6 @@ pub const Expression = struct {
         // le regular expressions
         binary: BinaryExpression,
         unary: UnaryExpression,
-        variable_declaration: VariableDeclarationExpression,
         assignment: AssignmentExpression,
         call: CallExpression,
     };
@@ -84,6 +83,7 @@ pub const Statement = struct {
     span: tokens.Span,
     kind: union(enum) {
         expression: ExpressionStatement,
+        variable_declaration: VariableDeclarationStatement,
         function_decl: FunctionDeclarationStatement,
         return_stmt: ReturnStatement,
         if_stmt: IfStatement,
@@ -126,7 +126,7 @@ pub const AssignmentExpression = struct {
     value: *const Expression,
 };
 
-pub const VariableDeclarationExpression = struct {
+pub const VariableDeclarationStatement = struct {
     identifier: IdentifierExpression,
     type: TypeExpression,
     value: *Expression,

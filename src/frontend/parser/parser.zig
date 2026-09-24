@@ -97,10 +97,6 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .callback = @import("led/assignment_expression.zig").parseAssignmentExpression,
     },
     .{
-        .token_kind = .box_colon,
-        .callback = @import("led/parse_variable_declaration.zig").parseVariableDeclaration,
-    },
-    .{
         .token_kind = .less,
         .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },

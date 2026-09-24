@@ -13,6 +13,7 @@ pub const TypedStmt = union(enum) {
     block: TypedBlockStatement,
     scoped: TypedScopedStatement,
     if_stmt: TypedIfStatement,
+    variable_declaration: TypedVariableDeclaration,
     loop: TypedLoopStatement,
     break_stmt: ast.BreakStatement,
 };
@@ -58,7 +59,6 @@ pub const TypedExpr = struct {
         identifier: TypedIdentifier,
         binary: TypedBinaryExpr,
         unary: TypedUnaryExpr,
-        variable_declaration: TypedVariableDeclaration,
         assignment: TypedAssignment,
         call: TypedCallExpr,
     },

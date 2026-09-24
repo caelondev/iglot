@@ -9,8 +9,8 @@ const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
 pub fn validateVariableDeclaration(
     sema: *FaruSemanticAnalyzer,
     allocator: std.mem.Allocator,
-    v: *const ast.VariableDeclarationExpression,
-) anyerror!?*typed_ast.TypedExpr {
+    v: *const ast.VariableDeclarationStatement,
+) anyerror!?typed_ast.TypedVariableDeclaration {
     if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
         const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
             .{
@@ -74,16 +74,8 @@ pub fn validateVariableDeclaration(
         return null;
     }
 
-    const node = try allocator.create(typed_ast.TypedExpr);
-    node.* = .{
-        .span = v.span,
-        .sem_type = var_type,
-        .kind = .{
-            .variable_declaration = .{
-                .identifier = v.identifier,
-                .value = value,
-            },
-        },
+    return .{
+        .identifier = v.identifier,
+        .value = value,
     };
-    return node;
 }
