@@ -10,6 +10,7 @@ const tt = @import("../../frontend/sema/type_table.zig");
 
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
 const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
+const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
 
 const lit = @import("expressions/literal.zig");
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
@@ -73,6 +74,7 @@ pub const FaruIR = struct {
         switch (stmt) {
             .return_stmt => |*r| try buildReturnStmt(self, allocator, r) orelse return null,
             .expression => |*e| try buildExpressionStmt(self, allocator, e) orelse return null,
+            .variable_declaration => |*v| try buildVariableDecl(self, allocator, v) orelse return null,
 
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});
