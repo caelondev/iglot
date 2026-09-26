@@ -48,21 +48,67 @@ pub const FaruIR = struct {
         scope_stack.* = .init();
         self.current_scope = scope_stack;
 
+        const init_fn = try self.module.createFunction(allocator, "@$__global_init", .void);
+        const entry_bb = try init_fn.newBlock(allocator, "entry");
+        self.current_fn = init_fn;
+        self.goToBlock(entry_bb);
+
         try self.initFaruBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt) orelse continue;
         }
+
+        if (!self.current_block.isTerminated()) {
+            try self.emit(allocator, .{
+                .op = .ret_void,
+                .sema_type = .void,
+                .data = .none,
+                .operands = &.{},
+                .result = null,
+            });
+        }
     }
 
     pub fn initFaruBuiltins(self: *Self, allocator: std.mem.Allocator) !void {
-        _ = try self.addGlobal(allocator, "true", .bool, .{ .bool = true });
-        _ = try self.addGlobal(allocator, "false", .bool, .{ .bool = false });
+        try self.buildBuiltinGlobal(allocator, "true", .bool, .{ .op = .const_bool, .const_data = .{ .bool = true } });
+        try self.buildBuiltinGlobal(allocator, "false", .bool, .{ .op = .const_bool, .const_data = .{ .bool = false } });
+    }
+
+    fn buildBuiltinGlobal(self: *Self, allocator: std.mem.Allocator, global_name: []const u8, sema_type: tt.SemaType, lit_instr: struct { op: inst.Opcode, const_data: inst.ConstantValue }) !void {
+        const ref = try self.addGlobal(allocator, global_name, sema_type);
+        const dest = self.current_fn.newVReg();
+        try self.emit(allocator, .{
+            .op = lit_instr.op,
+            .data = .{ .constant = lit_instr.const_data },
+            .operands = &.{},
+            .sema_type = sema_type,
+            .result = dest,
+        });
+        try self.emit(allocator, .{
+            .op = .store_global,
+            .data = .{ .global = ref },
+            .operands = try allocator.dupe(inst.VReg, &.{dest}),
+            .sema_type = sema_type,
+            .result = null,
+        });
     }
 
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
             .function_decl => |*f| try buildFunctionDecl(self, allocator, f) orelse return null,
+            .variable_declaration => |*v| {
+                const ref = try self.addGlobal(allocator, v.identifier.value, v.sema_type);
+                const value_reg = try self.buildExpression(allocator, &v.value.*) orelse unreachable;
+                try self.emit(allocator, .{
+                    .op = .store_global,
+                    .data = .{ .global = ref },
+                    .operands = try allocator.dupe(inst.VReg, &.{value_reg}),
+                    .sema_type = v.sema_type,
+                    .result = null,
+                });
+            },
+
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "illegal top level stmt {s}", .{@tagName(s)});
                 @panic(msg);
@@ -130,9 +176,9 @@ pub const FaruIR = struct {
         try self.current_block.instructions.append(allocator, instruction);
     }
 
-    pub fn addGlobal(self: *Self, allocator: std.mem.Allocator, global_name: []const u8, sema_type: tt.SemaType, initializer: inst.ConstantValue) !inst.GlobalRef {
+    pub fn addGlobal(self: *Self, allocator: std.mem.Allocator, global_name: []const u8, sema_type: tt.SemaType) !inst.GlobalRef {
         const id: u32 = @intCast(self.module.globals.items.len);
-        try self.module.globals.append(allocator, .{ .name = global_name, .sema_type = sema_type, .initializer = initializer });
+        try self.module.globals.append(allocator, .{ .name = global_name, .sema_type = sema_type });
         const ref = inst.GlobalRef{ .id = id };
         try self.global_symtab.put(allocator, global_name, ref);
         return ref;
@@ -141,6 +187,4 @@ pub const FaruIR = struct {
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {
         self.current_block = block;
     }
-
-    pub fn name() !void {}
 };

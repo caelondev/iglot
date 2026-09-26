@@ -40,6 +40,7 @@ pub const TypedUnaryExpr = struct {
 
 pub const TypedVariableDeclaration = struct {
     identifier: ast.IdentifierExpression,
+    sema_type: tt.SemaType,
     value: *TypedExpr,
 };
 

@@ -76,6 +76,7 @@ pub fn validateVariableDeclaration(
 
     return .{
         .identifier = v.identifier,
+        .sema_type = var_type,
         .value = value,
     };
 }
