@@ -14,7 +14,7 @@ const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableD
 
 const lit = @import("expressions/literal.zig");
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
-const buildExpressionStmt = @import("statements/expression.zig").buildExpressionStmt;
+const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmentExpr;
 
 pub const FaruIR = struct {
     module: Module,
@@ -119,7 +119,7 @@ pub const FaruIR = struct {
     pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
             .return_stmt => |*r| try buildReturnStmt(self, allocator, r) orelse return null,
-            .expression => |*e| try buildExpressionStmt(self, allocator, e) orelse return null,
+            .expression => |*e| _ = try self.buildExpression(allocator, e.typed),
             .variable_declaration => |*v| try buildVariableDecl(self, allocator, v) orelse return null,
 
             else => |s| {
@@ -137,6 +137,7 @@ pub const FaruIR = struct {
             .wide_integer => |*i| try lit.buildWideIntegerLit(self, allocator, i, sema_type),
             .float => |*f| try lit.buildFloatLit(self, allocator, f, sema_type),
             .string => |*s| try lit.buildStringLit(self, allocator, s, sema_type),
+            .assignment => |*a| try buildAssignmentExpr(self, allocator, a),
             .identifier => |*i| try self.resolveIdentifier(allocator, i, sema_type),
 
             .binary => |*b| try buildBinaryExpr(self, allocator, b),

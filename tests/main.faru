@@ -1,10 +1,8 @@
 a :: int = 10;
 b :: int = 67;
 
-fn @$&__global_init() void {
-    a :: int = a;
-}
-
-fn main() int {
-  return a + b;
+fn main() void {
+  number :: int = 0;
+  c :: int = 6;
+  number = c = b;
 }
