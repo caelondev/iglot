@@ -7,6 +7,7 @@ const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnost
 
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
+const parseStatementRecovering = @import("statements/parseStatement.zig").parseStatementRecovering;
 const Precedence = @import("precedence.zig").Precedence;
 
 pub const NudFn = *const fn (
@@ -192,10 +193,9 @@ pub const FaruParser = struct {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.curTokenIs(.eof)) {
-            if (try parseStatement(self, allocator)) |stmt| {
+            if (try parseStatementRecovering(self, allocator)) |stmt| {
                 try stmts.append(allocator, stmt);
             }
-            self.nextToken();
         }
 
         const body = try stmts.toOwnedSlice(allocator);
@@ -258,9 +258,15 @@ pub const FaruParser = struct {
         if (!self.panic_mode) return;
 
         while (self.cur_tok.kind != .eof) {
-            if (self.cur_tok.kind == .semicolon) break; // land ON it, like a successful parse would
-            if (self.cur_tok.kind == .right_brace) break; // let block-loops see the closing brace
-            if (isStatementStart(self.peek_tok.kind)) break; // peek, not cur — stop right before it
+            if (self.cur_tok.kind == .semicolon) {
+                self.nextToken();
+                break;
+            }
+            if (self.cur_tok.kind == .right_brace) break;
+            if (isStatementStart(self.peek_tok.kind)) {
+                self.nextToken();
+                break;
+            }
 
             self.nextToken();
         }
@@ -268,11 +274,40 @@ pub const FaruParser = struct {
         self.panic_mode = false;
     }
 
+    pub fn skipMalformedBody(self: *Self) void {
+        while (self.cur_tok.kind != .left_brace and self.cur_tok.kind != .eof) {
+            if (isStatementStart(self.peek_tok.kind)) return;
+            self.nextToken();
+        }
+        if (self.cur_tok.kind != .left_brace) return;
+
+        var depth: u32 = 0;
+        while (self.cur_tok.kind != .eof) {
+            switch (self.cur_tok.kind) {
+                .left_brace => depth += 1,
+                .right_brace => {
+                    depth -= 1;
+                    if (depth == 0) {
+                        self.nextToken();
+                        self.panic_mode = false;
+                        return;
+                    }
+                },
+                else => {},
+            }
+            self.nextToken();
+        }
+    }
+
     fn isStatementStart(kind: tokens.TokenKind) bool {
         for (statements) |stmt| {
             if (stmt.token_kind == kind) return true;
         }
         return false;
+    }
+
+    pub fn peekIsStatementStart(self: *Self) bool {
+        return isStatementStart(self.peek_tok.kind);
     }
 
     pub fn peekIs(self: *Self, kind: tokens.TokenKind) bool {

@@ -26,6 +26,17 @@
 //! If no expression can be parsed at the current position, `parseStatement`
 //! returns `null`, allowing the caller to determine whether the end of the
 //! input or another statement boundary has been reached.
+//!
+//! `parseStatement` itself never recovers from an error — it reports one
+//! (via `reportError`/`expectPeek`) and returns `null`. Error recovery is
+//! owned entirely by `parseStatementRecovering`, which is the single call
+//! site for `synchronize` in the whole statement-parsing pipeline. Every
+//! loop that parses a sequence of statements (`parseProgram`,
+//! `parseBlockStatement`, and any future block-like construct) must call
+//! `parseStatementRecovering` instead of `parseStatement` directly. This
+//! avoids the double-recovery bug where a leaf parser and its calling loop
+//! both try to resynchronize the same failure, producing duplicate or
+//! contradictory diagnostics.
 
 const std = @import("std");
 const ast = @import("../ast.zig");
@@ -41,28 +52,20 @@ pub fn parseStatement(
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     if (parser.curTokenIs(.identifier) and parser.peekTokenIs(.box_colon)) {
-        const stmt = try @import("variable_declaration.zig").parseVariableDeclaration(parser, allocator) orelse return null;
-        return stmt;
+        return try @import("variable_declaration.zig").parseVariableDeclaration(parser, allocator);
     }
 
     if (getStatement(parser.cur_tok.kind)) |callback| {
-        return try callback(parser, allocator) orelse {
-            parser.synchronize();
-            return null;
-        };
+        return try callback(parser, allocator);
     }
 
     const expr = try parseExpression(
         parser,
         allocator,
         Precedence.lowest.toInt(),
-    ) orelse {
-        parser.synchronize();
-        return null;
-    };
+    ) orelse return null;
 
     if (!try parser.expectPeek(allocator, .semicolon)) {
-        parser.synchronize();
         return null;
     }
 
@@ -75,6 +78,38 @@ pub fn parseStatement(
             },
         },
     };
+}
+
+/// Parses one statement and owns recovery for it. This is the only
+/// function in the parser that should ever call `synchronize`. Every
+/// statement-sequence loop (`parseProgram`, `parseBlockStatement`, ...)
+/// calls this instead of `parseStatement` directly.
+///
+/// On success, advances past the statement's last token (matching the
+/// convention that a parse function leaves `cur_tok` on its last consumed
+/// token). On failure, resynchronizes to the next safe boundary. If
+/// `synchronize` makes no progress (e.g. it lands on a token the calling
+/// loop has no way to consume, like a stray `}` at top level), forces a
+/// single token of advancement so callers can never spin forever.
+pub fn parseStatementRecovering(
+    parser: *FaruParser,
+    allocator: std.mem.Allocator,
+) !?ast.Statement {
+    const before = parser.advance_count;
+    const stmt = try parseStatement(parser, allocator);
+
+    if (parser.panic_mode) {
+        parser.synchronize();
+
+        if (!parser.madeProgress(before)) {
+            parser.nextToken();
+            parser.panic_mode = false;
+        }
+    } else if (stmt != null) {
+        parser.nextToken();
+    }
+
+    return stmt;
 }
 
 fn getStatement(kind: TokenKind) ?p.StmtFn {

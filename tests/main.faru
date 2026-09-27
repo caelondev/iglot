@@ -1,7 +1,7 @@
 a :: int = 10;
 b :: int = 67;
 
-fn @$__global_init() void {
+fn @$&__global_init() void {
     a :: int = a;
 }
 

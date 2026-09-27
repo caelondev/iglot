@@ -16,7 +16,10 @@ pub fn parseFunctionDeclarationStatement(
     parser.nextToken();
     const fn_name: tokens.Token = parser.cur_tok;
 
-    if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
+    if (!try parser.expectPeek(allocator, .left_parenthesis)) {
+        parser.skipMalformedBody();
+        return null;
+    }
     const fn_params = try parseFunctionParameters(parser, allocator) orelse return null;
     const fn_end_params_span = parser.cur_tok.span;
 

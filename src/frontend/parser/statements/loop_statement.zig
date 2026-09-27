@@ -12,6 +12,8 @@ pub fn parseLoopStatement(
     const keyword = parser.cur_tok;
     parser.nextToken();
 
+    if (!try parser.expectPeek(allocator, .left_brace)) return null;
+
     const body = try parseScopedStatement(parser, allocator) orelse return null;
     return .{
         .span = Span.mergeFromSpans(keyword.span, body.span),

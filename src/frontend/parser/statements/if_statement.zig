@@ -19,9 +19,15 @@ pub fn parseIfStatement(
         parser,
         allocator,
         Precedence.lowest.toInt(),
-    ) orelse return null;
+    ) orelse {
+        parser.skipMalformedBody();
+        return null;
+    };
 
-    if (!try parser.expectPeek(allocator, .colon)) return null;
+    if (!try parser.expectPeek(allocator, .colon)) {
+        parser.skipMalformedBody();
+        return null;
+    }
 
     var if_body: ast.Statement = undefined;
 
@@ -97,3 +103,4 @@ pub fn parseIfStatement(
         },
     };
 }
+

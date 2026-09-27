@@ -1,7 +1,7 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
 const FaruParser = @import("../parser.zig").FaruParser;
-const parseStatement = @import("parseStatement.zig").parseStatement;
+const parseStatementRecovering = @import("parseStatement.zig").parseStatementRecovering;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseBlockStatement(
@@ -14,11 +14,11 @@ pub fn parseBlockStatement(
     parser.nextToken();
 
     while (!parser.curTokenIs(.right_brace) and !parser.curTokenIs(.eof)) {
-        if (try parseStatement(parser, allocator)) |stmt| {
+        if (try parseStatementRecovering(parser, allocator)) |stmt| {
             try stmts.append(allocator, stmt);
         }
-        parser.nextToken();
     }
+
     const end = parser.cur_tok.span;
 
     return .{ .span = Span.mergeFromSpans(start, end), .statements = try stmts.toOwnedSlice(allocator) };

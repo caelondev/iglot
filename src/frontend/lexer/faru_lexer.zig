@@ -238,9 +238,8 @@ pub const FaruLexer = struct {
                     },
 
                     else => {
-                        const tok = self.newToken(.illegal, &.{self.cur()});
                         self.advance();
-                        return tok;
+                        return self.newToken(.illegal, self.source[start..self.cursor]);
                     },
                 }
             },
