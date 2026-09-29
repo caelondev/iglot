@@ -19,15 +19,20 @@
 
 const std = @import("std");
 const faru = @import("faru_information");
+const build_time = @import("build_time");
 const Context = @import("cli.zig").Context;
 
-/// Prints the faru version and build date.
+/// Prints the faru version and build date (or `dev` for dev builds).
 pub fn version(ctx: *Context) !void {
     var writer = std.Io.File.stdout().writerStreaming(ctx.io, &.{});
     const out = &writer.interface;
 
-    const now = std.Io.Clock.real.now(ctx.io);
-    const epoch_seconds = std.time.epoch.EpochSeconds{ .secs = @intCast(now.toSeconds()) };
+    if (build_time.timestamp == 0) {
+        try out.print("faru {s} (dev)\n", .{faru.version});
+        return;
+    }
+
+    const epoch_seconds = std.time.epoch.EpochSeconds{ .secs = @intCast(build_time.timestamp) };
     const year_day = epoch_seconds.getEpochDay().calculateYearDay();
     const month_day = year_day.calculateMonthDay();
 

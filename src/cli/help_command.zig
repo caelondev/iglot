@@ -25,6 +25,7 @@ const Context = @import("cli.zig").Context;
 pub fn help(ctx: *Context) !void {
     const options = [_][2][]const u8{
         .{ "help", "Show this help message" },
+        .{ "run <filepath>", "Runs a Faru program" },
         .{ "version", "Show version information" },
     };
 
