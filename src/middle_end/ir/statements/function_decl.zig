@@ -5,9 +5,16 @@ const Function = @import("../function.zig").Function;
 const FaruIR = @import("../faru_ir.zig").FaruIR;
 
 pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const typed_ast.TypedFunctionDeclarationStatement) !?void {
+    const prev_fn = ir.current_fn;
+    const prev_block = ir.current_block;
+    defer {
+        ir.current_fn = prev_fn;
+        ir.current_block = prev_block;
+    }
+
     const func = try ir.module.createFunction(allocator, f.identifier.value, f.return_type);
     const entry_bb = try func.newBlock(allocator, "entry");
-    ir.current_fn = func;
+
     ir.goToBlock(entry_bb);
 
     try ir.current_scope.push(allocator);

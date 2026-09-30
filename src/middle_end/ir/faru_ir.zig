@@ -160,12 +160,25 @@ pub const FaruIR = struct {
             return reg;
         }
 
-        const ref = self.global_symtab.get(i.value) orelse unreachable;
+        if (self.global_symtab.get(i.value)) |ref| {
+            const dest = self.current_fn.newVReg();
+
+            try self.emit(allocator, .{
+                .data = .{ .global = ref },
+                .op = .load_global,
+                .operands = &.{},
+                .sema_type = sema_type,
+                .result = dest,
+            });
+            return dest;
+        }
+
+        const func = self.module.getFunctionByName(i.value) orelse unreachable;
         const dest = self.current_fn.newVReg();
 
         try self.emit(allocator, .{
-            .data = .{ .global = ref },
-            .op = .load_global,
+            .data = .{ .constant = .{ .func = func.function_ref } },
+            .op = .load_fn,
             .operands = &.{},
             .sema_type = sema_type,
             .result = dest,

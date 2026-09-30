@@ -1,8 +1,7 @@
-a :: int = 10;
-b :: int = 67;
+fn function() void {}
+
+global_fn :: fn () void = function;
 
 fn main() void {
-  number :: int = 0;
-  c :: int = 6;
-  number = c = b;
+  local_fn :: fn () void = function;
 }
