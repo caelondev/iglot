@@ -13,6 +13,7 @@ const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
 
 const lit = @import("expressions/literal.zig");
+const buildUnaryExpr = @import("expressions/unary.zig").buildUnaryExpr;
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
 const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmentExpr;
 
@@ -140,6 +141,7 @@ pub const FaruIR = struct {
             .assignment => |*a| try buildAssignmentExpr(self, allocator, a),
             .identifier => |*i| try self.resolveIdentifier(allocator, i, sema_type),
 
+            .unary => |*u| try buildUnaryExpr(self, allocator, u),
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
 
             else => |e| {

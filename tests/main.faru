@@ -1,7 +1,4 @@
-fn function() void {}
-
-global_fn :: fn () void = function;
-
 fn main() void {
-  local_fn :: fn () void = function;
+  x :: bool = !true;
+  y :: int = -100;
 }
