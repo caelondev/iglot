@@ -10,7 +10,6 @@ pub fn parseLoopStatement(
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.cur_tok;
-    parser.nextToken();
 
     if (!try parser.expectPeek(allocator, .left_brace)) return null;
 

@@ -27,7 +27,7 @@ pub fn printFunction(writer: *std.Io.Writer, func: Function) !void {
 }
 
 pub fn printBlock(writer: *std.Io.Writer, block: BasicBlock) !void {
-    try writer.print("@{s} ({d}):\n", .{ block.name, block.id.id });
+    try writer.print("*{s} ({d}):\n", .{ block.name, block.id.id });
     for (block.instructions.items) |instr| {
         try writer.writeAll("    ");
         try printInstruction(writer, instr);
@@ -49,7 +49,7 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
             try printConstant(writer, c);
         },
 
-        .branch_target => |b| try writer.print(" bb{d}", .{b.id}),
+        .branch_target => |b| try writer.print(" *{d}", .{b.id}),
 
         .index => |idx| try writer.print(" #{d}", .{idx}),
 
@@ -63,9 +63,9 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
 
         .cond_branch => |cb| {
             if (instr.operands.len > 0) {
-                try writer.print(" [{d}], bb{d}, bb{d}", .{ instr.operands[0].id, cb.true_block.id, cb.false_block.id });
+                try writer.print(" [{d}], *{d}, *{d}", .{ instr.operands[0].id, cb.true_block.id, cb.false_block.id });
             } else {
-                try writer.print(" bb{d}, bb{d}", .{ cb.true_block.id, cb.false_block.id });
+                try writer.print(" *{d}, *{d}", .{ cb.true_block.id, cb.false_block.id });
             }
         },
 

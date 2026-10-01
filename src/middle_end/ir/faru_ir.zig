@@ -11,11 +11,17 @@ const tt = @import("../../frontend/sema/type_table.zig");
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
 const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
+const buildLoopStmt = @import("statements/loop.zig").buildLoopStmt;
+const buildBreakStmt = @import("statements/break.zig").buildBreakStmt;
 
 const lit = @import("expressions/literal.zig");
 const buildUnaryExpr = @import("expressions/unary.zig").buildUnaryExpr;
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
 const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmentExpr;
+
+const LoopContext = struct {
+    break_block: inst.BlockRef,
+};
 
 pub const FaruIR = struct {
     module: Module,
@@ -23,6 +29,7 @@ pub const FaruIR = struct {
     current_fn: *Function,
     current_block: *BasicBlock,
     current_scope: *ScopeStack,
+    loop_stack: std.ArrayList(LoopContext),
 
     global_symtab: std.StringHashMapUnmanaged(inst.GlobalRef),
 
@@ -34,6 +41,7 @@ pub const FaruIR = struct {
             .current_scope = undefined,
             .current_fn = undefined,
             .current_block = undefined,
+            .loop_stack = .empty,
 
             .global_symtab = .empty,
         };
@@ -41,6 +49,7 @@ pub const FaruIR = struct {
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.global_symtab.deinit(allocator);
+        self.loop_stack.deinit(allocator);
         self.current_scope.deinit(allocator);
     }
 
@@ -117,11 +126,13 @@ pub const FaruIR = struct {
         }
     }
 
-    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
+    pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) anyerror!?void {
         switch (stmt) {
             .return_stmt => |*r| try buildReturnStmt(self, allocator, r) orelse return null,
             .expression => |*e| _ = try self.buildExpression(allocator, e.typed),
             .variable_declaration => |*v| try buildVariableDecl(self, allocator, v) orelse return null,
+            .loop => |*l| try buildLoopStmt(self, allocator, l) orelse return null,
+            .break_stmt => |*b| try buildBreakStmt(self, allocator, b) orelse return null,
 
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});
@@ -152,6 +163,11 @@ pub const FaruIR = struct {
     }
 
     pub fn buildBodyStmt(self: *Self, allocator: std.mem.Allocator, block: typed_ast.TypedBlockStatement) !?void {
+        for (block.typed_stmts) |stmt| {
+            try self.buildStmt(allocator, stmt) orelse return null;
+        }
+    }
+    pub fn buildScopedStmt(self: *Self, allocator: std.mem.Allocator, block: typed_ast.TypedScopedStatement) !?void {
         for (block.typed_stmts) |stmt| {
             try self.buildStmt(allocator, stmt) orelse return null;
         }
@@ -202,5 +218,13 @@ pub const FaruIR = struct {
 
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {
         self.current_block = block;
+    }
+
+    pub fn pushLoopContext(self: *Self, allocator: std.mem.Allocator, ctx: LoopContext) !void {
+        try self.loop_stack.append(allocator, ctx);
+    }
+
+    pub fn popLoopContext(self: *Self) void {
+        _ = self.loop_stack.pop();
     }
 };

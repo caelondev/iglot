@@ -15,6 +15,7 @@ pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ty
     const func = try ir.module.createFunction(allocator, f.identifier.value, f.return_type);
     const entry_bb = try func.newBlock(allocator, "entry");
 
+    ir.current_fn = func;
     ir.goToBlock(entry_bb);
 
     try ir.current_scope.push(allocator);
@@ -22,10 +23,9 @@ pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ty
     try ir.buildBodyStmt(allocator, f.body) orelse return null;
 
     if (!ir.current_block.isTerminated()) {
-        // Sema guarantees only void functions can be unterminated,
-        // so we implicitly inject ret_void when there's no explicit return.
+        const op: inst.Opcode = if (f.return_type == .void) .ret_void else .@"unreachable";
         try ir.emit(allocator, .{
-            .op = .ret_void,
+            .op = op,
             .sema_type = .void,
             .data = .none,
             .operands = &.{},

@@ -1,4 +1,10 @@
-fn main() void {
-  x :: bool = !true;
-  y :: int = -100;
+fn main() int {
+  x :: int = 10;
+
+  loop {
+      x = x + 1;
+  return x;
+  }
+
+  return x;
 }
