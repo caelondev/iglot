@@ -26,7 +26,7 @@ pub const FaruSemanticAnalyzer = struct {
     diagnostics: std.ArrayList(FaruDiagnostic),
 
     current_function_ctx: ?FunctionContext,
-    is_in_loop: bool,
+    loop_depth: usize,
 
     const Self = @This();
     pub fn init() Self {
@@ -34,7 +34,7 @@ pub const FaruSemanticAnalyzer = struct {
             .type_table = undefined,
             .diagnostics = .empty,
             .current_function_ctx = null,
-            .is_in_loop = false,
+            .loop_depth = 0,
         };
     }
 

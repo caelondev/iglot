@@ -11,8 +11,8 @@ pub fn validateLoopStatement(
     allocator: std.mem.Allocator,
     l: *const ast.LoopStatement,
 ) anyerror!?typed_ast.TypedLoopStatement {
-    sema.is_in_loop = true;
-    defer sema.is_in_loop = false;
+    sema.loop_depth += 1;
+    defer sema.loop_depth -= 1;
     const stmt = try sema.validateScopedStatement(allocator, &l.body) orelse return null;
     return .{ .body = stmt };
 }

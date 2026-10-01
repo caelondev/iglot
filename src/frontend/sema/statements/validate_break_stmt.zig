@@ -11,7 +11,7 @@ pub fn validateBreakStatement(
     allocator: std.mem.Allocator,
     l: *const ast.BreakStatement,
 ) anyerror!?ast.BreakStatement {
-    if (!sema.is_in_loop) {
+    if (sema.loop_depth == 0) {
         try sema.reportError(allocator, .{
             .span = l.span,
             .kind = .IllegalBreak,

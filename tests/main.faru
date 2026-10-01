@@ -2,8 +2,10 @@ fn main() int {
   x :: int = 10;
 
   loop {
-      x = x + 1;
-  return x;
+      loop {
+          break;
+      }
+      break;
   }
 
   return x;
