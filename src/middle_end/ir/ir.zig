@@ -19,6 +19,7 @@ const lit = @import("expressions/literal.zig");
 const buildUnaryExpr = @import("expressions/unary.zig").buildUnaryExpr;
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
 const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmentExpr;
+const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 
 const LoopContext = struct {
     break_block: inst.BlockRef,
@@ -139,10 +140,7 @@ pub const IglotIR = struct {
             .scoped => |s| try self.buildScopedStmt(allocator, s) orelse return null,
             .block => |b| try self.buildBodyStmt(allocator, b) orelse return null,
 
-            else => |s| {
-                const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});
-                @panic(msg);
-            },
+            .function_decl => unreachable,
         }
     }
 
@@ -160,10 +158,7 @@ pub const IglotIR = struct {
             .unary => |*u| try buildUnaryExpr(self, allocator, u),
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
 
-            else => |e| {
-                const msg = try std.fmt.allocPrint(allocator, "TODO: build expr {s}", .{@tagName(e)});
-                @panic(msg);
-            },
+            .call => |*c| try buildCallExpr(self, allocator, c),
         };
     }
 

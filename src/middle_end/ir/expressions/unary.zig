@@ -7,6 +7,7 @@ const IglotIR = @import("../ir.zig").IglotIR;
 
 pub fn buildUnaryExpr(ir: *IglotIR, allocator: std.mem.Allocator, u: *const typed_ast.TypedUnaryExpr) !?inst.VReg {
     const rhs_reg = try ir.buildExpression(allocator, u.rhs) orelse return null;
+    const dest = ir.current_fn.newVReg();
     const op: inst.Opcode = switch (u.operator) {
         .bang => .not,
         .minus => .neg,
@@ -18,8 +19,8 @@ pub fn buildUnaryExpr(ir: *IglotIR, allocator: std.mem.Allocator, u: *const type
         .sema_type = u.rhs.sem_type,
         .data = .none,
         .operands = try allocator.dupe(inst.VReg, &.{rhs_reg}),
-        .result = null,
+        .result = dest,
     });
 
-    return rhs_reg;
+    return dest;
 }
