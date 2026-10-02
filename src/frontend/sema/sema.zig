@@ -42,12 +42,71 @@ pub const IglotSemanticAnalyzer = struct {
         self.type_table = try .init(allocator);
         try self.initBuiltinIdentifiers(allocator);
 
+        for (program.body) |*s| {
+            try self.hoistDeclaration(allocator, s) orelse continue;
+        }
+
         var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
         for (program.body) |*stmt| {
             const typed = try self.scanTopLevelStatement(allocator, stmt) orelse continue;
             try body.append(allocator, typed);
         }
         return .{ .body = try body.toOwnedSlice(allocator) };
+    }
+
+    pub fn functionSemType(allocator: std.mem.Allocator, f: *const ast.FunctionDeclarationStatement) !?tt.SemaType {
+        const ret_ptr = try allocator.create(tt.SemaType);
+        ret_ptr.* = try tt.SemaType.fromTypeExpression(allocator, f.return_type) orelse return null;
+
+        const params = try allocator.alloc(*tt.SemaType, f.parameters.len);
+        for (f.parameters, 0..) |param, i| {
+            const p = try allocator.create(tt.SemaType);
+            p.* = try tt.SemaType.fromTypeExpression(allocator, param.param_type) orelse return null;
+            params[i] = p;
+        }
+
+        return .{ .function = .{
+            .parameters = params,
+            .return_type = ret_ptr,
+        } };
+    }
+
+    fn hoistDeclaration(self: *Self, allocator: std.mem.Allocator, stmt: *ast.Statement) !?void {
+        switch (stmt.kind) {
+            .function_decl => |*f| {
+                if (self.type_table.lookupCurrentScope(f.identifier.value)) |existing| {
+                    const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+                        .{
+                            .note = .{
+                                .message = "identifier declared here",
+                                .span = existing.span,
+                            },
+                        },
+                    });
+
+                    try self.reportError(allocator, .{
+                        .span = f.span,
+                        .severity = .err,
+                        .kind = .{
+                            .IdentifierAlreadyExist = .{
+                                .identifier = f.identifier.value,
+                            },
+                        },
+                        .annotations = annotations,
+                    });
+
+                    return null;
+                }
+
+                const function_sem_type = try functionSemType(allocator, f) orelse return null;
+                try self.type_table.declareIdentifier(allocator, f.identifier.value, .{
+                    .span = f.span,
+                    .sem_type = function_sem_type,
+                    .is_final = false,
+                });
+            },
+            else => return,
+        }
     }
 
     fn scanTopLevelStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {

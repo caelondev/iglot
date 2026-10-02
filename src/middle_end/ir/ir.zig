@@ -68,6 +68,10 @@ pub const IglotIR = struct {
         try self.initIglotBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
+            try self.hoistDeclaration(allocator, stmt) orelse continue;
+        }
+
+        for (t_ast.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt) orelse continue;
         }
 
@@ -79,6 +83,15 @@ pub const IglotIR = struct {
                 .operands = &.{},
                 .result = null,
             });
+        }
+    }
+
+    fn hoistDeclaration(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
+        switch (stmt) {
+            .function_decl => |*f| {
+                _ = try self.module.createFunction(allocator, f.identifier.value, f.return_type);
+            },
+            else => return null,
         }
     }
 

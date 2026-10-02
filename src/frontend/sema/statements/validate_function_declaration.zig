@@ -11,74 +11,35 @@ pub fn validateFunctionDeclaration(
     allocator: std.mem.Allocator,
     f: *const ast.FunctionDeclarationStatement,
 ) anyerror!?typed_ast.TypedFunctionDeclarationStatement {
-    if (sema.type_table.lookupCurrentScope(f.identifier.value)) |i| {
-        const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-            .{
-                .note = .{
-                    .message = "identifier declared here",
-                    .span = i.span,
-                },
-            },
-        });
-
-        try sema.reportError(allocator, .{
-            .span = f.span,
-            .severity = .err,
-            .kind = .{
-                .IdentifierAlreadyExist = .{
-                    .identifier = f.identifier.value,
-                },
-            },
-            .annotations = annotations,
-        });
-
-        return null;
-    }
-
-    const ret_sem_type: tt.SemaType = try tt.SemaType.fromTypeExpression(allocator, f.return_type) orelse return null;
-    const ret_ptr = try allocator.create(tt.SemaType);
-    ret_ptr.* = ret_sem_type;
-
-    var param_sem_types = try allocator.alloc(*tt.SemaType, f.parameters.len);
-    var param_sem_types_flat = try allocator.alloc(tt.SemaType, f.parameters.len);
-
-    for (f.parameters, 0..) |param, i| {
-        const param_sem_type = try tt.SemaType.fromTypeExpression(allocator, param.param_type) orelse return null;
-        param_sem_types_flat[i] = param_sem_type;
-        param_sem_types[i] = &param_sem_types_flat[i];
-    }
-
-    const function_sem_type: tt.SemaType = .{
-        .function = .{
-            .parameters = param_sem_types,
-            .return_type = ret_ptr,
-        },
+    // NOTE: the hoist pass already declared this function with its full type,
+    // duplicate names are reported there. we just read the type back.
+    const declared = sema.type_table.lookupIdentifier(f.identifier.value) orelse return null;
+    const fn_type = switch (declared.sem_type) {
+        .function => |ft| ft,
+        else => return null,
     };
+    const ret_sem_type: tt.SemaType = fn_type.return_type.*;
 
     const prev_ctx = sema.current_function_ctx;
     sema.current_function_ctx = .{ .return_type = ret_sem_type };
     defer sema.current_function_ctx = prev_ctx;
-
-    try sema.type_table.declareIdentifier(allocator, f.identifier.value, .{
-        .span = f.span,
-        .sem_type = function_sem_type,
-        .is_final = false,
-    });
 
     try sema.type_table.enterScope(allocator);
     defer sema.type_table.leaveScope(allocator);
 
     var params = try allocator.alloc(typed_ast.TypedFunctionParameter, f.parameters.len);
     for (f.parameters, 0..) |param, i| {
+        const param_sem_type: tt.SemaType = fn_type.parameters[i].*;
+
         try sema.type_table.declareIdentifier(allocator, param.identifier.value, .{
             .span = param.span,
-            .sem_type = param_sem_types_flat[i],
+            .sem_type = param_sem_type,
             .is_final = param.param_type.kind == .final,
         });
 
         params[i] = .{
             .identifier = param.identifier,
-            .param_type = param_sem_types_flat[i],
+            .param_type = param_sem_type,
             .span = param.span,
         };
     }
@@ -109,6 +70,7 @@ pub fn validateFunctionDeclaration(
         .span = f.span,
     };
 }
+
 fn loopCanBreak(body: *const typed_ast.TypedScopedStatement) bool {
     for (body.typed_stmts) |*stmt| {
         if (stmtCanBreak(stmt)) return true;

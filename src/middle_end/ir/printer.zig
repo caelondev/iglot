@@ -19,7 +19,7 @@ pub fn printGlobals(writer: *std.Io.Writer, module: Module) !void {
 }
 
 pub fn printFunction(writer: *std.Io.Writer, func: Function) !void {
-    try writer.print("fn {s}() {f} {{\n", .{ func.function_name, func.ret_type });
+    try writer.print("fn @{d} {s}() {f} {{\n", .{ func.function_ref.id, func.function_name, func.ret_type });
     for (func.blocks.items) |block| {
         try printBlock(writer, block.*);
     }
@@ -70,7 +70,7 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
         },
 
         .call => |c| {
-            try writer.print(" @{d}(", .{c.callee.id});
+            try writer.print(" [{d}](", .{c.callee.id});
             try printOperandList(writer, instr.operands, "", ", ");
             try writer.writeAll(")");
         },
