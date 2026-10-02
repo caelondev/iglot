@@ -13,6 +13,7 @@ const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
 const buildLoopStmt = @import("statements/loop.zig").buildLoopStmt;
 const buildBreakStmt = @import("statements/break.zig").buildBreakStmt;
+const buildIfStmt = @import("statements/if_stmt.zig").buildIfStmt;
 
 const lit = @import("expressions/literal.zig");
 const buildUnaryExpr = @import("expressions/unary.zig").buildUnaryExpr;
@@ -133,6 +134,10 @@ pub const FaruIR = struct {
             .variable_declaration => |*v| try buildVariableDecl(self, allocator, v) orelse return null,
             .loop => |*l| try buildLoopStmt(self, allocator, l) orelse return null,
             .break_stmt => |*b| try buildBreakStmt(self, allocator, b) orelse return null,
+            .if_stmt => |*i| try buildIfStmt(self, allocator, i) orelse return null,
+
+            .scoped => |s| try self.buildScopedStmt(allocator, s) orelse return null,
+            .block => |b| try self.buildBodyStmt(allocator, b) orelse return null,
 
             else => |s| {
                 const msg = try std.fmt.allocPrint(allocator, "TODO: build stmt {s}", .{@tagName(s)});

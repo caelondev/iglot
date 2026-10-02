@@ -1,12 +1,7 @@
 fn main() int {
-  x :: int = 10;
-
-  loop {
-      loop {
-          break;
-      }
-      break;
+  if true: {
+    return 1;
   }
-
-  return x;
+  else if false: return 2;
+  else return 3;
 }
