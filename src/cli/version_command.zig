@@ -13,22 +13,22 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Version command for faru.
+//! Version command for iglot.
 //!
-//! Prints the current faru version along with the build date.
+//! Prints the current iglot version along with the build date.
 
 const std = @import("std");
-const faru = @import("faru_information");
+const iglot = @import("iglot_information");
 const build_time = @import("build_time");
 const Context = @import("cli.zig").Context;
 
-/// Prints the faru version and build date (or `dev` for dev builds).
+/// Prints the iglot version and build date (or `dev` for dev builds).
 pub fn version(ctx: *Context) !void {
     var writer = std.Io.File.stdout().writerStreaming(ctx.io, &.{});
     const out = &writer.interface;
 
     if (build_time.timestamp == 0) {
-        try out.print("faru {s} (dev)\n", .{faru.version});
+        try out.print("iglot {s} (dev)\n", .{iglot.version});
         return;
     }
 
@@ -36,8 +36,8 @@ pub fn version(ctx: *Context) !void {
     const year_day = epoch_seconds.getEpochDay().calculateYearDay();
     const month_day = year_day.calculateMonthDay();
 
-    try out.print("faru {s} ({d}-{d:0>2}-{d:0>2})\n", .{
-        faru.version,
+    try out.print("iglot {s} ({d}-{d:0>2}-{d:0>2})\n", .{
+        iglot.version,
         year_day.year,
         month_day.month.numeric(),
         month_day.day_index + 1,

@@ -2,10 +2,10 @@ const std = @import("std");
 const ast = @import("../../../frontend/parser/ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 const tt = @import("../../../frontend/sema/type_table.zig");
 
-pub fn buildIntegerLit(ir: *FaruIR, allocator: std.mem.Allocator, i: *const ast.IntegerExpression, sema_type: tt.SemaType) !?inst.VReg {
+pub fn buildIntegerLit(ir: *IglotIR, allocator: std.mem.Allocator, i: *const ast.IntegerExpression, sema_type: tt.SemaType) !?inst.VReg {
     const c: struct { inst.ConstantValue, inst.Opcode } = switch (sema_type) {
         .int => .{ .{ .int = @intCast(i.value) }, .const_int },
         .wideint => .{ .{ .wideint = i.value }, .const_wideint },
@@ -24,7 +24,7 @@ pub fn buildIntegerLit(ir: *FaruIR, allocator: std.mem.Allocator, i: *const ast.
     return dest;
 }
 
-pub fn buildWideIntegerLit(ir: *FaruIR, allocator: std.mem.Allocator, i: *const ast.WideIntegerExpression, sema_type: tt.SemaType) !?inst.VReg {
+pub fn buildWideIntegerLit(ir: *IglotIR, allocator: std.mem.Allocator, i: *const ast.WideIntegerExpression, sema_type: tt.SemaType) !?inst.VReg {
     const dest = ir.current_fn.newVReg();
     try ir.emit(allocator, .{
         .data = .{ .constant = .{ .wideint = i.value } },
@@ -37,7 +37,7 @@ pub fn buildWideIntegerLit(ir: *FaruIR, allocator: std.mem.Allocator, i: *const 
     return dest;
 }
 
-pub fn buildFloatLit(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ast.FloatExpression, sema_type: tt.SemaType) !?inst.VReg {
+pub fn buildFloatLit(ir: *IglotIR, allocator: std.mem.Allocator, f: *const ast.FloatExpression, sema_type: tt.SemaType) !?inst.VReg {
     const c: struct { inst.ConstantValue, inst.Opcode } = switch (sema_type) {
         .float => .{ .{ .float = @floatCast(f.value) }, .const_float },
         .double => .{ .{ .double = f.value }, .const_double },
@@ -56,7 +56,7 @@ pub fn buildFloatLit(ir: *FaruIR, allocator: std.mem.Allocator, f: *const ast.Fl
     return dest;
 }
 
-pub fn buildStringLit(ir: *FaruIR, allocator: std.mem.Allocator, s: *const ast.StringExpression, sema_type: tt.SemaType) !?inst.VReg {
+pub fn buildStringLit(ir: *IglotIR, allocator: std.mem.Allocator, s: *const ast.StringExpression, sema_type: tt.SemaType) !?inst.VReg {
     const dest = ir.current_fn.newVReg();
     try ir.emit(allocator, .{
         .data = .{ .constant = .{ .string = s.value } },

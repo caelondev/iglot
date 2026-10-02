@@ -3,9 +3,9 @@ const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const TokenKind = @import("../../../frontend/lexer/tokens.zig").TokenKind;
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildBinaryExpr(ir: *FaruIR, allocator: std.mem.Allocator, b: *const typed_ast.TypedBinaryExpr) !?inst.VReg {
+pub fn buildBinaryExpr(ir: *IglotIR, allocator: std.mem.Allocator, b: *const typed_ast.TypedBinaryExpr) !?inst.VReg {
     const op = tokenToOpcode(b.operator);
     const left_ref = try ir.buildExpression(allocator, b.left) orelse return null;
     const right_ref = try ir.buildExpression(allocator, b.right) orelse return null;

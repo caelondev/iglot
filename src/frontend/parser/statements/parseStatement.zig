@@ -13,7 +13,7 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Parses statements in the Faru language.
+//! Parses statements in the Iglot language.
 //!
 //! Statement parsing acts as the entry point for parsing a single statement.
 //! It determines which kind of statement can be parsed from the current
@@ -43,12 +43,12 @@ const ast = @import("../ast.zig");
 const p = @import("../parser.zig");
 const TokenKind = @import("../../lexer/tokens.zig").TokenKind;
 const statements = p.statements;
-const FaruParser = p.FaruParser;
+const IglotParser = p.IglotParser;
 const parseExpression = @import("parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseStatement(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     if (parser.curTokenIs(.identifier) and parser.peekTokenIs(.box_colon)) {
@@ -92,7 +92,7 @@ pub fn parseStatement(
 /// loop has no way to consume, like a stray `}` at top level), forces a
 /// single token of advancement so callers can never spin forever.
 pub fn parseStatementRecovering(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const before = parser.advance_count;

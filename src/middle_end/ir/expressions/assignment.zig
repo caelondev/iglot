@@ -3,9 +3,9 @@ const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const TokenKind = @import("../../../frontend/lexer/tokens.zig").TokenKind;
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildAssignmentExpr(ir: *FaruIR, allocator: std.mem.Allocator, a: *const typed_ast.TypedAssignment) !?inst.VReg {
+pub fn buildAssignmentExpr(ir: *IglotIR, allocator: std.mem.Allocator, a: *const typed_ast.TypedAssignment) !?inst.VReg {
     const rhs = try ir.buildExpression(allocator, a.value) orelse return null;
     const dest = ir.current_scope.resolve(a.assignee.kind.identifier.value) orelse unreachable;
 

@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const FaruLexer = @import("../lexer/faru_lexer.zig").FaruLexer;
+const IglotLexer = @import("../lexer/lexer.zig").IglotLexer;
 const tokens = @import("../lexer/tokens.zig");
 const ast = @import("ast.zig");
-const FaruDiagnostic = @import("../../diagnostics/diagnostics.zig").FaruDiagnostic;
+const IglotDiagnostic = @import("../../diagnostics/diagnostics.zig").IglotDiagnostic;
 
 const nud_lit = @import("nud/literals.zig");
 const parseStatement = @import("statements/parseStatement.zig").parseStatement;
@@ -11,18 +11,18 @@ const parseStatementRecovering = @import("statements/parseStatement.zig").parseS
 const Precedence = @import("precedence.zig").Precedence;
 
 pub const NudFn = *const fn (
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) anyerror!?ast.Expression;
 
 pub const LedFn = *const fn (
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) anyerror!?ast.Expression;
 
 pub const StmtFn = *const fn (
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) anyerror!?ast.Statement;
 
@@ -158,12 +158,12 @@ pub const statements = [_]Statement{
     },
 };
 
-pub const FaruParser = struct {
-    lexer: *FaruLexer,
+pub const IglotParser = struct {
+    lexer: *IglotLexer,
     cur_tok: tokens.Token,
     peek_tok: tokens.Token,
 
-    diagnostics: std.ArrayList(FaruDiagnostic),
+    diagnostics: std.ArrayList(IglotDiagnostic),
     panic_mode: bool,
     advance_count: u32,
 
@@ -171,7 +171,7 @@ pub const FaruParser = struct {
 
     pub fn init(
         allocator: std.mem.Allocator,
-        lexer: *FaruLexer,
+        lexer: *IglotLexer,
     ) !Self {
         var p: Self = .{
             .lexer = lexer,
@@ -243,7 +243,7 @@ pub const FaruParser = struct {
         return self.cur_tok.kind == .eof;
     }
 
-    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: FaruDiagnostic) !void {
+    pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: IglotDiagnostic) !void {
         if (self.panic_mode) return;
 
         self.panic_mode = true;

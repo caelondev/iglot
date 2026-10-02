@@ -14,7 +14,7 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const std = @import("std");
-const FaruCLI = @import("cli/cli.zig").FaruCLI;
+const IglotCLI = @import("cli/cli.zig").IglotCLI;
 
 pub fn main(init: std.process.Init) !void {
     const args =
@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
     defer init.gpa.free(args);
 
     const argsIter = init.minimal.args.iterate();
-    var cli = FaruCLI.init(args, argsIter);
+    var cli = IglotCLI.init(args, argsIter);
 
     try cli.run(
         init.arena,

@@ -1,7 +1,7 @@
 .{
-    .name = .faru,
+    .name = .iglot,
     .version = "0.0.0",
-    .fingerprint = 0x4b7a48130b2cc8e5,
+    .fingerprint = 0x31dd92c719bc58,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .inkdye = .{

@@ -1,10 +1,10 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseBreakStatement(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.cur_tok;

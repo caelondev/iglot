@@ -2,9 +2,9 @@ const std = @import("std");
 const ast = @import("../../../frontend/parser/ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildBreakStmt(self: *FaruIR, allocator: std.mem.Allocator, b: *const ast.BreakStatement) !?void {
+pub fn buildBreakStmt(self: *IglotIR, allocator: std.mem.Allocator, b: *const ast.BreakStatement) !?void {
     _ = b;
     const top_loop = self.loop_stack.getLast();
     try self.emit(allocator, .{

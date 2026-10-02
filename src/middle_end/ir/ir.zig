@@ -24,7 +24,7 @@ const LoopContext = struct {
     break_block: inst.BlockRef,
 };
 
-pub const FaruIR = struct {
+pub const IglotIR = struct {
     module: Module,
 
     current_fn: *Function,
@@ -64,7 +64,7 @@ pub const FaruIR = struct {
         self.current_fn = init_fn;
         self.goToBlock(entry_bb);
 
-        try self.initFaruBuiltins(allocator);
+        try self.initIglotBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt) orelse continue;
@@ -81,7 +81,7 @@ pub const FaruIR = struct {
         }
     }
 
-    pub fn initFaruBuiltins(self: *Self, allocator: std.mem.Allocator) !void {
+    pub fn initIglotBuiltins(self: *Self, allocator: std.mem.Allocator) !void {
         try self.buildBuiltinGlobal(allocator, "true", .bool, .{ .op = .const_bool, .const_data = .{ .bool = true } });
         try self.buildBuiltinGlobal(allocator, "false", .bool, .{ .op = .const_bool, .const_data = .{ .bool = false } });
     }

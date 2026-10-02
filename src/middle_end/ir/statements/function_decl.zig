@@ -2,9 +2,9 @@ const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildFunctionDecl(ir: *FaruIR, allocator: std.mem.Allocator, f: *const typed_ast.TypedFunctionDeclarationStatement) !?void {
+pub fn buildFunctionDecl(ir: *IglotIR, allocator: std.mem.Allocator, f: *const typed_ast.TypedFunctionDeclarationStatement) !?void {
     const prev_fn = ir.current_fn;
     const prev_block = ir.current_block;
     defer {

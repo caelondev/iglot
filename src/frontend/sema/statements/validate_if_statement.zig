@@ -1,13 +1,13 @@
 const std = @import("std");
-const FaruDiagnostic = @import("../../../diagnostics/diagnostics.zig").FaruDiagnostic;
+const IglotDiagnostic = @import("../../../diagnostics/diagnostics.zig").IglotDiagnostic;
 const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
-const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
+const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
 
 pub fn validateIfStatement(
-    sema: *FaruSemanticAnalyzer,
+    sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
     f: *const ast.IfStatement,
 ) anyerror!?typed_ast.TypedIfStatement {

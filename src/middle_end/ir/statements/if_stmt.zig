@@ -2,9 +2,9 @@ const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildIfStmt(ir: *FaruIR, allocator: std.mem.Allocator, i: *const typed_ast.TypedIfStatement) !?void {
+pub fn buildIfStmt(ir: *IglotIR, allocator: std.mem.Allocator, i: *const typed_ast.TypedIfStatement) !?void {
     const cond_blk = try ir.current_fn.newBlock(allocator, "if.cond");
     const then_blk = try ir.current_fn.newBlock(allocator, "if.then");
     const alt_blk = try ir.current_fn.newBlock(allocator, "if.alt");

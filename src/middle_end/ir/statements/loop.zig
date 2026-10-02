@@ -2,9 +2,9 @@ const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildLoopStmt(self: *FaruIR, allocator: std.mem.Allocator, l: *const typed_ast.TypedLoopStatement) !?void {
+pub fn buildLoopStmt(self: *IglotIR, allocator: std.mem.Allocator, l: *const typed_ast.TypedLoopStatement) !?void {
     const loop_start_blk = try self.current_fn.newBlock(allocator, "loop.start");
     const loop_end_blk = try self.current_fn.newBlock(allocator, "loop.end");
 

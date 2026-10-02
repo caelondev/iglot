@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const FaruLexer = @import("../../lexer/faru_lexer.zig").FaruLexer;
+const IglotLexer = @import("../../lexer/lexer.zig").IglotLexer;
 const tokens = @import("../../lexer/tokens.zig");
 const ast = @import("../ast.zig");
-const FaruDiagnostic = @import("../../../diagnostics/diagnostics.zig").FaruDiagnostic;
+const IglotDiagnostic = @import("../../../diagnostics/diagnostics.zig").IglotDiagnostic;
 
 const nud_lit = @import("../nud/literals.zig");
 const parseStatement = @import("../statements/parseStatement.zig").parseStatement;
 const Precedence = @import("../precedence.zig").Precedence;
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 
 /// assumes cur_tok is already sitting on the type token when called
 pub fn parseTypeExpression(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
     const tok = parser.cur_tok;
@@ -45,14 +45,14 @@ pub fn parseTypeExpression(
 }
 
 pub fn parseReturnTypeExpression(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.TypeExpression {
     return parseType(parser, allocator, parser.cur_tok);
 }
 
 fn parseType(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
     tok: tokens.Token,
 ) anyerror!?ast.TypeExpression {

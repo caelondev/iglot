@@ -1,18 +1,18 @@
 const std = @import("std");
-const FaruDiagnostic = @import("../../../diagnostics/diagnostics.zig").FaruDiagnostic;
+const IglotDiagnostic = @import("../../../diagnostics/diagnostics.zig").IglotDiagnostic;
 const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
-const FaruSemanticAnalyzer = @import("../sema.zig").FaruSemanticAnalyzer;
+const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
 
 pub fn validateVariableDeclaration(
-    sema: *FaruSemanticAnalyzer,
+    sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
     v: *const ast.VariableDeclarationStatement,
 ) anyerror!?typed_ast.TypedVariableDeclaration {
     if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
-        const annotations = try allocator.dupe(FaruDiagnostic.Annotation, &.{
+        const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
             .{
                 .note = .{
                     .message = "identifier declared here",

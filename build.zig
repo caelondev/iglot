@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = addFaru(b, target, optimize, 0);
+    const exe = addIglot(b, target, optimize, 0);
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
 
     const release_step = b.step("release", "Build an optimized release with a real build timestamp");
     const now = std.Io.Clock.real.now(b.graph.io).toSeconds();
-    const release_exe = addFaru(b, target, .ReleaseFast, now);
+    const release_exe = addIglot(b, target, .ReleaseFast, now);
     const install_release = b.addInstallArtifact(release_exe, .{
         .dest_dir = .{ .override = .{ .custom = "release" } },
     });
@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) void {
     release_step.dependOn(&install_release.step);
 }
 
-fn addFaru(
+fn addIglot(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
@@ -49,16 +49,16 @@ fn addFaru(
     , .{stamp}));
 
     const exe = b.addExecutable(.{
-        .name = "faru",
+        .name = "iglot",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/faru.zig"),
+            .root_source_file = b.path("src/iglot.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
 
     exe.root_module.addImport("inkdye", inkdye.module("inkdye"));
-    exe.root_module.addImport("faru_information", b.createModule(.{
+    exe.root_module.addImport("iglot_information", b.createModule(.{
         .root_source_file = b.path("build.zig.zon"),
     }));
     exe.root_module.addImport("build_time", b.createModule(.{

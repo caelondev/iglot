@@ -2,9 +2,9 @@ const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
-const FaruIR = @import("../faru_ir.zig").FaruIR;
+const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildReturnStmt(ir: *FaruIR, allocator: std.mem.Allocator, r: *const typed_ast.TypedReturnStatement) !?void {
+pub fn buildReturnStmt(ir: *IglotIR, allocator: std.mem.Allocator, r: *const typed_ast.TypedReturnStatement) !?void {
     if (r.return_value == null) {
         try ir.emit(allocator, .{
             .op = .ret_void,

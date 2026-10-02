@@ -1,12 +1,12 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const parseStatement = @import("parseStatement.zig").parseStatement;
 const parseScopedStatement = @import("scoped_statement.zig").parseScopedStatement;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseLoopStatement(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const keyword = parser.cur_tok;

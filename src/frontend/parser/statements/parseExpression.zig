@@ -38,10 +38,10 @@ const ast = @import("../ast.zig");
 const literal = @import("../nud/literals.zig");
 const p = @import("../parser.zig");
 const tokens = @import("../../lexer/tokens.zig");
-const FaruParser = p.FaruParser;
+const IglotParser = p.IglotParser;
 const Precedence = @import("../precedence.zig").Precedence;
 
-pub fn parseExpression(parser: *FaruParser, allocator: std.mem.Allocator, precedence: u8) !?ast.Expression {
+pub fn parseExpression(parser: *IglotParser, allocator: std.mem.Allocator, precedence: u8) !?ast.Expression {
     const nud = lookupNud(parser.cur_tok.kind) orelse {
         try parser.reportError(allocator, .{
             .span = parser.cur_tok.span,

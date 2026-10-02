@@ -1,13 +1,13 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const parseTypeExpression = @import("../type/parse_type_expression.zig").parseTypeExpression;
 const Span = @import("../../lexer/tokens.zig").Span;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseVariableDeclaration(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Statement {
     const var_name = parser.cur_tok;

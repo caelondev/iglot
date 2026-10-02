@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const ast = @import("../ast.zig");
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseUnaryExpression(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
     const operator = parser.cur_tok;

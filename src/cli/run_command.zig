@@ -13,9 +13,9 @@
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //!
-//! Run command for faru.
+//! Run command for iglot.
 //!
-//! Compiles and interprets a Faru program.
+//! Compiles and interprets a Iglot program.
 //!
 //! The run command is responsible for driving the language execution pipeline,
 //! from parsing the source into an intermediate representation through
@@ -23,17 +23,17 @@
 
 const std = @import("std");
 const Context = @import("cli.zig").Context;
-const FaruLexer = @import("../frontend/lexer/faru_lexer.zig").FaruLexer;
+const IglotLexer = @import("../frontend/lexer/lexer.zig").IglotLexer;
 const InkDye = @import("inkdye");
 const p = @import("../frontend/parser/parser.zig");
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
 const pathExists = @import("helpers/path_exists.zig").pathExists;
-const FaruSemanticAnalyzer = @import("../frontend/sema/sema.zig").FaruSemanticAnalyzer;
-const FaruIR = @import("../middle_end/ir/faru_ir.zig").FaruIR;
+const IglotSemanticAnalyzer = @import("../frontend/sema/sema.zig").IglotSemanticAnalyzer;
+const IglotIR = @import("../middle_end/ir/ir.zig").IglotIR;
 const printModule = @import("../middle_end/ir/printer.zig").printModule;
 
-/// Compiles and interprets a Faru program.
+/// Compiles and interprets a Iglot program.
 pub fn run(ctx: *Context) !void {
     const allocator = ctx.arena.*.allocator();
 
@@ -48,7 +48,7 @@ pub fn run(ctx: *Context) !void {
     const ewriter = &stderr.interface;
 
     const path = ctx.argsIter.next() orelse {
-        try ewriter.print("{s}: usage: faru run <filepath>\n", .{e});
+        try ewriter.print("{s}: usage: iglot run <filepath>\n", .{e});
         return;
     };
 
@@ -60,8 +60,8 @@ pub fn run(ctx: *Context) !void {
     const cwd = std.Io.Dir.cwd();
     const src = try cwd.readFileAlloc(ctx.io, path, allocator, .unlimited);
 
-    var lexer = FaruLexer.init(src);
-    var parser = try p.FaruParser.init(allocator, &lexer);
+    var lexer = IglotLexer.init(src);
+    var parser = try p.IglotParser.init(allocator, &lexer);
     const ast = try parser.parseProgram(allocator);
 
     var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
@@ -78,7 +78,7 @@ pub fn run(ctx: *Context) !void {
         try dumpAny(writer, ast, 0);
     } else return;
 
-    var sema: FaruSemanticAnalyzer = .init();
+    var sema: IglotSemanticAnalyzer = .init();
     const t_ast = try sema.analyze(allocator, ast);
     if (sema.diagnostics.items.len != 0) {
         try writer.writeByte('\n');
@@ -99,7 +99,7 @@ pub fn run(ctx: *Context) !void {
         std.debug.print("typed ast:", .{});
         try dumpAny(writer, t_ast, 0);
 
-        var ir_builder: FaruIR = .init();
+        var ir_builder: IglotIR = .init();
         defer ir_builder.deinit(allocator);
 
         try ir_builder.buildProgram(allocator, t_ast);

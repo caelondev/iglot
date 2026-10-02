@@ -1,14 +1,14 @@
 <div align="center">
-  <img src="assets/faru-icon.svg" alt="faru icon" width="180">
+  <img src="assets/iglot-icon.svg" alt="iglot icon" width="180">
 
-  <h1><strong>faru</strong></h1>
+  <h1><strong>iglot</strong></h1>
 
   <br>
 
-[Repository](https://codeberg.org/caelondev/faru) · [Issues](https://codeberg.org/caelondev/faru/issues)
+[Repository](https://codeberg.org/caelondev/iglot) · [Issues](https://codeberg.org/caelondev/iglot/issues)
 </div>
 
-Faru is a statically-typed programming language built around clarity and control.
+Iglot is a statically-typed programming language built around clarity and control.
 
 > **Status:** Work in progress. The language and compiler are still changing quite a bit.
 
@@ -21,30 +21,30 @@ Faru is a statically-typed programming language built around clarity and control
 ### Build from source
 
 ```bash
-git clone https://codeberg.org/caelondev/faru.git
-cd faru
+git clone https://codeberg.org/caelondev/iglot.git
+cd iglot
 zig build
 ```
 
-Run a Faru program with:
+Run a Iglot program with:
 
 ```bash
-./zig-cache/bin/faru run yourfile.faru
+./zig-cache/bin/iglot run yourfile.iglot
 ```
 
-## What is Faru?
+## What is Iglot?
 
-Faru is a statically-typed programming language designed for everyday use, from quick scripts and small utilities to larger programs.
+Iglot is a statically-typed programming language designed for everyday use, from quick scripts and small utilities to larger programs.
 
 It is built around three simple goals: fast, type-safe, and boring.
 
-Faru favors explicit behavior, predictable semantics, and a small amount of language magic. The syntax is intended to stay simple and readable without getting in the way of writing real programs.
+Iglot favors explicit behavior, predictable semantics, and a small amount of language magic. The syntax is intended to stay simple and readable without getting in the way of writing real programs.
 
-Although scripting and small utilities are an important use case, Faru is not intended to be limited to them. The language and runtime are being designed to grow into something capable of handling day-to-day programming more broadly.
+Although scripting and small utilities are an important use case, Iglot is not intended to be limited to them. The language and runtime are being designed to grow into something capable of handling day-to-day programming more broadly.
 
 ## Examples
 
-```faru
+```iglot
 fn add(a :: int, b :: int) int {
   return a + b;
 }
@@ -57,7 +57,7 @@ fn main() int {
 
 ## Development
 
-Faru is actively developed and is still a work in progress. The language, compiler, and runtime are evolving as the project grows.
+Iglot is actively developed and is still a work in progress. The language, compiler, and runtime are evolving as the project grows.
 
 The architecture is intentionally kept modular to leave room for future optimizations, runtime features, and compilation backends.
 
@@ -69,7 +69,7 @@ For larger changes, opening an issue first is a good way to discuss the idea and
 
 ## License
 
-Faru is licensed under the [GNU Affero General Public License v3.0](./LICENSE).
+Iglot is licensed under the [GNU Affero General Public License v3.0](./LICENSE).
 
 ---
 

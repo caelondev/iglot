@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const ast = @import("../ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
 const Precedence = @import("../precedence.zig").Precedence;
 
 pub fn parseAssignmentExpression(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {

@@ -15,7 +15,7 @@
 //!
 //! Definitions for lexical tokens and their source locations.
 //!
-//! A `Token` represents a single lexical unit produced by the Faru lexer.
+//! A `Token` represents a single lexical unit produced by the Iglot lexer.
 //! Tokens contain their kind, the corresponding source lexeme, and the
 //! source span where the token was found.
 //!

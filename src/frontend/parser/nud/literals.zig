@@ -28,11 +28,11 @@
 
 const std = @import("std");
 
-const FaruParser = @import("../parser.zig").FaruParser;
+const IglotParser = @import("../parser.zig").IglotParser;
 const ast = @import("../ast.zig");
 
 pub fn parseWideInteger(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
     const lit_raw = parser.cur_tok;
@@ -66,7 +66,7 @@ pub fn parseWideInteger(
 }
 
 pub fn parseInteger(
-    parser: *FaruParser,
+    parser: *IglotParser,
     allocator: std.mem.Allocator,
 ) !?ast.Expression {
     const lit_raw = parser.cur_tok;
@@ -99,7 +99,7 @@ pub fn parseInteger(
     };
 }
 
-pub fn parseFloat(parser: *FaruParser, _: std.mem.Allocator) !?ast.Expression {
+pub fn parseFloat(parser: *IglotParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.cur_tok;
 
     const float = std.fmt.parseFloat(f64, lit_raw.lexeme) catch |err| {
@@ -118,7 +118,7 @@ pub fn parseFloat(parser: *FaruParser, _: std.mem.Allocator) !?ast.Expression {
     };
 }
 
-pub fn parseIdentifier(parser: *FaruParser, _: std.mem.Allocator) !?ast.Expression {
+pub fn parseIdentifier(parser: *IglotParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.cur_tok;
     const ident_expr: ast.IdentifierExpression = .{ .value = lit_raw.lexeme };
     return .{
@@ -127,7 +127,7 @@ pub fn parseIdentifier(parser: *FaruParser, _: std.mem.Allocator) !?ast.Expressi
     };
 }
 
-pub fn parseString(parser: *FaruParser, _: std.mem.Allocator) !?ast.Expression {
+pub fn parseString(parser: *IglotParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.cur_tok;
     const str_expr: ast.StringExpression = .{ .value = lit_raw.lexeme };
     return .{
