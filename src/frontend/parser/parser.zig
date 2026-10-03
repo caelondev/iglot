@@ -189,6 +189,10 @@ pub const IglotParser = struct {
         return p;
     }
 
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        self.diagnostics.deinit(allocator);
+    }
+
     pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !ast.Program {
         var stmts: std.ArrayList(ast.Statement) = .empty;
 

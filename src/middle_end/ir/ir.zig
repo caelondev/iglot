@@ -56,7 +56,7 @@ pub const IglotIR = struct {
         self.current_scope.deinit(allocator);
     }
 
-    pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !void {
+    pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !?*Module {
         const scope_stack = try allocator.create(ScopeStack);
         scope_stack.* = .init();
         self.current_scope = scope_stack;
@@ -73,18 +73,13 @@ pub const IglotIR = struct {
         }
 
         for (t_ast.body) |stmt| {
-            try self.buildTopLevelStmt(allocator, stmt) orelse continue;
+            try self.buildTopLevelStmt(allocator, stmt) orelse return null;
         }
 
-        if (!self.current_block.isTerminated()) {
-            try self.emit(allocator, .{
-                .op = .ret_void,
-                .sema_type = .void,
-                .data = .none,
-                .operands = &.{},
-                .result = null,
-            });
-        }
+        const module = try allocator.create(Module);
+        module.* = self.module;
+
+        return module;
     }
 
     fn hoistDeclaration(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {

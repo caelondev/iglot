@@ -11,7 +11,7 @@ pub const IglotCodegen = struct {
 
     pub fn init() IglotCodegen {
         return .{
-            .module = undefined,
+            .module = .init(),
             .block_start = .empty,
             .reg_count = 0,
         };
@@ -22,8 +22,11 @@ pub const IglotCodegen = struct {
         self.block_start.deinit(allocator);
     }
 
-    pub fn generate(self: *IglotCodegen, ir_module: *const IrModule) !Module {
-        _ = .{ self, ir_module };
-        @panic("todo");
+    pub fn generate(self: *IglotCodegen, allocator: std.mem.Allocator, ir_module: *const IrModule) !*Module {
+        _ = .{ ir_module, allocator };
+
+        const module = try allocator.create(Module);
+        module.* = self.module;
+        return module;
     }
 };

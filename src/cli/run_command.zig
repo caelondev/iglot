@@ -12,28 +12,25 @@
 //!
 //! You should have received a copy of the GNU Affero General Public License
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//!
-//! Run command for iglot.
-//!
-//! Compiles and interprets a Iglot program.
-//!
-//! The run command is responsible for driving the language execution pipeline,
-//! from parsing the source into an intermediate representation through
-//! compilation and interpretation.
 
 const std = @import("std");
+
 const Context = @import("cli.zig").Context;
-const IglotLexer = @import("../frontend/lexer/lexer.zig").IglotLexer;
 const InkDye = @import("inkdye");
-const p = @import("../frontend/parser/parser.zig");
-const dumpAny = @import("../debug/dump_any.zig").dumpAny;
-const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
-const pathExists = @import("helpers/path_exists.zig").pathExists;
+
+const IglotLexer = @import("../frontend/lexer/lexer.zig").IglotLexer;
+const IglotParser = @import("../frontend/parser/parser.zig").IglotParser;
 const IglotSemanticAnalyzer = @import("../frontend/sema/sema.zig").IglotSemanticAnalyzer;
 const IglotIR = @import("../middle_end/ir/ir.zig").IglotIR;
+const IglotCodegen = @import("../bytecode/codegen.zig").IglotCodegen;
+
+const dumpAny = @import("../debug/dump_any.zig").dumpAny;
+const dumpBytecode = @import("../bytecode/disasm.zig").dumpBytecode;
+const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
+const pathExists = @import("helpers/path_exists.zig").pathExists;
 const printModule = @import("../middle_end/ir/printer.zig").printModule;
 
-/// Compiles and interprets a Iglot program.
+/// Compiles and interprets an Iglot program.
 pub fn run(ctx: *Context) !void {
     const allocator = ctx.arena.*.allocator();
 
@@ -43,69 +40,131 @@ pub fn run(ctx: *Context) !void {
     });
     defer dye.deinit();
 
-    const e = try dye.red().bold().fmt("error", .{});
     var stderr = std.Io.File.stderr().writer(ctx.io, &.{});
     const ewriter = &stderr.interface;
 
     const path = ctx.argsIter.next() orelse {
-        try ewriter.print("{s}: usage: iglot run <filepath>\n", .{e});
+        try ewriter.print("{s}: usage: iglot run <filepath>\n", .{
+            try dye.red().bold().fmt("error", .{}),
+        });
         return;
     };
 
     if (!try pathExists(ctx.io, path)) {
-        try ewriter.print("{s}: path does not exist\n", .{e});
+        try ewriter.print("{s}: path does not exist\n", .{
+            try dye.red().bold().fmt("error", .{}),
+        });
         return;
     }
 
     const cwd = std.Io.Dir.cwd();
-    const src = try cwd.readFileAlloc(ctx.io, path, allocator, .unlimited);
+    const source = try cwd.readFileAlloc(
+        ctx.io,
+        path,
+        allocator,
+        .unlimited,
+    );
 
-    var lexer = IglotLexer.init(src);
-    var parser = try p.IglotParser.init(allocator, &lexer);
+    var stdout = std.Io.File.stdout().writer(ctx.io, &.{});
+    const writer = &stdout.interface;
+
+    // Parse
+    var lexer = IglotLexer.init(source);
+    var parser = try IglotParser.init(allocator, &lexer);
     const ast = try parser.parseProgram(allocator);
 
-    var stdout_writer = std.Io.File.stdout().writer(ctx.io, &.{});
-    const writer = &stdout_writer.interface;
-    for (parser.diagnostics.items, 0..) |d, i| {
-        try renderDiagnostics(writer, allocator, &dye, src, d);
-        if (i != parser.diagnostics.items.len - 1) {
-            try writer.writeByte('\n');
-        }
-    }
+    try renderParserDiagnostics(
+        writer,
+        allocator,
+        &dye,
+        source,
+        &parser,
+    );
 
-    if (parser.diagnostics.items.len == 0) {
-        std.debug.print("parsed ast:", .{});
-        try dumpAny(writer, ast, 0);
-    } else return;
+    if (parser.diagnostics.items.len != 0)
+        return;
 
+    // std.debug.print("parsed ast:\n", .{});
+    // try dumpAny(writer, ast, 0);
+
+    // Semantic analysis
     var sema: IglotSemanticAnalyzer = .init();
-    const t_ast = try sema.analyze(allocator, ast);
+    const typed_ast = try sema.analyze(allocator, ast);
+
     if (sema.diagnostics.items.len != 0) {
-        try writer.writeByte('\n');
-        for (sema.diagnostics.items) |d| {
-            try renderDiagnostics(writer, allocator, &dye, src, d);
-            try writer.writeByte('\n');
-        }
-
-        try writer.writeAll(
-            try dye.cyan().fmt("--> ", .{}),
+        try renderSemaDiagnostics(
+            writer,
+            allocator,
+            &dye,
+            source,
+            &sema,
         );
-        try writer.print("found {s}\n", .{
-            try dye.red().fmt("{d} error(s)", .{
-                sema.diagnostics.items.len,
-            }),
-        });
-    } else {
-        std.debug.print("typed ast:", .{});
-        try dumpAny(writer, t_ast, 0);
-
-        var ir_builder: IglotIR = .init();
-        defer ir_builder.deinit(allocator);
-
-        try ir_builder.buildProgram(allocator, t_ast);
-
-        try writer.writeByte('\n');
-        std.debug.print("ir module:\n", .{});
-        try printModule(writer, ir_builder.module);
+        return;
     }
+    sema.deinit(allocator);
+
+    // std.debug.print("typed ast:\n", .{});
+    // try dumpAny(writer, typed_ast, 0);
+
+    // IR
+    var ir: IglotIR = .init();
+
+    const module = try ir.buildProgram(allocator, typed_ast) orelse return;
+    ir.deinit(allocator);
+
+    std.debug.print("ir module:\n", .{});
+    try printModule(writer, module.*);
+
+    // Codegen
+    var codegen: IglotCodegen = .init();
+    const bytecode = try codegen.generate(allocator, module);
+
+    try dumpBytecode(writer, bytecode);
+}
+
+fn renderParserDiagnostics(
+    writer: *std.Io.Writer,
+    allocator: std.mem.Allocator,
+    dye: *InkDye.RuntimeChameleon,
+    source: []const u8,
+    parser: *const IglotParser,
+) !void {
+    for (parser.diagnostics.items, 0..) |diagnostic, i| {
+        try renderDiagnostics(
+            writer,
+            allocator,
+            dye,
+            source,
+            diagnostic,
+        );
+
+        if (i + 1 < parser.diagnostics.items.len)
+            try writer.writeByte('\n');
+    }
+}
+
+fn renderSemaDiagnostics(
+    writer: *std.Io.Writer,
+    allocator: std.mem.Allocator,
+    dye: *InkDye.RuntimeChameleon,
+    source: []const u8,
+    sema: *const IglotSemanticAnalyzer,
+) !void {
+    for (sema.diagnostics.items) |diagnostic| {
+        try renderDiagnostics(
+            writer,
+            allocator,
+            dye,
+            source,
+            diagnostic,
+        );
+        try writer.writeByte('\n');
+    }
+
+    try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
+    try writer.print("found {s}\n", .{
+        try dye.red().fmt("{d} error(s)", .{
+            sema.diagnostics.items.len,
+        }),
+    });
 }

@@ -38,6 +38,11 @@ pub const IglotSemanticAnalyzer = struct {
         };
     }
 
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        self.type_table.deinit(allocator);
+        self.diagnostics.deinit(allocator);
+    }
+
     pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
         self.type_table = try .init(allocator);
         try self.initBuiltinIdentifiers(allocator);
