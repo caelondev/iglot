@@ -1,5 +1,6 @@
 const std = @import("std");
 const Function = @import("function.zig").Function;
+const Params = @import("function.zig").Params;
 const inst = @import("instruction.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
@@ -41,6 +42,7 @@ pub const Module = struct {
         self: *Module,
         allocator: std.mem.Allocator,
         name: []const u8,
+        params: []const Params,
         ret_type: tt.SemaType,
     ) !*Function {
         const ref: inst.FunctionRef = .{ .id = self.next_function_id };
@@ -49,6 +51,8 @@ pub const Module = struct {
         const function = try allocator.create(Function);
         errdefer allocator.destroy(function);
         function.* = .init(ref, name, ret_type);
+
+        for (params) |p| try function.appendParam(allocator, p);
 
         try self.functions.append(allocator, function);
         try self.function_names.put(allocator, name, ref.id);

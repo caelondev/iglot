@@ -3,9 +3,16 @@ const BasicBlock = @import("basic_block.zig").BasicBlock;
 const inst = @import("instruction.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
+pub const Params = struct {
+    name: []const u8,
+    index: u32,
+    sema_type: tt.SemaType,
+};
+
 pub const Function = struct {
     function_name: []const u8,
     function_ref: inst.FunctionRef,
+    params: std.ArrayList(Params),
     ret_type: tt.SemaType,
     blocks: std.ArrayList(*BasicBlock),
     next_block_id: u32,
@@ -16,6 +23,7 @@ pub const Function = struct {
         return .{
             .function_name = name,
             .function_ref = ref,
+            .params = .empty,
             .ret_type = ret_type,
             .blocks = .empty,
             .next_block_id = 0,
@@ -44,5 +52,9 @@ pub const Function = struct {
 
     pub fn getBlock(self: *Self, ref: inst.BlockRef) *BasicBlock {
         return self.blocks.items[ref.id];
+    }
+
+    pub fn appendParam(self: *Self, allocator: std.mem.Allocator, param: Params) !void {
+        try self.params.append(allocator, param);
     }
 };

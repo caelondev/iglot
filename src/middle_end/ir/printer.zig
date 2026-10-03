@@ -6,8 +6,10 @@ const Module = @import("module.zig").Module;
 
 pub fn printModule(writer: *std.Io.Writer, module: Module) !void {
     try printGlobals(writer, module);
-    for (module.functions.items) |function| {
+    for (module.functions.items, 0..) |function, i| {
         try printFunction(writer, function.*);
+        if (i != module.functions.items.len)
+            try writer.writeByte('\n');
     }
 }
 
@@ -19,7 +21,12 @@ pub fn printGlobals(writer: *std.Io.Writer, module: Module) !void {
 }
 
 pub fn printFunction(writer: *std.Io.Writer, func: Function) !void {
-    try writer.print("fn @{d} {s}() {f} {{\n", .{ func.function_ref.id, func.function_name, func.ret_type });
+    try writer.print("fn @{d} {s}(", .{ func.function_ref.id, func.function_name });
+    for (func.params.items, 0..) |param, i| {
+        if (i != 0) try writer.writeAll(", ");
+        try writer.print("{s} :: {f}", .{ param.name, param.sema_type });
+    }
+    try writer.print(") {f} {{\n", .{func.ret_type});
     for (func.blocks.items) |block| {
         try printBlock(writer, block.*);
     }

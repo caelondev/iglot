@@ -1,6 +1,7 @@
 const std = @import("std");
 const Module = @import("module.zig").Module;
 const Function = @import("function.zig").Function;
+const Params = @import("function.zig").Params;
 const BasicBlock = @import("basic_block.zig").BasicBlock;
 const ScopeStack = @import("scope_table.zig").ScopeStack;
 const inst = @import("instruction.zig");
@@ -60,7 +61,7 @@ pub const IglotIR = struct {
         scope_stack.* = .init();
         self.current_scope = scope_stack;
 
-        const init_fn = try self.module.createFunction(allocator, "@$__global_init", .void);
+        const init_fn = try self.module.createFunction(allocator, "@$__global_init", &.{}, .void);
         const entry_bb = try init_fn.newBlock(allocator, "entry");
         self.current_fn = init_fn;
         self.goToBlock(entry_bb);
@@ -89,7 +90,22 @@ pub const IglotIR = struct {
     fn hoistDeclaration(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
             .function_decl => |*f| {
-                _ = try self.module.createFunction(allocator, f.identifier.value, f.return_type);
+                var params: std.ArrayList(Params) = .empty;
+
+                for (f.parameters, 0..) |p, i| {
+                    try params.append(allocator, .{
+                        .name = p.identifier.value,
+                        .sema_type = p.param_type,
+                        .index = @intCast(i),
+                    });
+                }
+
+                _ = try self.module.createFunction(
+                    allocator,
+                    f.identifier.value,
+                    try params.toOwnedSlice(allocator),
+                    f.return_type,
+                );
             },
             else => return null,
         }
