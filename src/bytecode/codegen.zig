@@ -5,7 +5,7 @@ const IrModule = @import("../middle_end/ir/module.zig").Module;
 const IrVReg = @import("../middle_end/ir/instruction.zig").VReg;
 const IrInstruction = @import("../middle_end/ir/instruction.zig").Instruction;
 
-const arithmetic = @import("codegen/arithmetic.zig").arithmetic;
+const binary = @import("codegen/binary.zig").binary;
 
 pub const IglotCodegen = struct {
     module: Module,
@@ -78,7 +78,13 @@ pub const IglotCodegen = struct {
             .mul,
             .div,
             .sub,
-            => try arithmetic(self, allocator, ins),
+            .cmp_eq,
+            .cmp_ne,
+            .cmp_le,
+            .cmp_ge,
+            .cmp_lt,
+            .cmp_gt,
+            => try binary(self, allocator, ins),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
