@@ -27,6 +27,7 @@ pub fn irToCgOpcode(inst: i.Instruction) bc.IglotOpcode {
         .cmp_ge => dispatchOpcode(inst.sema_type.?, .ig_ge_i, .ig_ge_w, .ig_ge_f, .ig_ge_d),
         .cmp_lt => dispatchOpcode(inst.sema_type.?, .ig_lt_i, .ig_lt_w, .ig_lt_f, .ig_lt_d),
         .cmp_gt => dispatchOpcode(inst.sema_type.?, .ig_gt_i, .ig_gt_w, .ig_gt_f, .ig_gt_d),
+
         else => unreachable,
     };
 }

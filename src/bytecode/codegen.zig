@@ -4,6 +4,7 @@ const Module = @import("module.zig").Module;
 const IrModule = @import("../middle_end/ir/module.zig").Module;
 const IrVReg = @import("../middle_end/ir/instruction.zig").VReg;
 const IrInstruction = @import("../middle_end/ir/instruction.zig").Instruction;
+const IrFunction = @import("../middle_end/ir/function.zig").Function;
 
 const binary = @import("codegen/binary.zig").binary;
 
@@ -30,8 +31,6 @@ pub const IglotCodegen = struct {
     }
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator, ir_module: *const IrModule) !*Module {
-        _ = .{ ir_module, allocator };
-
         for (ir_module.functions.items) |f| {
             _ = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len));
         }
@@ -40,11 +39,15 @@ pub const IglotCodegen = struct {
             self.current_fn_ref = @intCast(i);
             self.reg_count = @intCast(f.params.items.len);
 
+            const expected = try self.computeBlockStarts(allocator, f.*);
+
             for (f.blocks.items) |block| {
                 for (block.instructions.items) |ins| {
                     try self.genInstruction(allocator, ins);
                 }
             }
+
+            std.debug.assert(self.module.functions.items[i].code.items.len == expected);
 
             self.module.functions.items[self.current_fn_ref].reg_count = self.reg_count;
         }
@@ -86,6 +89,9 @@ pub const IglotCodegen = struct {
             .cmp_gt,
             => try binary(self, allocator, ins),
 
+            .br => try self.genBranch(allocator, ins),
+            .cond_br => try self.genBranch(allocator, ins),
+
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
                 return error.UnimplementedOpcode;
@@ -111,7 +117,38 @@ pub const IglotCodegen = struct {
         return dest;
     }
 
+    fn genBranch(self: *Self, allocator: std.mem.Allocator, ins: IrInstruction) !void {
+        switch (ins.data) {
+            .branch_target => |t| try self.emit(allocator, .i(.ig_jmp, self.block_start.items[t.id])),
+            .cond_branch => |cb| {
+                const cond = try self.reg(ins.operands[0]);
+                try self.emit(allocator, .ri(.ig_jmp_if, cond, self.block_start.items[cb.true_block.id]));
+                try self.emit(allocator, .i(.ig_jmp, self.block_start.items[cb.false_block.id]));
+            },
+            else => unreachable,
+        }
+    }
+
     pub fn emit(self: *Self, allocator: std.mem.Allocator, inst: bc.Instruction) !void {
         _ = try self.module.emit(allocator, self.current_fn_ref, inst);
+    }
+
+    fn computeBlockStarts(self: *Self, allocator: std.mem.Allocator, f: IrFunction) !u32 {
+        self.block_start.clearRetainingCapacity();
+        try self.block_start.resize(allocator, f.blocks.items.len);
+
+        var pc: u32 = 0;
+        for (f.blocks.items) |block| {
+            self.block_start.items[block.id.id] = pc;
+            for (block.instructions.items) |ins| pc += instructionCount(ins);
+        }
+        return pc;
+    }
+
+    fn instructionCount(ins: IrInstruction) u32 {
+        return switch (ins.data) {
+            .cond_branch => 2,
+            else => 1,
+        };
     }
 };

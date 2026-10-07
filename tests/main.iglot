@@ -1,23 +1,6 @@
-fn bool_test_1() bool {
-    return 1 == 1;
-}
-
-fn bool_test_2() bool {
-    return 1 != 2;
-}
-
-fn bool_test_3() bool {
-    return 1 < 2;
-}
-
-fn bool_test_4() bool {
-    return 2 > 1;
-}
-
-fn bool_test_5() bool {
-    return 1 <= 2;
-}
-
-fn bool_test_6() bool {
-    return 2 >= 1;
+fn main() void {
+  if true: {
+    x :: int = 10;
+    return;
+  } else if false: return;
 }
