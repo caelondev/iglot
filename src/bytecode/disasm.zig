@@ -4,11 +4,49 @@ const Module = @import("module.zig").Module;
 const Function = @import("module.zig").Function;
 
 pub fn dumpBytecode(writer: *std.Io.Writer, m: *const Module) !void {
+    try printConstants(writer, m);
     for (m.functions.items, 0..) |func, id| {
         try printFunction(writer, m, func, id);
         if (id + 1 != m.functions.items.len) try writer.writeByte('\n');
     }
 }
+
+// constant pool
+
+fn printConstants(writer: *std.Io.Writer, m: *const Module) !void {
+    const c = &m.constants;
+    try poolGroup(writer, "int", "{d}", c.ints.items);
+    try poolGroup(writer, "wideint", "{d}", c.wideints.items);
+    try poolGroup(writer, "float", "{d}", c.floats.items);
+    try poolGroup(writer, "double", "{d}", c.doubles.items);
+    try poolGroup(writer, "string", "\"{s}\"", c.strings.items);
+}
+
+fn printPoolHeader(writer: *std.Io.Writer, title: []const u8, count: usize) !void {
+    try writer.print("#pool {s} ({d}) $:\n", .{ title, count });
+}
+
+fn poolGroup(writer: *std.Io.Writer, title: []const u8, comptime fmt: []const u8, items: anytype) !void {
+    if (items.len == 0) return;
+    try printPoolHeader(writer, title, items.len);
+
+    for (items, 0..) |item, i| {
+        var buf: [64]u8 = undefined;
+        var text = std.Io.Writer.fixed(&buf);
+        text.print(fmt, .{item}) catch {}; // a value too long for the column just gets cut off
+        try writer.print("{d:0>4} | {s:<28} | ", .{ i, text.buffered() });
+
+        if (@TypeOf(item) == []const u8) {
+            try writer.print("len {d}", .{item.len});
+        } else {
+            try writeHexBytes(writer, std.mem.asBytes(&item));
+        }
+        try writer.writeByte('\n');
+    }
+    try writer.writeByte('\n');
+}
+
+// functions
 
 pub fn printFunction(writer: *std.Io.Writer, m: *const Module, func: Function, id: usize) !void {
     try writer.print("fn @{d} {s} (params {d}, regs {d})\n", .{
@@ -64,6 +102,13 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
             try w.print(", {s}", .{if (ins.imm() != 0) "true" else "false"});
         },
 
+        // pool loads print a typed ref so they match the #pool groups
+        .ig_const_i => try constRef(w, ins, "int"),
+        .ig_const_w => try constRef(w, ins, "wideint"),
+        .ig_const_f => try constRef(w, ins, "float"),
+        .ig_const_d => try constRef(w, ins, "double"),
+        .ig_const_str => try constRef(w, ins, "string"),
+
         else => switch (bc.format(ins.op)) {
             .n => {},
             .r => try printReg(w, ins.a),
@@ -88,6 +133,11 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
     }
 }
 
+fn constRef(w: *std.Io.Writer, ins: bc.Instruction, comptime kind: []const u8) !void {
+    try printReg(w, ins.a);
+    try w.print(", " ++ kind ++ "[{d}]", .{ins.imm()});
+}
+
 fn printReg(w: *std.Io.Writer, reg: u16) !void {
     if (reg == bc.no_reg) {
         try w.writeByte('_');
@@ -97,7 +147,11 @@ fn printReg(w: *std.Io.Writer, reg: u16) !void {
 }
 
 fn printBytes(writer: *std.Io.Writer, ins: bc.Instruction) !void {
-    for (std.mem.asBytes(&ins), 0..) |byte, i| {
+    try writeHexBytes(writer, std.mem.asBytes(&ins));
+}
+
+fn writeHexBytes(writer: *std.Io.Writer, bytes: []const u8) !void {
+    for (bytes, 0..) |byte, i| {
         if (i != 0) try writer.writeByte(' ');
         try writer.print("{X:0>2}", .{byte});
     }

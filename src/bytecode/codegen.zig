@@ -5,6 +5,8 @@ const IrModule = @import("../middle_end/ir/module.zig").Module;
 const IrVReg = @import("../middle_end/ir/instruction.zig").VReg;
 const IrInstruction = @import("../middle_end/ir/instruction.zig").Instruction;
 
+const arithmetic = @import("codegen/arithmetic.zig").arithmetic;
+
 pub const IglotCodegen = struct {
     module: Module,
 
@@ -64,11 +66,19 @@ pub const IglotCodegen = struct {
 
     fn genInstruction(self: *Self, allocator: std.mem.Allocator, ins: IrInstruction) !void {
         switch (ins.op) {
-            .const_int, .const_wideint, .const_float, .const_double, .const_string, .const_bool, .const_fn => try self.genConstant(allocator, ins),
+            .const_int, .const_wideint, .const_float, .const_double, .const_string, .const_bool, .const_fn => _ = try self.genConstant(allocator, ins),
             .ret => try self.emit(allocator, .r(.ig_ret, try self.reg(ins.operands[0]))),
             .ret_void => try self.emit(allocator, .n(.ig_ret_void)),
             .store_global => try self.emit(allocator, .ri(.ig_store_global, try self.reg(ins.operands[0]), ins.data.global.id)),
             .load_global => try self.emit(allocator, .ri(.ig_load_global, try self.reg(ins.result.?), ins.data.global.id)),
+            .param => try self.emit(allocator, .ri(.ig_param, try self.reg(ins.result.?), ins.operands[0].id)),
+
+            .add,
+            .mul,
+            .div,
+            .sub,
+            => |op| try arithmetic(self, op, ins),
+
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
                 return error.UnimplementedOpcode;
@@ -76,7 +86,7 @@ pub const IglotCodegen = struct {
         }
     }
 
-    fn genConstant(self: *IglotCodegen, allocator: std.mem.Allocator, ins: IrInstruction) !void {
+    fn genConstant(self: *IglotCodegen, allocator: std.mem.Allocator, ins: IrInstruction) !u16 {
         const dest = try self.reg(ins.result.?);
         const pool = &self.module.constants;
         const I = bc.Instruction;
@@ -90,6 +100,8 @@ pub const IglotCodegen = struct {
             .bool => |b| try self.emit(allocator, I.ri(.ig_const_bool, dest, @intFromBool(b))),
             .func => |f| try self.emit(allocator, I.ri(.ig_const_fn, dest, f.id)),
         }
+
+        return dest;
     }
 
     fn emit(self: *Self, allocator: std.mem.Allocator, inst: bc.Instruction) !void {
