@@ -14,18 +14,9 @@ pub fn printFunction(writer: *std.Io.Writer, m: *const Module, func: Function, i
     try writer.print("fn @{d} {s} (params {d}, regs {d})\n", .{
         id, func.name, func.param_count, func.reg_count,
     });
-    const end = functionEnd(m, func.code_start);
-    for (m.code.items[func.code_start..end], func.code_start..) |ins, pc| {
+    for (func.code.items, 0..) |ins, pc| {
         try printInstruction(writer, m, pc, ins);
     }
-}
-
-fn functionEnd(m: *const Module, start: u32) u32 {
-    var end: u32 = @intCast(m.code.items.len);
-    for (m.functions.items) |f| {
-        if (f.code_start > start and f.code_start < end) end = f.code_start;
-    }
-    return end;
 }
 
 pub fn printInstruction(writer: *std.Io.Writer, m: *const Module, pc: usize, ins: bc.Instruction) !void {
@@ -112,7 +103,6 @@ fn printBytes(writer: *std.Io.Writer, ins: bc.Instruction) !void {
     }
 }
 
-// resolves pool indices and function ids so you don't cross reference by hand
 fn printComment(writer: *std.Io.Writer, m: *const Module, ins: bc.Instruction) !void {
     const idx = ins.imm();
     switch (ins.op) {
