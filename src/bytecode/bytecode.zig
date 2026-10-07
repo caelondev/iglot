@@ -85,7 +85,7 @@ pub const IglotOpcode = enum(u8) {
     ig_ret_void = 0xC4,
 
     // calls
-    ig_param = 0xD0,
+    ig_load_param = 0xD0,
     ig_call = 0xD1,
 
     // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
@@ -173,7 +173,6 @@ pub fn format(op: IglotOpcode) OperandFormat {
         => .n,
 
         .ig_ret,
-        .ig_param,
         => .r,
 
         .ig_neg_i,
@@ -236,6 +235,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_load_global,
         .ig_store_global,
         .ig_load_fn,
+        .ig_load_param,
         .ig_const_i,
         .ig_const_w,
         .ig_const_f,

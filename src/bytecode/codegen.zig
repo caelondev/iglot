@@ -71,13 +71,14 @@ pub const IglotCodegen = struct {
             .ret_void => try self.emit(allocator, .n(.ig_ret_void)),
             .store_global => try self.emit(allocator, .ri(.ig_store_global, try self.reg(ins.operands[0]), ins.data.global.id)),
             .load_global => try self.emit(allocator, .ri(.ig_load_global, try self.reg(ins.result.?), ins.data.global.id)),
-            .param => try self.emit(allocator, .ri(.ig_param, try self.reg(ins.result.?), ins.operands[0].id)),
+
+            .param => try self.emit(allocator, .ri(.ig_load_param, try self.reg(ins.result.?), ins.operands[0].id)),
 
             .add,
             .mul,
             .div,
             .sub,
-            => |op| try arithmetic(self, op, ins),
+            => try arithmetic(self, allocator, ins),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
@@ -104,7 +105,7 @@ pub const IglotCodegen = struct {
         return dest;
     }
 
-    fn emit(self: *Self, allocator: std.mem.Allocator, inst: bc.Instruction) !void {
+    pub fn emit(self: *Self, allocator: std.mem.Allocator, inst: bc.Instruction) !void {
         _ = try self.module.emit(allocator, self.current_fn_ref, inst);
     }
 };
