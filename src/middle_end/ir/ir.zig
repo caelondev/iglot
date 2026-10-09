@@ -9,6 +9,8 @@ const typed_ast = @import("../../frontend/sema/typed_ast.zig");
 const ast = @import("../../frontend/parser/ast.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
+const simplifyCfg = @import("simplify_cfg.zig").simplifyCfg;
+
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
 const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
@@ -78,6 +80,8 @@ pub const IglotIR = struct {
 
         const module = try allocator.create(Module);
         module.* = self.module;
+
+        try simplifyCfg(allocator, module);
 
         return module;
     }

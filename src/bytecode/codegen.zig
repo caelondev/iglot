@@ -69,7 +69,15 @@ pub const IglotCodegen = struct {
 
     fn genInstruction(self: *Self, allocator: std.mem.Allocator, ins: IrInstruction) !void {
         switch (ins.op) {
-            .const_int, .const_wideint, .const_float, .const_double, .const_string, .const_bool, .const_fn => _ = try self.genConstant(allocator, ins),
+            .const_int,
+            .const_wideint,
+            .const_float,
+            .const_double,
+            .const_string,
+            .const_bool,
+            .const_fn,
+            => _ = try self.genConstant(allocator, ins),
+
             .ret => try self.emit(allocator, .r(.ig_ret, try self.reg(ins.operands[0]))),
             .ret_void => try self.emit(allocator, .n(.ig_ret_void)),
             .store_global => try self.emit(allocator, .ri(.ig_store_global, try self.reg(ins.operands[0]), ins.data.global.id)),
