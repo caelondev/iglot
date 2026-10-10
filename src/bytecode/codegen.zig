@@ -35,7 +35,9 @@ pub const IglotCodegen = struct {
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator, ir_module: *const IrModule) !*Module {
         for (ir_module.functions.items) |f| {
-            _ = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len));
+            const id = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len));
+            if (std.mem.eql(u8, f.function_name, "main")) self.module.entry = id;
+            if (std.mem.eql(u8, f.function_name, "@$__global_init")) self.module.entry = id;
         }
 
         for (ir_module.functions.items, 0..) |f, i| {
@@ -146,7 +148,7 @@ pub const IglotCodegen = struct {
                     try self.emit(allocator, .ri(.ig_jmp_if, cond, to_true));
                 } else {
                     try self.emit(allocator, .ri(.ig_jmp_ifnot, cond, to_false));
-                    try self.emit(allocator, .ri(.ig_jmp_if, cond, to_true));
+                    try self.emit(allocator, .i(.ig_jmp, to_true));
                 }
             },
             else => unreachable,

@@ -1,8 +1,6 @@
 fn main() void {
-  loop {
     if true: {
       x :: int = 10;
       return;
     } else if false: return;
-  }
 }

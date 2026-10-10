@@ -23,6 +23,7 @@ const IglotParser = @import("../frontend/parser/parser.zig").IglotParser;
 const IglotSemanticAnalyzer = @import("../frontend/sema/sema.zig").IglotSemanticAnalyzer;
 const IglotIR = @import("../middle_end/ir/ir.zig").IglotIR;
 const IglotCodegen = @import("../bytecode/codegen.zig").IglotCodegen;
+const IglotVM = @import("../vm/vm.zig").IglotVM;
 
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const dumpBytecode = @import("../bytecode/disasm.zig").dumpBytecode;
@@ -109,17 +110,28 @@ pub fn run(ctx: *Context) !void {
     // IR
     var ir: IglotIR = .init();
 
-    const module = try ir.buildProgram(allocator, typed_ast) orelse return;
+    const ir_module = try ir.buildProgram(allocator, typed_ast) orelse return;
     ir.deinit(allocator);
 
     std.debug.print("ir module:\n", .{});
-    try printModule(writer, module.*);
+    try printModule(writer, ir_module.*);
 
     // Codegen
     var codegen: IglotCodegen = .init();
-    const bytecode = try codegen.generate(allocator, module);
+    const module = try codegen.generate(allocator, ir_module);
 
-    try dumpBytecode(writer, bytecode);
+    try dumpBytecode(writer, module);
+
+    // TODO: implement a real bytecode validator
+    const entry = module.entry orelse {
+        try ewriter.print("{s}: no main function\n", .{try dye.red().bold().fmt("error", .{})});
+        return;
+    };
+
+    var iglot_vm: IglotVM = .init(module);
+    defer iglot_vm.deinit(allocator);
+
+    try iglot_vm.run(allocator, entry);
 }
 
 fn renderParserDiagnostics(
