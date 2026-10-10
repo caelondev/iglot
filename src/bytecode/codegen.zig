@@ -5,6 +5,7 @@ const IrModule = @import("../middle_end/ir/module.zig").Module;
 const IrVReg = @import("../middle_end/ir/instruction.zig").VReg;
 const IrInstruction = @import("../middle_end/ir/instruction.zig").Instruction;
 const IrFunction = @import("../middle_end/ir/function.zig").Function;
+const IrBasicBlock = @import("../middle_end/ir/basic_block.zig").BasicBlock;
 
 const binary = @import("codegen/binary.zig").binary;
 
@@ -14,6 +15,7 @@ pub const IglotCodegen = struct {
     block_start: std.ArrayList(u32),
     current_fn_ref: u32,
     reg_count: u16,
+    next_block: ?u32,
 
     const Self = @This();
     pub fn init() Self {
@@ -22,6 +24,7 @@ pub const IglotCodegen = struct {
             .block_start = .empty,
             .reg_count = 0,
             .current_fn_ref = 0,
+            .next_block = null,
         };
     }
 
@@ -42,6 +45,7 @@ pub const IglotCodegen = struct {
             const expected = try self.computeBlockStarts(allocator, f.*);
 
             for (f.blocks.items) |block| {
+                self.next_block = nextBlockId(f.blocks.items, block.id.id);
                 for (block.instructions.items) |ins| {
                     try self.genInstruction(allocator, ins);
                 }
@@ -127,11 +131,23 @@ pub const IglotCodegen = struct {
 
     fn genBranch(self: *Self, allocator: std.mem.Allocator, ins: IrInstruction) !void {
         switch (ins.data) {
-            .branch_target => |t| try self.emit(allocator, .i(.ig_jmp, self.block_start.items[t.id])),
+            .branch_target => |t| {
+                if (self.next_block == t.id) return;
+                try self.emit(allocator, .i(.ig_jmp, self.block_start.items[t.id]));
+            },
             .cond_branch => |cb| {
                 const cond = try self.reg(ins.operands[0]);
-                try self.emit(allocator, .ri(.ig_jmp_if, cond, self.block_start.items[cb.true_block.id]));
-                try self.emit(allocator, .i(.ig_jmp, self.block_start.items[cb.false_block.id]));
+                const to_true = self.block_start.items[cb.true_block.id];
+                const to_false = self.block_start.items[cb.false_block.id];
+
+                if (self.next_block == cb.true_block.id) {
+                    try self.emit(allocator, .ri(.ig_jmp_ifnot, cond, to_false));
+                } else if (self.next_block == cb.false_block.id) {
+                    try self.emit(allocator, .ri(.ig_jmp_if, cond, to_true));
+                } else {
+                    try self.emit(allocator, .ri(.ig_jmp_ifnot, cond, to_false));
+                    try self.emit(allocator, .ri(.ig_jmp_if, cond, to_true));
+                }
             },
             else => unreachable,
         }
@@ -147,16 +163,22 @@ pub const IglotCodegen = struct {
 
         var pc: u32 = 0;
         for (f.blocks.items) |block| {
+            const next_block = nextBlockId(f.blocks.items, block.id.id);
             self.block_start.items[block.id.id] = pc;
-            for (block.instructions.items) |ins| pc += instructionCount(ins);
+            for (block.instructions.items) |ins| pc += instructionCount(ins, next_block);
         }
         return pc;
     }
 
-    fn instructionCount(ins: IrInstruction) u32 {
+    fn instructionCount(ins: IrInstruction, next: ?u32) u32 {
         return switch (ins.data) {
-            .cond_branch => 2,
+            .branch_target => |t| if (next == t.id) 0 else 1,
+            .cond_branch => |cb| if (next == cb.true_block.id or next == cb.false_block.id) 1 else 2,
             else => 1,
         };
+    }
+
+    fn nextBlockId(blocks: []const *IrBasicBlock, rel_idx: usize) ?u32 {
+        return if (rel_idx + 1 < blocks.len) blocks[rel_idx + 1].id.id else null;
     }
 };
