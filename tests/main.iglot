@@ -1,6 +1,3 @@
-fn main() void {
-    if true: {
-      x :: int = 10;
-      return;
-    } else if false: return;
+fn main() int {
+  return 10;
 }

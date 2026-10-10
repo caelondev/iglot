@@ -131,7 +131,16 @@ pub fn run(ctx: *Context) !void {
     var iglot_vm: IglotVM = .init(module);
     defer iglot_vm.deinit(allocator);
 
-    try iglot_vm.run(allocator, entry);
+    const ret_val = try iglot_vm.run(allocator, entry);
+
+    try ewriter.print("[Program exited with status code ", .{});
+    switch (ret_val) {
+        .double => |v| try ewriter.print("{d}", .{v}),
+        .float => |v| try ewriter.print("{d}", .{v}),
+        .int => |v| try ewriter.print("{d}", .{v}),
+        .wideint => |v| try ewriter.print("{d}", .{v}),
+    }
+    try ewriter.print("]\n", .{});
 }
 
 fn renderParserDiagnostics(
