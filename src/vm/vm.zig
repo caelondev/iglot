@@ -13,6 +13,7 @@ pub const IglotValue = union(enum) {
     wideint: i128,
     float: f32,
     double: f64,
+    bool: u1,
     func: u32,
 };
 
@@ -93,19 +94,6 @@ pub const IglotVM = struct {
                 .ig_store_global => self.globals.items[ins.imm()] = regs[ins.a],
                 .ig_load_param => regs[ins.a] = regs[ins.imm()],
 
-                .ig_mov => regs[ins.a] = regs[ins.b],
-
-                .ig_load_fn, .ig_const_fn => regs[ins.a] = .{ .func = ins.imm() },
-                .ig_call => {
-                    const callee = regs[ins.a].func;
-                    const new_base = frame.base + ins.a + 1; // skip callee
-
-                    try self.pushFrame(allocator, callee, new_base, ins.c);
-
-                    frame = try self.getCurrentFrame();
-                    regs = self.regs.items[frame.base..];
-                },
-
                 .ig_add_i => regs[ins.a] = .{ .int = regs[ins.b].int +% regs[ins.c].int },
                 .ig_sub_i => regs[ins.a] = .{ .int = regs[ins.b].int -% regs[ins.c].int },
                 .ig_mul_i => regs[ins.a] = .{ .int = regs[ins.b].int *% regs[ins.c].int },
@@ -125,6 +113,60 @@ pub const IglotVM = struct {
                 .ig_sub_d => regs[ins.a] = .{ .double = regs[ins.b].double - regs[ins.c].double },
                 .ig_mul_d => regs[ins.a] = .{ .double = regs[ins.b].double * regs[ins.c].double },
                 .ig_div_d => regs[ins.a] = .{ .double = regs[ins.b].double / regs[ins.c].double },
+
+                .ig_lt_i => regs[ins.a] = cmp(.int, .lt, regs[ins.b], regs[ins.c]),
+                .ig_le_i => regs[ins.a] = cmp(.int, .lte, regs[ins.b], regs[ins.c]),
+                .ig_gt_i => regs[ins.a] = cmp(.int, .gt, regs[ins.b], regs[ins.c]),
+                .ig_ge_i => regs[ins.a] = cmp(.int, .gte, regs[ins.b], regs[ins.c]),
+                .ig_eq_i => regs[ins.a] = cmp(.int, .eq, regs[ins.b], regs[ins.c]),
+                .ig_ne_i => regs[ins.a] = cmp(.int, .neq, regs[ins.b], regs[ins.c]),
+
+                .ig_lt_w => regs[ins.a] = cmp(.wideint, .lt, regs[ins.b], regs[ins.c]),
+                .ig_le_w => regs[ins.a] = cmp(.wideint, .lte, regs[ins.b], regs[ins.c]),
+                .ig_gt_w => regs[ins.a] = cmp(.wideint, .gt, regs[ins.b], regs[ins.c]),
+                .ig_ge_w => regs[ins.a] = cmp(.wideint, .gte, regs[ins.b], regs[ins.c]),
+                .ig_eq_w => regs[ins.a] = cmp(.wideint, .eq, regs[ins.b], regs[ins.c]),
+                .ig_ne_w => regs[ins.a] = cmp(.wideint, .neq, regs[ins.b], regs[ins.c]),
+
+                .ig_lt_f => regs[ins.a] = cmp(.float, .lt, regs[ins.b], regs[ins.c]),
+                .ig_le_f => regs[ins.a] = cmp(.float, .lte, regs[ins.b], regs[ins.c]),
+                .ig_gt_f => regs[ins.a] = cmp(.float, .gt, regs[ins.b], regs[ins.c]),
+                .ig_ge_f => regs[ins.a] = cmp(.float, .gte, regs[ins.b], regs[ins.c]),
+                .ig_eq_f => regs[ins.a] = cmp(.float, .eq, regs[ins.b], regs[ins.c]),
+                .ig_ne_f => regs[ins.a] = cmp(.float, .neq, regs[ins.b], regs[ins.c]),
+
+                .ig_lt_d => regs[ins.a] = cmp(.double, .lt, regs[ins.b], regs[ins.c]),
+                .ig_le_d => regs[ins.a] = cmp(.double, .lte, regs[ins.b], regs[ins.c]),
+                .ig_gt_d => regs[ins.a] = cmp(.double, .gt, regs[ins.b], regs[ins.c]),
+                .ig_ge_d => regs[ins.a] = cmp(.double, .gte, regs[ins.b], regs[ins.c]),
+                .ig_eq_d => regs[ins.a] = cmp(.double, .eq, regs[ins.b], regs[ins.c]),
+                .ig_ne_d => regs[ins.a] = cmp(.double, .neq, regs[ins.b], regs[ins.c]),
+
+                .ig_mov => regs[ins.a] = regs[ins.b],
+                .ig_jmp => frame.pc = ins.imm(),
+                .ig_jmp_if => {
+                    const cond = regs[ins.a].bool;
+                    if (cond == 1) {
+                        frame.pc = ins.imm();
+                    }
+                },
+                .ig_jmp_ifnot => {
+                    const cond = regs[ins.a].bool;
+                    if (cond == 0) {
+                        frame.pc = ins.imm();
+                    }
+                },
+
+                .ig_load_fn, .ig_const_fn => regs[ins.a] = .{ .func = ins.imm() },
+                .ig_call => {
+                    const callee = regs[ins.a].func;
+                    const new_base = frame.base + ins.a + 1; // skip callee
+
+                    try self.pushFrame(allocator, callee, new_base, ins.c);
+
+                    frame = try self.getCurrentFrame();
+                    regs = self.regs.items[frame.base..];
+                },
 
                 .ig_ret, .ig_ret_void => {
                     const value: IglotValue = if (ins.op == .ig_ret) regs[ins.a] else .{ .int = 0 };
@@ -152,8 +194,11 @@ pub const IglotVM = struct {
     }
 };
 
-fn cmp(comptime field: []const u8, comptime op: std.math.CompareOperator, a: IglotValue, b: IglotValue) IglotValue {
-    return .{ .int = @intFromBool(std.math.compare(@field(a, field), op, @field(b, field))) };
+const ValueKind = std.meta.Tag(IglotValue); // .int, .wideint, .float, .double, .func
+
+fn cmp(comptime kind: ValueKind, comptime op: std.math.CompareOperator, a: IglotValue, b: IglotValue) IglotValue {
+    const field = @tagName(kind);
+    return .{ .bool = @intFromBool(std.math.compare(@field(a, field), op, @field(b, field))) };
 }
 
 fn divInt(comptime T: type, a: T, b: T) !T {
