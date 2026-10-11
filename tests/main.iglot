@@ -1,6 +1,5 @@
 fn main() int {
-  add(10, 50);
-  return add(10, 100);
+  return fib(50);
 }
 
 fn add(a :: int, b :: int) int {

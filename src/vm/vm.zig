@@ -13,12 +13,14 @@ pub const IglotValue = union(enum) {
     wideint: i128,
     float: f32,
     double: f64,
+    func: u32,
 };
 
 pub const CallFrame = struct {
     code: []const bc.Instruction, // what this frame executes, fetched with code[pc]
     pc: u32, // next instruction in that code
     base: u32, // where this frame's r0 sits in the shared register stack
+    end: u32, // base + reg_count, so a return knows how far to shrink back
     ret_reg: u16, // caller register that receives the result (bc.no_reg if unused)
 };
 
@@ -51,15 +53,15 @@ pub const IglotVM = struct {
         return self.execute(allocator, entry);
     }
 
-    // reserves this function's registers on the shared stack and pushes its frame
-    fn pushFrame(self: *Self, allocator: std.mem.Allocator, func_id: u32, ret_reg: u16) !void {
+    fn pushFrame(self: *Self, allocator: std.mem.Allocator, func_id: u32, base: u32, ret_reg: u16) !void {
         const func = &self.module.functions.items[func_id];
-        const base: u32 = @intCast(self.regs.items.len);
-        try self.regs.appendNTimes(allocator, undefined, func.reg_count);
+        const end = base + func.reg_count;
+        if (end > self.regs.items.len) try self.regs.resize(allocator, end);
         try self.frames.append(allocator, .{
             .code = func.code.items,
             .pc = 0,
             .base = base,
+            .end = end,
             .ret_reg = ret_reg,
         });
     }
@@ -70,7 +72,7 @@ pub const IglotVM = struct {
     }
 
     fn execute(self: *Self, allocator: std.mem.Allocator, func_id: u32) IglotRuntimeError!IglotValue {
-        try self.pushFrame(allocator, func_id, bc.no_reg);
+        try self.pushFrame(allocator, func_id, 0, bc.no_reg);
 
         var frame = try self.getCurrentFrame();
         var regs = self.regs.items[frame.base..];
@@ -89,7 +91,20 @@ pub const IglotVM = struct {
 
                 .ig_load_global => regs[ins.a] = self.globals.items[ins.imm()],
                 .ig_store_global => self.globals.items[ins.imm()] = regs[ins.a],
-                .ig_load_param => regs[ins.a] = regs[ins.imm()], // no-op when a == imm
+                .ig_load_param => regs[ins.a] = regs[ins.imm()],
+
+                .ig_mov => regs[ins.a] = regs[ins.b],
+
+                .ig_load_fn, .ig_const_fn => regs[ins.a] = .{ .func = ins.imm() },
+                .ig_call => {
+                    const callee = regs[ins.a].func;
+                    const new_base = frame.base + ins.a + 1; // skip callee
+
+                    try self.pushFrame(allocator, callee, new_base, ins.c);
+
+                    frame = try self.getCurrentFrame();
+                    regs = self.regs.items[frame.base..];
+                },
 
                 .ig_add_i => regs[ins.a] = .{ .int = regs[ins.b].int +% regs[ins.c].int },
                 .ig_sub_i => regs[ins.a] = .{ .int = regs[ins.b].int -% regs[ins.c].int },
@@ -115,10 +130,13 @@ pub const IglotVM = struct {
                     const value: IglotValue = if (ins.op == .ig_ret) regs[ins.a] else .{ .int = 0 };
 
                     const done = self.frames.pop().?;
-                    self.regs.shrinkRetainingCapacity(done.base);
-                    if (self.frames.items.len == 0) return value;
+                    if (self.frames.items.len == 0) {
+                        self.regs.shrinkRetainingCapacity(done.base);
+                        return value;
+                    }
 
-                    frame = &self.frames.items[self.frames.items.len - 1];
+                    frame = try self.getCurrentFrame();
+                    self.regs.shrinkRetainingCapacity(frame.end);
                     regs = self.regs.items[frame.base..];
                     if (done.ret_reg != bc.no_reg) regs[done.ret_reg] = value;
                 },

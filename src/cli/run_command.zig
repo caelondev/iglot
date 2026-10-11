@@ -139,6 +139,7 @@ pub fn run(ctx: *Context) !void {
         .float => |v| try ewriter.print("{d}", .{v}),
         .int => |v| try ewriter.print("{d}", .{v}),
         .wideint => |v| try ewriter.print("{d}", .{v}),
+        .func => |f| try ewriter.print("{d}", .{f}),
     }
     try ewriter.print("]\n", .{});
 }
