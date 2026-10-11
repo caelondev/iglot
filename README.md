@@ -1,5 +1,4 @@
-<div align="center">
-  <img src="assets/iglot-icon.svg" alt="iglot icon" width="180">
+<vdiv align="center">
 
   <h1><strong>iglot</strong></h1>
 
