@@ -1,8 +1,5 @@
 fn main() int {
-  return fib(20);
-}
-
-fn fib(n :: int) int {
-  if n <= 1: return n;
-  return fib(n-1) + fib(n-2);
+  a :: int = 10;
+  a = 100;
+  return a;
 }

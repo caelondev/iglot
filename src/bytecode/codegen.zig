@@ -106,6 +106,7 @@ pub const IglotCodegen = struct {
             .cmp_gt,
             => try binary(self, allocator, ins),
 
+            .mov => try self.emit(allocator, .rr(.ig_mov, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
             .br => try self.genBranch(allocator, ins),
             .cond_br => try self.genBranch(allocator, ins),
 
