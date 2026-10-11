@@ -82,9 +82,8 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
 
         .ig_call => {
             try printReg(w, ins.a);
-            try w.writeAll(", ");
-            try printReg(w, ins.b);
-            try w.print(", {d} args", .{ins.c});
+            try w.print(", {d} args, ", .{ins.b});
+            try printReg(w, ins.c);
         },
 
         .ig_load_global, .ig_store_global => {

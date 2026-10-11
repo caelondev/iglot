@@ -85,6 +85,10 @@ pub const IglotOpcode = enum(u8) {
     ig_ret_void = 0xC4,
 
     // calls
+    //   ig_call  a = window start: function id in r[a], arguments in r[a+1 .. a+b]
+    //            b = argument count (a count, not a register)
+    //            c = caller register that receives the result (no_reg for void)
+    //   the callee's frame starts at r[a+1], so its r0 is argument 0
     ig_load_param = 0xD0,
     ig_call = 0xD1,
 

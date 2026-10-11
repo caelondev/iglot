@@ -16,6 +16,7 @@ pub const IglotCodegen = struct {
     current_fn_ref: u32,
     reg_count: u16,
     next_block: ?u32,
+    window_base: u16,
 
     const Self = @This();
     pub fn init() Self {
@@ -25,6 +26,7 @@ pub const IglotCodegen = struct {
             .reg_count = 0,
             .current_fn_ref = 0,
             .next_block = null,
+            .window_base = 0,
         };
     }
 
@@ -43,6 +45,7 @@ pub const IglotCodegen = struct {
         for (ir_module.functions.items, 0..) |f, i| {
             self.current_fn_ref = @intCast(i);
             self.reg_count = @intCast(f.params.items.len);
+            self.window_base = @intCast(f.next_vreg_id);
 
             const expected = try self.computeBlockStarts(allocator, f.*);
 
@@ -105,6 +108,9 @@ pub const IglotCodegen = struct {
 
             .br => try self.genBranch(allocator, ins),
             .cond_br => try self.genBranch(allocator, ins),
+
+            .load_fn => try self.emit(allocator, .ri(.ig_load_fn, try self.reg(ins.result.?), ins.data.constant.func.id)),
+            .call => try self.getCall(allocator, ins),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
@@ -176,11 +182,26 @@ pub const IglotCodegen = struct {
         return switch (ins.data) {
             .branch_target => |t| if (next == t.id) 0 else 1,
             .cond_branch => |cb| if (next == cb.true_block.id or next == cb.false_block.id) 1 else 2,
+            .call => 2 + @as(u32, @intCast(ins.operands.len)),
             else => 1,
         };
     }
 
     fn nextBlockId(blocks: []const *IrBasicBlock, rel_idx: usize) ?u32 {
         return if (rel_idx + 1 < blocks.len) blocks[rel_idx + 1].id.id else null;
+    }
+
+    fn getCall(self: *Self, allocator: std.mem.Allocator, inst: IrInstruction) !void {
+        const argc: u16 = @intCast(inst.operands.len);
+        const window = self.window_base;
+        self.reg_count = @max(self.reg_count, window + 1 + argc);
+
+        try self.emit(allocator, .rr(.ig_mov, window, try self.reg(inst.data.call.callee)));
+        for (inst.operands, 0..) |arg, i| {
+            try self.emit(allocator, .rr(.ig_mov, window + 1 + @as(u16, @intCast(i)), try self.reg(arg)));
+        }
+
+        const dst = if (inst.result) |r| try self.reg(r) else bc.no_reg;
+        try self.emit(allocator, .rrr(.ig_call, window, argc, dst));
     }
 };
