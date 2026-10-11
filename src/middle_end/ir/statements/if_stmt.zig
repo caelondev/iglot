@@ -1,18 +1,20 @@
 const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const inst = @import("../instruction.zig");
-const Function = @import("../function.zig").Function;
 const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildIfStmt(ir: *IglotIR, allocator: std.mem.Allocator, i: *const typed_ast.TypedIfStatement) !?void {
+pub fn buildIfStmt(
+    ir: *IglotIR,
+    allocator: std.mem.Allocator,
+    i: *const typed_ast.TypedIfStatement,
+) !?void {
     const cond_blk = try ir.current_fn.newBlock(allocator, "if.cond");
     const then_blk = try ir.current_fn.newBlock(allocator, "if.then");
     const alt_blk = try ir.current_fn.newBlock(allocator, "if.alt");
+    const merge_blk = try ir.current_fn.newBlock(allocator, "if.merge");
 
     try ir.emit(allocator, .{
-        .data = .{
-            .branch_target = cond_blk.id,
-        },
+        .data = .{ .branch_target = cond_blk.id },
         .op = .br,
         .operands = &.{},
         .result = null,
@@ -20,7 +22,9 @@ pub fn buildIfStmt(ir: *IglotIR, allocator: std.mem.Allocator, i: *const typed_a
     });
 
     ir.goToBlock(cond_blk);
-    const cond_ref = try ir.buildExpression(allocator, i.condition) orelse return null;
+
+    const cond_ref = try ir.buildExpression(allocator, i.condition) orelse
+        return null;
 
     try ir.emit(allocator, .{
         .data = .{
@@ -36,10 +40,34 @@ pub fn buildIfStmt(ir: *IglotIR, allocator: std.mem.Allocator, i: *const typed_a
     });
 
     ir.goToBlock(then_blk);
+
     try ir.buildStmt(allocator, i.consequence.*) orelse return null;
 
+    if (!ir.current_block.isTerminated()) {
+        try ir.emit(allocator, .{
+            .data = .{ .branch_target = merge_blk.id },
+            .op = .br,
+            .operands = &.{},
+            .result = null,
+            .sema_type = null,
+        });
+    }
+
     ir.goToBlock(alt_blk);
+
     if (i.alternative) |alt| {
         try ir.buildStmt(allocator, alt.*) orelse return null;
     }
+
+    if (!ir.current_block.isTerminated()) {
+        try ir.emit(allocator, .{
+            .data = .{ .branch_target = merge_blk.id },
+            .op = .br,
+            .operands = &.{},
+            .result = null,
+            .sema_type = null,
+        });
+    }
+
+    ir.goToBlock(merge_blk);
 }
