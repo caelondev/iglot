@@ -36,10 +36,12 @@ pub const IglotCodegen = struct {
     }
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator, ir_module: *const IrModule) !*Module {
+        self.module.global_count = @intCast(ir_module.globals.items.len);
+
         for (ir_module.functions.items) |f| {
             const id = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len));
             if (std.mem.eql(u8, f.function_name, "main")) self.module.entry = id;
-            if (std.mem.eql(u8, f.function_name, "@$__global_init")) self.module.entry = id;
+            if (std.mem.eql(u8, f.function_name, "@$__global_init")) self.module.init_fn = id;
         }
 
         for (ir_module.functions.items, 0..) |f, i| {
@@ -105,6 +107,8 @@ pub const IglotCodegen = struct {
             .cmp_lt,
             .cmp_gt,
             => try binary(self, allocator, ins),
+
+            .not => try self.emit(allocator, .rr(.ig_not, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
 
             .mov => try self.emit(allocator, .rr(.ig_mov, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
             .br => try self.genBranch(allocator, ins),

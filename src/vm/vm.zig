@@ -88,7 +88,7 @@ pub const IglotVM = struct {
                 .ig_const_w => regs[ins.a] = .{ .wideint = pool.wideints.items[ins.imm()] },
                 .ig_const_f => regs[ins.a] = .{ .float = pool.floats.items[ins.imm()] },
                 .ig_const_d => regs[ins.a] = .{ .double = pool.doubles.items[ins.imm()] },
-                .ig_const_bool => regs[ins.a] = .{ .int = ins.imm() },
+                .ig_const_bool => regs[ins.a] = .{ .bool = @intCast(ins.imm()) },
 
                 .ig_load_global => regs[ins.a] = self.globals.items[ins.imm()],
                 .ig_store_global => self.globals.items[ins.imm()] = regs[ins.a],
@@ -141,6 +141,11 @@ pub const IglotVM = struct {
                 .ig_ge_d => regs[ins.a] = cmp(.double, .gte, regs[ins.b], regs[ins.c]),
                 .ig_eq_d => regs[ins.a] = cmp(.double, .eq, regs[ins.b], regs[ins.c]),
                 .ig_ne_d => regs[ins.a] = cmp(.double, .neq, regs[ins.b], regs[ins.c]),
+
+                .ig_not => {
+                    const val: u1 = if (regs[ins.b].bool == 1) 0 else 1;
+                    regs[ins.a] = .{ .bool = val };
+                },
 
                 .ig_mov => regs[ins.a] = regs[ins.b],
                 .ig_jmp => frame.pc = ins.imm(),

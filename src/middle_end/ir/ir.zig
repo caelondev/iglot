@@ -69,6 +69,13 @@ pub const IglotIR = struct {
         self.goToBlock(entry_bb);
 
         try self.initIglotBuiltins(allocator);
+        try self.emit(allocator, .{
+            .op = .ret_void,
+            .operands = &.{},
+            .result = null,
+            .data = .none,
+            .sema_type = .void,
+        });
 
         for (t_ast.body) |stmt| {
             try self.hoistDeclaration(allocator, stmt) orelse continue;
