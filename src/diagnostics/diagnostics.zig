@@ -66,6 +66,7 @@ pub const IglotDiagnostic = struct {
         NonCallableCallee: struct { callee_type: SemaType },
         TooFewArguments: struct { expected: usize, found: usize },
         TooManyArguments: struct { expected: usize, found: usize },
+        NonVoidMainReturnType: struct { found: SemaType },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -96,6 +97,7 @@ pub const IglotDiagnostic = struct {
                 .TooManyArguments => |t| try writer.print("too many arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
                 .TooFewArguments => |t| try writer.print("too few arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
                 .IllegalBreak => try writer.print("cannot break outside a loop", .{}),
+                .NonVoidMainReturnType => |f| try writer.print("\"main\" function must return a \"void\" type. found {f}", .{f.found}),
             }
         }
     };

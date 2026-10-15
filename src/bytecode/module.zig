@@ -1,5 +1,6 @@
 const std = @import("std");
 const bc = @import("bytecode.zig");
+const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
 
 pub const Function = struct {
     name: []const u8,
@@ -7,13 +8,15 @@ pub const Function = struct {
     param_count: u16,
     reg_count: u16 = 0,
     code: std.ArrayList(bc.Instruction),
+    ret_type: SemaType,
 
-    pub fn init(name: []const u8, param_count: u16) Function {
+    pub fn init(name: []const u8, param_count: u16, ret_type: SemaType) Function {
         return .{
             .name = name,
             .param_count = param_count,
             .reg_count = 0,
             .code = .empty,
+            .ret_type = ret_type,
         };
     }
 
@@ -105,8 +108,8 @@ pub const Module = struct {
         self.constants.deinit(allocator);
     }
 
-    pub fn declareFunction(self: *Self, allocator: std.mem.Allocator, name: []const u8, param_count: u16) !u32 {
-        try self.functions.append(allocator, .init(name, param_count));
+    pub fn declareFunction(self: *Self, allocator: std.mem.Allocator, name: []const u8, param_count: u16, ret_type: SemaType) !u32 {
+        try self.functions.append(allocator, .init(name, param_count, ret_type));
         return @intCast(self.functions.items.len - 1);
     }
 

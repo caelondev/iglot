@@ -124,6 +124,10 @@ pub const IglotSemanticAnalyzer = struct {
             },
             .function_decl => |f| {
                 const decl = try validateFunctionDeclaration(self, allocator, &f) orelse return null;
+
+                if (std.mem.eql(u8, decl.identifier.value, "main")) {
+                    try self.validateMainFunctionSigniture(allocator, decl) orelse return null;
+                }
                 return .{
                     .function_decl = decl,
                 };
@@ -276,6 +280,15 @@ pub const IglotSemanticAnalyzer = struct {
             .assignment => |*a| validateAssignmentExpr(self, allocator, a, span),
             .call => |*c| validateCallExpr(self, allocator, c, span),
         };
+    }
+
+    fn validateMainFunctionSigniture(self: *Self, allocator: std.mem.Allocator, decl: typed_ast.TypedFunctionDeclarationStatement) !?void {
+        if (decl.return_type != .void) {
+            try self.reportError(allocator, .{
+                .kind = .{ .NonVoidMainReturnType = .{ .found = decl.return_type } },
+                .span = decl.span,
+            });
+        }
     }
 
     fn resolveIntegerType(

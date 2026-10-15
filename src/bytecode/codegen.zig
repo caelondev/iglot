@@ -40,7 +40,7 @@ pub const IglotCodegen = struct {
         self.module.global_count = @intCast(ir_module.globals.items.len);
 
         for (ir_module.functions.items) |f| {
-            const id = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len));
+            const id = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len), f.ret_type);
             if (std.mem.eql(u8, f.function_name, "main")) self.module.entry = id;
             if (std.mem.eql(u8, f.function_name, "@$__global_init")) self.module.init_fn = id;
         }

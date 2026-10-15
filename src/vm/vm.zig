@@ -7,6 +7,8 @@ pub const IglotRuntimeError = error{
     DivisionByZero,
     UnimplementedOpcode,
     IntegerOverflow,
+    NoEntryPoint,
+    InvalidEntryReturnType,
 } || std.mem.Allocator.Error;
 
 pub const IglotValue = union(enum) {
@@ -49,10 +51,17 @@ pub const IglotVM = struct {
         self.frames.deinit(allocator);
     }
 
-    pub fn run(self: *Self, allocator: std.mem.Allocator, entry: u32) !IglotValue {
+    pub fn run(self: *Self, allocator: std.mem.Allocator, entry: ?u32) !IglotValue {
+        try self.validateModule(entry);
         try self.globals.appendNTimes(allocator, undefined, self.module.global_count);
         if (self.module.init_fn) |f| _ = try self.execute(allocator, f);
-        return self.execute(allocator, entry);
+        return self.execute(allocator, entry.?);
+    }
+
+    fn validateModule(self: *Self, entry: ?u32) !void {
+        if (entry == null) return error.NoEntryPoint;
+        const main = self.module.functions.items[entry.?];
+        if (main.ret_type != .void) return error.InvalidEntryReturnType;
     }
 
     fn pushFrame(self: *Self, allocator: std.mem.Allocator, func_id: u32, base: u32, ret_reg: u16) !void {

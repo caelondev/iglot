@@ -1,5 +1,3 @@
-fn main() bool {
-  x :: bool = true and true;
-  y :: bool = true or false;
-  return y;
+fn main() int {
+  return 100;
 }
