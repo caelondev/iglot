@@ -149,6 +149,9 @@ pub const IglotVM = struct {
                 .ig_neg_f => regs[ins.a] = .{ .float = -regs[ins.b].float },
                 .ig_neg_d => regs[ins.a] = .{ .double = -regs[ins.b].double },
 
+                .ig_and => regs[ins.a] = .{ .bool = @intFromBool((regs[ins.b].bool == 1) and (regs[ins.c].bool == 1)) },
+                .ig_or => regs[ins.a] = .{ .bool = @intFromBool((regs[ins.b].bool == 1) or (regs[ins.c].bool == 1)) },
+
                 .ig_not => {
                     const val: u1 = if (regs[ins.b].bool == 1) 0 else 1;
                     regs[ins.a] = .{ .bool = val };

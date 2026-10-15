@@ -1,5 +1,5 @@
-a :: int = 100;
-
-fn main() int {
-  return a;
+fn main() bool {
+  x :: bool = true and true;
+  y :: bool = true or false;
+  return y;
 }

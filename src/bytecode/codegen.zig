@@ -112,6 +112,9 @@ pub const IglotCodegen = struct {
             .neg => try unary(self, allocator, ins),
             .not => try self.emit(allocator, .rr(.ig_not, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
 
+            .@"and" => try self.emit(allocator, .rrr(.ig_and, try self.reg(ins.result.?), try self.reg(ins.operands[0]), try self.reg(ins.operands[1]))),
+            .@"or" => try self.emit(allocator, .rrr(.ig_or, try self.reg(ins.result.?), try self.reg(ins.operands[0]), try self.reg(ins.operands[1]))),
+
             .mov => try self.emit(allocator, .rr(.ig_mov, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
             .br => try self.genBranch(allocator, ins),
             .cond_br => try self.genBranch(allocator, ins),
