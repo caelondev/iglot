@@ -271,8 +271,8 @@ pub const IglotSemanticAnalyzer = struct {
                 };
                 break :blk node;
             },
-            .binary => |*b| validateBinaryExpr(self, allocator, b, span),
-            .unary => |*u| validateUnaryExpr(self, allocator, u, span),
+            .binary => |*b| validateBinaryExpr(self, allocator, b, span, expected_type),
+            .unary => |*u| validateUnaryExpr(self, allocator, u, span, expected_type),
             .assignment => |*a| validateAssignmentExpr(self, allocator, a, span),
             .call => |*c| validateCallExpr(self, allocator, c, span),
         };

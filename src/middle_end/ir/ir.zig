@@ -66,8 +66,8 @@ pub const IglotIR = struct {
         const init_fn = try self.module.createFunction(allocator, "@$__global_init", &.{}, .void);
         const entry_bb = try init_fn.newBlock(allocator, "entry");
         self.current_fn = init_fn;
-        self.goToBlock(entry_bb);
 
+        self.goToBlock(entry_bb);
         try self.initIglotBuiltins(allocator);
 
         for (t_ast.body) |stmt| {
@@ -78,8 +78,8 @@ pub const IglotIR = struct {
             try self.buildTopLevelStmt(allocator, stmt) orelse return null;
         }
 
-        // terminate @$__global_init after initializing all
-        // top-level statements (includes a global variable declaration)
+        // terminate @$__global_init only after all top-level stmts
+        // (including global var initializers) have been emitted
         self.goToBlock(entry_bb);
         try self.emit(allocator, .{
             .op = .ret_void,

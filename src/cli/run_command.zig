@@ -113,14 +113,14 @@ pub fn run(ctx: *Context) !void {
     const ir_module = try ir.buildProgram(allocator, typed_ast) orelse return;
     ir.deinit(allocator);
 
-    std.debug.print("ir module:\n", .{});
-    try printModule(writer, ir_module.*);
+    // std.debug.print("ir module:\n", .{});
+    // try printModule(writer, ir_module.*);
 
     // Codegen
     var codegen: IglotCodegen = .init();
     const module = try codegen.generate(allocator, ir_module);
 
-    try dumpBytecode(writer, module);
+    // try dumpBytecode(writer, module);
 
     // TODO: implement a real bytecode validator
     const entry = module.entry orelse {

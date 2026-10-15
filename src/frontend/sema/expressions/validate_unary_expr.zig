@@ -11,8 +11,9 @@ pub fn validateUnaryExpr(
     allocator: std.mem.Allocator,
     u: *const ast.UnaryExpression,
     span: Span,
+    expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
-    const rhs = try sema.validateExpression(allocator, u.rhs, u.rhs.span, null) orelse return null;
+    const rhs = try sema.validateExpression(allocator, u.rhs, u.rhs.span, expected_type) orelse return null;
     const result_type: tt.SemaType = switch (u.operator) {
         .bang => blk: {
             if (!rhs.sem_type.eql(.bool)) {

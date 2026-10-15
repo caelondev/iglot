@@ -11,9 +11,10 @@ pub fn validateBinaryExpr(
     allocator: std.mem.Allocator,
     b: *const ast.BinaryExpression,
     span: Span,
+    expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
-    const left = try sema.validateExpression(allocator, b.left, b.left.span, null) orelse return null;
-    const right = try sema.validateExpression(allocator, b.right, b.right.span, null) orelse return null;
+    const left = try sema.validateExpression(allocator, b.left, b.left.span, expected_type) orelse return null;
+    const right = try sema.validateExpression(allocator, b.right, b.right.span, expected_type) orelse return null;
 
     if (!left.sem_type.eql(right.sem_type)) {
         try sema.reportError(allocator, .{
