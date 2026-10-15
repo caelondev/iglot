@@ -6,6 +6,7 @@ pub const IglotRuntimeError = error{
     NoCallFrame,
     DivisionByZero,
     UnimplementedOpcode,
+    IntegerOverflow,
 } || std.mem.Allocator.Error;
 
 pub const IglotValue = union(enum) {
@@ -142,6 +143,12 @@ pub const IglotVM = struct {
                 .ig_eq_d => regs[ins.a] = cmp(.double, .eq, regs[ins.b], regs[ins.c]),
                 .ig_ne_d => regs[ins.a] = cmp(.double, .neq, regs[ins.b], regs[ins.c]),
 
+                .ig_neg_i => regs[ins.a] = .{ .int = try negInt(i64, regs, ins) },
+                .ig_neg_w => regs[ins.a] = .{ .wideint = try negInt(i128, regs, ins) },
+
+                .ig_neg_f => regs[ins.a] = .{ .float = -regs[ins.b].float },
+                .ig_neg_d => regs[ins.a] = .{ .double = -regs[ins.b].double },
+
                 .ig_not => {
                     const val: u1 = if (regs[ins.b].bool == 1) 0 else 1;
                     regs[ins.a] = .{ .bool = val };
@@ -204,6 +211,17 @@ const ValueKind = std.meta.Tag(IglotValue); // .int, .wideint, .float, .double, 
 fn cmp(comptime kind: ValueKind, comptime op: std.math.CompareOperator, a: IglotValue, b: IglotValue) IglotValue {
     const field = @tagName(kind);
     return .{ .bool = @intFromBool(std.math.compare(@field(a, field), op, @field(b, field))) };
+}
+
+fn negInt(comptime T: type, regs: []IglotValue, ins: bc.Instruction) !T {
+    const x = regs[ins.b].int;
+    const result = @subWithOverflow(@as(T, 0), x);
+
+    if (result[1] != 0) {
+        return error.IntegerOverflow;
+    }
+
+    return result[0];
 }
 
 fn divInt(comptime T: type, a: T, b: T) !T {

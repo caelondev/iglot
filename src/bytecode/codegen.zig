@@ -8,6 +8,7 @@ const IrFunction = @import("../middle_end/ir/function.zig").Function;
 const IrBasicBlock = @import("../middle_end/ir/basic_block.zig").BasicBlock;
 
 const binary = @import("codegen/binary.zig").binary;
+const unary = @import("codegen/unary.zig").unary;
 
 pub const IglotCodegen = struct {
     module: Module,
@@ -108,6 +109,7 @@ pub const IglotCodegen = struct {
             .cmp_gt,
             => try binary(self, allocator, ins),
 
+            .neg => try unary(self, allocator, ins),
             .not => try self.emit(allocator, .rr(.ig_not, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
 
             .mov => try self.emit(allocator, .rr(.ig_mov, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
