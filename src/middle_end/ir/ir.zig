@@ -69,13 +69,6 @@ pub const IglotIR = struct {
         self.goToBlock(entry_bb);
 
         try self.initIglotBuiltins(allocator);
-        try self.emit(allocator, .{
-            .op = .ret_void,
-            .operands = &.{},
-            .result = null,
-            .data = .none,
-            .sema_type = .void,
-        });
 
         for (t_ast.body) |stmt| {
             try self.hoistDeclaration(allocator, stmt) orelse continue;
@@ -84,6 +77,17 @@ pub const IglotIR = struct {
         for (t_ast.body) |stmt| {
             try self.buildTopLevelStmt(allocator, stmt) orelse return null;
         }
+
+        // terminate @$__global_init after initializing all
+        // top-level statements (includes a global variable declaration)
+        self.goToBlock(entry_bb);
+        try self.emit(allocator, .{
+            .op = .ret_void,
+            .operands = &.{},
+            .result = null,
+            .data = .none,
+            .sema_type = .void,
+        });
 
         const module = try allocator.create(Module);
         module.* = self.module;
