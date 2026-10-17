@@ -1,5 +1,6 @@
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
+const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
 const IglotValue = @import("values.zig").IglotValue;
 
 const BuiltinIglotFunctionError = std.Io.Writer.Error;
@@ -8,17 +9,30 @@ const Context = struct {
     out: *std.Io.Writer,
 };
 
-pub const BuiltinIglotFunction = fn (ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue;
+pub const BuiltinIglotFunction = *const fn (ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue;
 
 pub const Builtin = struct {
     name: []const u8,
-    arity: u8,
+    params: []const SemaType,
+    ret_type: SemaType,
     func: BuiltinIglotFunction,
+
+    /// the .function type sema puts in scope
+    pub fn semaType(self: Builtin, allocator: std.mem.Allocator) !SemaType {
+        const params = try allocator.alloc(*SemaType, self.params.len);
+        for (self.params, params) |p, *slot| {
+            slot.* = try allocator.create(SemaType);
+            slot.*.* = p;
+        }
+        const ret = try allocator.create(SemaType);
+        ret.* = self.ret_type;
+        return .{ .function = .{ .parameters = params, .return_type = ret } };
+    }
 };
 
 pub const table = [_]Builtin{
-    .{ .name = "print", .arity = 1, .func = print },
-    .{ .name = "println", .arity = 1, .func = println },
+    .{ .name = "print", .params = &.{.any}, .ret_type = .void, .func = &print },
+    .{ .name = "println", .params = &.{.any}, .ret_type = .void, .func = &println },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {

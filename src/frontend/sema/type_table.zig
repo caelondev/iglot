@@ -20,6 +20,9 @@ pub const SemaType = union(enum) {
     // special type used for error messages
     number,
 
+    // builtin params only, for now. used in args
+    any,
+
     pub fn fromTypeExpression(
         allocator: std.mem.Allocator,
         type_expr: TypeExpression,
@@ -91,6 +94,7 @@ pub const SemaType = union(enum) {
                 try writer.writeAll(") ");
                 try writeSymbolString(writer, f.return_type.*);
             },
+            .any => try writer.writeAll("any"),
         };
     }
 
@@ -114,6 +118,13 @@ pub const SemaType = union(enum) {
         };
     }
 
+    /// one-way check for args meeting params: `expected.accepts(found)`.
+    /// `any` only works on the expected side and still rejects void
+    pub fn accepts(self: SemaType, found: SemaType) bool {
+        if (std.meta.activeTag(self) == .any) return std.meta.activeTag(found) != .void;
+        return found.eql(self);
+    }
+
     pub fn is_numerical(self: SemaType) bool {
         return switch (self) {
             .int, .wideint, .float, .double => true,
@@ -126,6 +137,7 @@ pub const TypeEntry = struct {
     sem_type: SemaType,
     span: Span,
     is_final: bool,
+    is_builtin: bool = false,
 };
 
 pub const TypeTable = struct {

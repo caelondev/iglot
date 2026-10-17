@@ -29,7 +29,7 @@ pub fn validateVariableDeclaration(
                     .identifier = v.identifier.value,
                 },
             },
-            .annotations = annotations,
+            .annotations = if (i.is_builtin) &.{} else annotations,
         });
 
         return null;

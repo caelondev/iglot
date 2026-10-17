@@ -5,6 +5,9 @@ const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
+const lookupBuiltin = @import("../../vm/builtins.zig").lookupBuiltin;
+const builtins_table = @import("../../vm/builtins.zig").table;
+
 const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
 const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 const validateAssignmentExpr = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
@@ -146,6 +149,15 @@ pub const IglotSemanticAnalyzer = struct {
     pub fn initBuiltinIdentifiers(self: *Self, allocator: std.mem.Allocator) !void {
         try self.type_table.declareIdentifier(allocator, "true", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
         try self.type_table.declareIdentifier(allocator, "false", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
+
+        for (builtins_table) |b| {
+            try self.type_table.declareIdentifier(allocator, b.name, .{
+                .sem_type = try b.semaType(allocator),
+                .span = .empty(),
+                .is_final = true,
+                .is_builtin = true,
+            });
+        }
     }
 
     pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {

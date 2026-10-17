@@ -62,7 +62,7 @@ pub fn validateCallExpr(
     for (c.arguments, callee_fn.parameters) |a, param| {
         const arg = try sema.validateExpression(allocator, a, a.span, null) orelse return null;
 
-        if (!arg.sem_type.eql(param.*)) {
+        if (!param.accepts(arg.sem_type)) {
             try sema.reportError(allocator, .{
                 .span = arg.span,
                 .kind = .{
