@@ -5,4 +5,5 @@ pub const IglotValue = union(enum) {
     double: f64,
     bool: u1,
     func: u32,
+    heap_ref: usize,
 };

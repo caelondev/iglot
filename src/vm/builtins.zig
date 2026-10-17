@@ -2,14 +2,18 @@ const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
 const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
 const IglotValue = @import("values.zig").IglotValue;
+const IglotVM = @import("vm.zig").IglotVM;
+const Object = @import("object.zig").Object;
+const ObjectHeap = @import("object_heap.zig").ObjectHeap;
 
 const BuiltinIglotFunctionError = std.Io.Writer.Error;
 
 pub const Context = struct {
+    gpa: std.mem.Allocator,
     out: *std.Io.Writer,
 };
 
-pub const BuiltinIglotFunction = *const fn (ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue;
+pub const BuiltinIglotFunction = *const fn (vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue;
 
 pub const Builtin = struct {
     name: []const u8,
@@ -46,18 +50,24 @@ pub fn lookupBuiltin(name: []const u8) ?u16 {
 /// what void builtins return. codegen passes no_reg as the ret reg so it's never read
 const unit: IglotValue = .{ .int = 0 };
 
-fn print(ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, args[0]);
+fn print(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    try writeValue(ctx.out, &vm.object_heap, args[0]);
     return unit;
 }
 
-fn println(ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, args[0]);
+fn println(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    try writeValue(ctx.out, &vm.object_heap, args[0]);
     try ctx.out.writeByte('\n');
     return unit;
 }
 
-fn writeValue(out: *std.Io.Writer, v: IglotValue) std.Io.Writer.Error!void {
+fn writeHeapValue(out: *std.Io.Writer, obj: *Object) !void {
+    switch (obj.*) {
+        .string => |s| try out.writeAll(s.bytes),
+    }
+}
+
+fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue) std.Io.Writer.Error!void {
     switch (v) {
         .int => |x| try out.print("{d}", .{x}),
         .wideint => |x| try out.print("{d}", .{x}),
@@ -65,6 +75,10 @@ fn writeValue(out: *std.Io.Writer, v: IglotValue) std.Io.Writer.Error!void {
         .double => |x| try writeFloat(out, x),
         .bool => |x| try out.writeAll(if (x == 1) "true" else "false"),
         .func => |id| try out.print("<fn {d}>", .{id}),
+        .heap_ref => |ref| {
+            const val = obj_heap.resolveRef(ref);
+            try writeHeapValue(out, val);
+        },
     }
 }
 

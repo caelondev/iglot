@@ -124,7 +124,7 @@ pub fn run(ctx: *Context) !void {
 
     // try dumpBytecode(writer, module);
 
-    var iglot_vm: IglotVM = .init(module, .{ .out = ewriter });
+    var iglot_vm: IglotVM = .init(module, .{ .out = ewriter, .gpa = ctx.allocator });
     defer iglot_vm.deinit(allocator);
 
     _ = try iglot_vm.run(allocator, module.entry);

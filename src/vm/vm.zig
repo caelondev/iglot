@@ -3,6 +3,7 @@ const bc = @import("../bytecode/bytecode.zig");
 const builtins = @import("builtins.zig");
 const Module = @import("../bytecode/module.zig").Module;
 const IglotValue = @import("values.zig").IglotValue;
+const ObjectHeap = @import("object_heap.zig").ObjectHeap;
 
 pub const IglotRuntimeError = error{
     NoCallFrame,
@@ -26,6 +27,7 @@ pub const IglotVM = struct {
     globals: std.ArrayList(IglotValue),
     regs: std.ArrayList(IglotValue),
     frames: std.ArrayList(CallFrame),
+    object_heap: ObjectHeap,
     ctx: builtins.Context,
 
     const Self = @This();
@@ -36,6 +38,7 @@ pub const IglotVM = struct {
             .globals = .empty,
             .regs = .empty,
             .frames = .empty,
+            .object_heap = .init(ctx.gpa),
             .ctx = ctx,
         };
     }
@@ -44,6 +47,7 @@ pub const IglotVM = struct {
         self.globals.deinit(allocator);
         self.regs.deinit(allocator);
         self.frames.deinit(allocator);
+        self.object_heap.deinit();
     }
 
     pub fn run(self: *Self, allocator: std.mem.Allocator, entry: ?u32) !IglotValue {
@@ -93,6 +97,12 @@ pub const IglotVM = struct {
                 .ig_const_w => regs[ins.a] = .{ .wideint = pool.wideints.items[ins.imm()] },
                 .ig_const_f => regs[ins.a] = .{ .float = pool.floats.items[ins.imm()] },
                 .ig_const_d => regs[ins.a] = .{ .double = pool.doubles.items[ins.imm()] },
+                .ig_const_str => {
+                    const val = pool.strings.items[ins.imm()];
+                    const ref = try self.object_heap.createString(val);
+                    regs[ins.a] = .{ .heap_ref = ref };
+                },
+
                 .ig_const_bool => regs[ins.a] = .{ .bool = @intCast(ins.imm()) },
 
                 .ig_load_global => regs[ins.a] = self.globals.items[ins.imm()],
@@ -190,7 +200,7 @@ pub const IglotVM = struct {
                 .ig_call_builtin => {
                     const builtin = &builtins.table[ins.b];
                     const args = regs[ins.a + 1 ..][0..builtin.params.len];
-                    const result = try builtin.func(&self.ctx, args);
+                    const result = try builtin.func(self, &self.ctx, args);
                     if (ins.c != bc.no_reg) regs[ins.c] = result;
                 },
 
