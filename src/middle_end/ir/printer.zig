@@ -58,6 +58,8 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
 
         .branch_target => |b| try writer.print(" *{d}", .{b.id}),
 
+        .builtin => |b| try writer.print(" '{d}", .{b}),
+
         .index => |idx| try writer.print(" #{d}", .{idx}),
 
         .global => |g| {

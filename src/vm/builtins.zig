@@ -5,7 +5,7 @@ const IglotValue = @import("values.zig").IglotValue;
 
 const BuiltinIglotFunctionError = std.Io.Writer.Error;
 
-const Context = struct {
+pub const Context = struct {
     out: *std.Io.Writer,
 };
 

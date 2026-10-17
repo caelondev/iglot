@@ -1,3 +1,9 @@
 fn main() void {
-    print(10);
+  i :: int = 0;
+  
+  loop {
+      if i >= 10: return;
+      println(i);
+      i = i +1;
+  }
 }

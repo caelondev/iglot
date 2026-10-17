@@ -92,6 +92,12 @@ pub const IglotOpcode = enum(u8) {
     ig_load_param = 0xD0,
     ig_call = 0xD1,
 
+    //   ig_call_builtin  a = window start: r[a] unused, arguments in r[a+1 ..]
+    //            b = builtin id (index into builtins.table, NOT an arg count)
+    //            c = caller register that receives the result (no_reg for void)
+    //            arg count comes from the table entry, not the instruction
+    ig_call_builtin = 0xD2,
+
     // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
 
     ig_trap = 0xFF, // ir @"unreachable"
@@ -234,6 +240,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_eq_d,
         .ig_ne_d,
         .ig_call,
+        .ig_call_builtin,
         => .rrr,
 
         .ig_load_global,

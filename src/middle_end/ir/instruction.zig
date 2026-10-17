@@ -43,6 +43,7 @@ pub const Opcode = enum {
 
     // calls
     call,
+    call_builtin,
     param,
 
     // constants
@@ -70,6 +71,7 @@ pub const Instruction = struct {
         branch_target: BlockRef,
         index: usize,
         global: GlobalRef,
+        builtin: u16,
         cond_branch: struct {
             true_block: BlockRef,
             false_block: BlockRef,

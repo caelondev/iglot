@@ -25,6 +25,8 @@ const IglotIR = @import("../middle_end/ir/ir.zig").IglotIR;
 const IglotCodegen = @import("../bytecode/codegen.zig").IglotCodegen;
 const IglotVM = @import("../vm/vm.zig").IglotVM;
 
+const VMContext = @import("../vm/builtins.zig").Context;
+
 const dumpAny = @import("../debug/dump_any.zig").dumpAny;
 const dumpBytecode = @import("../bytecode/disasm.zig").dumpBytecode;
 const renderDiagnostics = @import("../diagnostics/render_diagnostics.zig").renderDiagnostics;
@@ -113,36 +115,19 @@ pub fn run(ctx: *Context) !void {
     const ir_module = try ir.buildProgram(allocator, typed_ast) orelse return;
     ir.deinit(allocator);
 
-    std.debug.print("ir module:\n", .{});
-    try printModule(writer, ir_module.*);
+    // std.debug.print("ir module:\n", .{});
+    // try printModule(writer, ir_module.*);
 
     // Codegen
     var codegen: IglotCodegen = .init();
     const module = try codegen.generate(allocator, ir_module);
 
-    try dumpBytecode(writer, module);
+    // try dumpBytecode(writer, module);
 
-    // TODO: implement a real bytecode validator
-    const entry = module.entry orelse {
-        try ewriter.print("{s}: no main function\n", .{try dye.red().bold().fmt("error", .{})});
-        return;
-    };
-
-    var iglot_vm: IglotVM = .init(module);
+    var iglot_vm: IglotVM = .init(module, .{ .out = ewriter });
     defer iglot_vm.deinit(allocator);
 
-    const ret_val = try iglot_vm.run(allocator, entry);
-
-    try ewriter.print("[Program exited with status code ", .{});
-    switch (ret_val) {
-        .double => |v| try ewriter.print("{d}", .{v}),
-        .float => |v| try ewriter.print("{d}", .{v}),
-        .int => |v| try ewriter.print("{d}", .{v}),
-        .wideint => |v| try ewriter.print("{d}", .{v}),
-        .func => |v| try ewriter.print("{d}", .{v}),
-        .bool => |v| try ewriter.print("{d}", .{v}),
-    }
-    try ewriter.print("]\n", .{});
+    _ = try iglot_vm.run(allocator, module.entry);
 }
 
 fn renderParserDiagnostics(

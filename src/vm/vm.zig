@@ -1,5 +1,6 @@
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
+const builtins = @import("builtins.zig");
 const Module = @import("../bytecode/module.zig").Module;
 const IglotValue = @import("values.zig").IglotValue;
 
@@ -10,7 +11,7 @@ pub const IglotRuntimeError = error{
     IntegerOverflow,
     NoEntryPoint,
     InvalidEntryReturnType,
-} || std.mem.Allocator.Error;
+} || std.mem.Allocator.Error || std.Io.Writer.Error;
 
 pub const CallFrame = struct {
     code: []const bc.Instruction, // what this frame executes, fetched with code[pc]
@@ -25,15 +26,17 @@ pub const IglotVM = struct {
     globals: std.ArrayList(IglotValue),
     regs: std.ArrayList(IglotValue),
     frames: std.ArrayList(CallFrame),
+    ctx: builtins.Context,
 
     const Self = @This();
 
-    pub fn init(module: *const Module) Self {
+    pub fn init(module: *const Module, ctx: builtins.Context) Self {
         return .{
             .module = module,
             .globals = .empty,
             .regs = .empty,
             .frames = .empty,
+            .ctx = ctx,
         };
     }
 
@@ -182,6 +185,13 @@ pub const IglotVM = struct {
 
                     frame = try self.getCurrentFrame();
                     regs = self.regs.items[frame.base..];
+                },
+
+                .ig_call_builtin => {
+                    const builtin = &builtins.table[ins.b];
+                    const args = regs[ins.a + 1 ..][0..builtin.params.len];
+                    const result = try builtin.func(&self.ctx, args);
+                    if (ins.c != bc.no_reg) regs[ins.c] = result;
                 },
 
                 .ig_ret, .ig_ret_void => {

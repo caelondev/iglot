@@ -121,6 +121,7 @@ pub const IglotCodegen = struct {
 
             .load_fn => try self.emit(allocator, .ri(.ig_load_fn, try self.reg(ins.result.?), ins.data.constant.func.id)),
             .call => try self.getCall(allocator, ins),
+            .call_builtin => try self.genBuiltinCall(allocator, ins),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
@@ -193,6 +194,7 @@ pub const IglotCodegen = struct {
             .branch_target => |t| if (next == t.id) 0 else 1,
             .cond_branch => |cb| if (next == cb.true_block.id or next == cb.false_block.id) 1 else 2,
             .call => 2 + @as(u32, @intCast(ins.operands.len)),
+            .builtin => 1 + @as(u32, @intCast(ins.operands.len)),
             else => 1,
         };
     }
@@ -213,5 +215,19 @@ pub const IglotCodegen = struct {
 
         const dst = if (inst.result) |r| try self.reg(r) else bc.no_reg;
         try self.emit(allocator, .rrr(.ig_call, window, argc, dst));
+    }
+
+    fn genBuiltinCall(self: *Self, allocator: std.mem.Allocator, inst: IrInstruction) !void {
+        const argc: u16 = @intCast(inst.operands.len);
+        const window = self.window_base;
+        self.reg_count = @max(self.reg_count, window + 1 + argc);
+
+        for (inst.operands, 0..) |arg, i| {
+            try self.emit(allocator, .rr(.ig_mov, window + 1 + @as(u16, @intCast(i)), try self.reg(arg)));
+        }
+
+        const is_void = std.meta.activeTag(inst.sema_type.?) == .void;
+        const dst = if (is_void) bc.no_reg else try self.reg(inst.result.?);
+        try self.emit(allocator, .rrr(.ig_call_builtin, window, inst.data.builtin, dst));
     }
 };
