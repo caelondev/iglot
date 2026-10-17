@@ -1,6 +1,7 @@
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
 const Module = @import("../bytecode/module.zig").Module;
+const IglotValue = @import("values.zig").IglotValue;
 
 pub const IglotRuntimeError = error{
     NoCallFrame,
@@ -10,15 +11,6 @@ pub const IglotRuntimeError = error{
     NoEntryPoint,
     InvalidEntryReturnType,
 } || std.mem.Allocator.Error;
-
-pub const IglotValue = union(enum) {
-    int: i64,
-    wideint: i128,
-    float: f32,
-    double: f64,
-    bool: u1,
-    func: u32,
-};
 
 pub const CallFrame = struct {
     code: []const bc.Instruction, // what this frame executes, fetched with code[pc]

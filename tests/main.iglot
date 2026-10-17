@@ -1,3 +1,6 @@
 fn main() int {
+  x :: bool = true and true;
+  y :: bool = true or false;
+
   return 100;
 }
