@@ -43,14 +43,29 @@ Although scripting and small utilities are an important use case, Iglot is not i
 
 ## Examples
 
-```iglot
-fn add(a :: int, b :: int) int {
-  return a + b;
+Hello, World!
+
+A simple program that prints a message to the console.
+
+```
+fn main() void {
+  println("Hello, World!");
+}
+```
+
+Fibonacci Sequence
+
+Calculate the 20th Fibonacci number using recursion, with type inference for the result.
+
+```
+fn fib(n :: int) int {
+  if n <= 1: return n;
+  return fib(n - 1) + fib(n - 2);
 }
 
-fn main() int {
-  value :: fin int = 1000 * 5;
-  return value;
+fn main() void {
+  value ::= fib(20);
+  println(value);
 }
 ```
 
