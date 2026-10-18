@@ -122,7 +122,7 @@ pub fn run(ctx: *Context) !void {
     var codegen: IglotCodegen = .init();
     const module = try codegen.generate(allocator, ir_module);
 
-    try dumpBytecode(writer, module);
+    // try dumpBytecode(writer, module);
 
     var iglot_vm: IglotVM = .init(module, .{ .out = ewriter, .gpa = ctx.allocator });
     defer iglot_vm.deinit(allocator);

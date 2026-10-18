@@ -35,48 +35,91 @@ pub fn validateVariableDeclaration(
         return null;
     }
 
-    // TODO: add type inferrence instead of returning null
-    const var_type =
-        try tt.SemaType.fromTypeExpression(allocator, v.type) orelse return null;
+    var var_type: ?tt.SemaType = null;
 
-    if (var_type == .void) {
-        try sema.reportError(allocator, .{
-            .span = v.type.span,
-            .severity = .err,
-            .kind = .{
-                .VoidValueStorage = .{ .identifier = v.identifier.value },
+    if (v.type) |t| {
+        var_type = try tt.SemaType.fromTypeExpression(allocator, t) orelse return null;
+    }
+
+    if (var_type) |ty| {
+        if (ty == .void) {
+            try sema.reportError(allocator, .{
+                .span = v.type.?.span,
+                .severity = .err,
+                .kind = .{
+                    .VoidValueStorage = .{
+                        .identifier = v.identifier.value,
+                    },
+                },
+            });
+
+            return null;
+        }
+    }
+
+    const value = try sema.validateExpression(
+        allocator,
+        v.value,
+        v.value.span,
+        var_type,
+    ) orelse {
+        // still declare so errors won't cascade
+        try sema.type_table.declareIdentifier(
+            allocator,
+            v.identifier.value,
+            .{
+                .span = v.span,
+                .sem_type = var_type orelse .any,
+                .is_final = if (v.type) |t| t.kind == .final else false,
             },
-        });
+        );
 
         return null;
+    };
+
+    if (var_type) |vtype| {
+        if (!vtype.eql(value.sem_type)) {
+            try sema.reportError(allocator, .{
+                .span = v.value.span,
+                .severity = .err,
+                .kind = .{
+                    .TypeMismatch = .{
+                        .expected = vtype,
+                        .found = value.sem_type,
+                    },
+                },
+            });
+
+            // preserve the declared type during error recovery
+            try sema.type_table.declareIdentifier(
+                allocator,
+                v.identifier.value,
+                .{
+                    .span = v.span,
+                    .sem_type = vtype,
+                    .is_final = if (v.type) |t| t.kind == .final else false,
+                },
+            );
+
+            return null;
+        }
     }
+
+    const resolved_type = var_type orelse value.sem_type;
 
     try sema.type_table.declareIdentifier(
         allocator,
         v.identifier.value,
         .{
             .span = v.span,
-            .sem_type = var_type,
-            .is_final = v.type.kind == .final,
+            .sem_type = resolved_type,
+            .is_final = if (v.type) |t| t.kind == .final else false,
         },
     );
 
-    const value = try sema.validateExpression(allocator, v.value, v.value.span, var_type) orelse return null;
-    if (!var_type.eql(value.sem_type)) {
-        try sema.reportError(allocator, .{
-            .span = v.value.span,
-            .severity = .err,
-            .kind = .{
-                .TypeMismatch = .{ .expected = var_type, .found = value.sem_type },
-            },
-        });
-
-        return null;
-    }
-
     return .{
         .identifier = v.identifier,
-        .sema_type = var_type,
+        .sema_type = resolved_type,
         .value = value,
     };
 }

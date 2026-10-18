@@ -128,7 +128,7 @@ pub const AssignmentExpression = struct {
 
 pub const VariableDeclarationStatement = struct {
     identifier: IdentifierExpression,
-    type: TypeExpression,
+    type: ?TypeExpression,
     value: *Expression,
     span: tokens.Span,
 };
