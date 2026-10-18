@@ -1,3 +1,4 @@
 fn main() void {
   println(println);
+  println(print);
 }

@@ -107,7 +107,7 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
             if (ins.b < builtins.table.len) {
                 try w.print(", {s}, ", .{builtins.table[ins.b].name});
             } else {
-                try w.print(", <bad builtin {d}>, ", .{ins.b});
+                try w.print(", <bad builtin {d}> ", .{ins.b});
             }
         },
 
