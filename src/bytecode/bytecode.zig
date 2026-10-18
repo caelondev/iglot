@@ -67,6 +67,7 @@ pub const IglotOpcode = enum(u8) {
     ig_load_global = 0xA1,
     ig_store_global = 0xA2,
     ig_load_fn = 0xA3,
+    ig_load_builtin_fn = 0xD3,
 
     // constants (constant pool index, except bool)
     ig_const_i = 0xB0,
@@ -246,6 +247,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_load_global,
         .ig_store_global,
         .ig_load_fn,
+        .ig_load_builtin_fn,
         .ig_load_param,
         .ig_const_i,
         .ig_const_w,

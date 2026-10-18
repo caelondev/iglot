@@ -34,6 +34,7 @@ pub const Opcode = enum {
     load_global,
     store_global,
     load_fn,
+    load_builtin_fn,
 
     // control flow
     br,

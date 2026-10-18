@@ -187,6 +187,8 @@ pub const IglotVM = struct {
                 },
 
                 .ig_load_fn, .ig_const_fn => regs[ins.a] = .{ .func = ins.imm() },
+                .ig_load_builtin_fn => regs[ins.a] = .{ .builtin_ref = ins.imm() },
+
                 .ig_call => {
                     const callee = regs[ins.a].func;
                     const new_base = frame.base + ins.a + 1; // skip callee
@@ -198,10 +200,11 @@ pub const IglotVM = struct {
                 },
 
                 .ig_call_builtin => {
-                    const builtin = &builtins.table[ins.b];
-                    const args = regs[ins.a + 1 ..][0..builtin.params.len];
-                    const result = try builtin.func(self, &self.ctx, args);
-                    if (ins.c != bc.no_reg) regs[ins.c] = result;
+                    const builtin_ref = regs[ins.a].builtin_ref;
+                    const callback = builtins.table[builtin_ref];
+                    const args = regs[ins.a + 1 ..][0..callback.params.len];
+                    const ret_val = try callback.func(self, &self.ctx, args);
+                    if (ins.c != bc.no_reg) regs[ins.c] = ret_val;
                 },
 
                 .ig_ret, .ig_ret_void => {

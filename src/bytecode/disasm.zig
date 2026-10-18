@@ -102,14 +102,13 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
             try w.print(", {s}", .{if (ins.imm() != 0) "true" else "false"});
         },
 
-        .ig_call_builtin => {
+        .ig_load_builtin_fn => {
             try printReg(w, ins.a);
             if (ins.b < builtins.table.len) {
                 try w.print(", {s}, ", .{builtins.table[ins.b].name});
             } else {
                 try w.print(", <bad builtin {d}>, ", .{ins.b});
             }
-            try printReg(w, ins.c);
         },
 
         // pool loads print a typed ref so they match the #pool groups

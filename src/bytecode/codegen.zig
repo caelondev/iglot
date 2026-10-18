@@ -120,6 +120,7 @@ pub const IglotCodegen = struct {
             .cond_br => try self.genBranch(allocator, ins),
 
             .load_fn => try self.emit(allocator, .ri(.ig_load_fn, try self.reg(ins.result.?), ins.data.constant.func.id)),
+            .load_builtin_fn => try self.emit(allocator, .ri(.ig_load_builtin_fn, try self.reg(ins.result.?), ins.data.builtin)),
             .call => try self.getCall(allocator, ins),
             .call_builtin => try self.genBuiltinCall(allocator, ins),
 
@@ -222,12 +223,13 @@ pub const IglotCodegen = struct {
         const window = self.window_base;
         self.reg_count = @max(self.reg_count, window + 1 + argc);
 
+        try self.emit(allocator, .rr(.ig_mov, window, try self.reg(inst.data.call.callee)));
         for (inst.operands, 0..) |arg, i| {
             try self.emit(allocator, .rr(.ig_mov, window + 1 + @as(u16, @intCast(i)), try self.reg(arg)));
         }
 
         const is_void = std.meta.activeTag(inst.sema_type.?) == .void;
         const dst = if (is_void) bc.no_reg else try self.reg(inst.result.?);
-        try self.emit(allocator, .rrr(.ig_call_builtin, window, inst.data.builtin, dst));
+        try self.emit(allocator, .rrr(.ig_call_builtin, window, argc, dst));
     }
 };

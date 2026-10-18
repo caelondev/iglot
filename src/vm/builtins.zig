@@ -74,7 +74,8 @@ fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue) std.Io.
         .float => |x| try writeFloat(out, x),
         .double => |x| try writeFloat(out, x),
         .bool => |x| try out.writeAll(if (x == 1) "true" else "false"),
-        .func => |id| try out.print("<fn {d}>", .{id}),
+        .func => |id| try out.print("<fn [{d}]>", .{id}),
+        .builtin_ref => |ref| try out.print("<builtin fn [{d}]>", .{ref}),
         .heap_ref => |ref| {
             const val = obj_heap.resolveRef(ref);
             try writeHeapValue(out, val);

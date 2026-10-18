@@ -1,13 +1,14 @@
 const std = @import("std");
+const inst = @import("instruction.zig");
+const typed_ast = @import("../../frontend/sema/typed_ast.zig");
+const ast = @import("../../frontend/parser/ast.zig");
+const tt = @import("../../frontend/sema/type_table.zig");
+const builtins = @import("../../vm/builtins.zig");
 const Module = @import("module.zig").Module;
 const Function = @import("function.zig").Function;
 const Params = @import("function.zig").Params;
 const BasicBlock = @import("basic_block.zig").BasicBlock;
 const ScopeStack = @import("scope_table.zig").ScopeStack;
-const inst = @import("instruction.zig");
-const typed_ast = @import("../../frontend/sema/typed_ast.zig");
-const ast = @import("../../frontend/parser/ast.zig");
-const tt = @import("../../frontend/sema/type_table.zig");
 
 const simplifyCfg = @import("simplify_cfg.zig").simplifyCfg;
 
@@ -26,6 +27,17 @@ const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 
 const LoopContext = struct {
     break_block: inst.BlockRef,
+};
+
+pub const IdentKind = enum {
+    local,
+    global,
+    func,
+    builtin,
+};
+pub const ResolvedIdent = struct {
+    reg: inst.VReg,
+    kind: IdentKind,
 };
 
 pub const IglotIR = struct {
@@ -192,7 +204,7 @@ pub const IglotIR = struct {
             .float => |*f| try lit.buildFloatLit(self, allocator, f, sema_type),
             .string => |*s| try lit.buildStringLit(self, allocator, s, sema_type),
             .assignment => |*a| try buildAssignmentExpr(self, allocator, a),
-            .identifier => |*i| try self.resolveIdentifier(allocator, i, sema_type),
+            .identifier => |*i| (try self.resolveIdentifier(allocator, i, sema_type)).reg,
 
             .unary => |*u| try buildUnaryExpr(self, allocator, u),
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
@@ -212,14 +224,13 @@ pub const IglotIR = struct {
         }
     }
 
-    pub fn resolveIdentifier(self: *Self, allocator: std.mem.Allocator, i: *const typed_ast.TypedIdentifier, sema_type: tt.SemaType) !?inst.VReg {
+    pub fn resolveIdentifier(self: *Self, allocator: std.mem.Allocator, i: *const typed_ast.TypedIdentifier, sema_type: tt.SemaType) !ResolvedIdent {
         if (self.current_scope.resolve(i.value)) |reg| {
-            return reg;
+            return .{ .reg = reg, .kind = .local };
         }
 
         if (self.global_symtab.get(i.value)) |ref| {
             const dest = self.current_fn.newVReg();
-
             try self.emit(allocator, .{
                 .data = .{ .global = ref },
                 .op = .load_global,
@@ -227,20 +238,31 @@ pub const IglotIR = struct {
                 .sema_type = sema_type,
                 .result = dest,
             });
-            return dest;
+            return .{ .reg = dest, .kind = .global };
         }
 
-        const func = self.module.getFunctionByName(i.value) orelse unreachable;
-        const dest = self.current_fn.newVReg();
+        if (self.module.getFunctionByName(i.value)) |func| {
+            const dest = self.current_fn.newVReg();
+            try self.emit(allocator, .{
+                .data = .{ .constant = .{ .func = func.function_ref } },
+                .op = .load_fn,
+                .operands = &.{},
+                .sema_type = sema_type,
+                .result = dest,
+            });
+            return .{ .reg = dest, .kind = .func };
+        }
 
+        const id = builtins.lookupBuiltin(i.value) orelse unreachable;
+        const dest = self.current_fn.newVReg();
         try self.emit(allocator, .{
-            .data = .{ .constant = .{ .func = func.function_ref } },
-            .op = .load_fn,
+            .data = .{ .builtin = id },
+            .op = .load_builtin_fn,
             .operands = &.{},
             .sema_type = sema_type,
             .result = dest,
         });
-        return dest;
+        return .{ .reg = dest, .kind = .builtin };
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {
