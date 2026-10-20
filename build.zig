@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| run_cmd.addArgs(args);
+    run_cmd.addPassthruArgs();
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
@@ -21,8 +21,9 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_exe_tests.step);
 
     const release_step = b.step("release", "Build an optimized release with a real build timestamp");
+    // b.graph.poisonCache(); // uncomment if the timestamp gets stuck (unverified signature)
     const now = std.Io.Clock.real.now(b.graph.io).toSeconds();
-    const release_exe = addIglot(b, target, .ReleaseFast, now);
+    const release_exe = addIglot(b, target, .fast, now);
     const install_release = b.addInstallArtifact(release_exe, .{
         .dest_dir = .{ .override = .{ .custom = "release" } },
     });
@@ -33,7 +34,7 @@ pub fn build(b: *std.Build) void {
 fn addIglot(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
+    optimize: std.lang.Optimize,
     stamp: i64,
 ) *std.Build.Step.Compile {
     const inkdye = b.dependency("inkdye", .{

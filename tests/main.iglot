@@ -1,4 +1,6 @@
-fn fib(n :: int) int {
+fn fib(n :: fin int) int {
+  n = 0;
+
   if n <= 1: return n;
   return fib(n - 1) + fib(n - 2);
 }
