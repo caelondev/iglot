@@ -2,11 +2,11 @@
     .name = .iglot,
     .version = "0.0.0",
     .fingerprint = 0x31dd92c719bc58,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .inkdye = .{
-            .url = "git+https://codeberg.org/caelondev/inkdye#cc2d8395b4949ecc67aa42ae4a3e2beb49a570ff",
-            .hash = "inkdye-0.1.1-PJZZVfkTAQB_fv9qX-_suDlgQgf68QLDZfwe9YQ349nB",
+            .url = "git+https://codeberg.org/caelondev/inkdye.git#74985fed8d2ee5dff5b4b0c21e15392f34f38de9",
+            .hash = "inkdye-1.1.0-PJZZVdkTAQAtCJckAYb2gZH2Gp0WfhRIEDiEmy8LU9Yw",
         },
     },
     .paths = .{

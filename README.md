@@ -15,7 +15,7 @@ Iglot is a statically-typed programming language built around clarity and contro
 
 ### Requirements
 
-- [Zig](https://ziglang.org/) 0.16.0 or newer
+- [Zig](https://ziglang.org/) 0.17.0 or newer
 
 ### Build from source
 
