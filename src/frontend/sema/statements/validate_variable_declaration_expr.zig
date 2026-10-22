@@ -38,7 +38,7 @@ pub fn validateVariableDeclaration(
     var var_type: ?tt.SemaType = null;
 
     if (v.type) |t| {
-        var_type = try tt.SemaType.fromTypeExpression(allocator, t) orelse return null;
+        var_type = try tt.SemaType.fromTypeExpression(sema, allocator, t) orelse return null;
     }
 
     if (var_type) |ty| {

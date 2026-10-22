@@ -1,3 +1,7 @@
+//! TODO: evalConstInt should distinguish why it failed, instead of returning null for everything
+//! - add kinds: ArraySizeOverflow, ArraySizeDivByZero
+//! - resolveArraySize maps each variant to its own diagnostic
+
 const std = @import("std");
 const IglotDiagnostic = @import("../../diagnostics/diagnostics.zig").IglotDiagnostic;
 const tt = @import("type_table.zig");
@@ -62,14 +66,14 @@ pub const IglotSemanticAnalyzer = struct {
         return .{ .body = try body.toOwnedSlice(allocator) };
     }
 
-    pub fn functionSemType(allocator: std.mem.Allocator, f: *const ast.FunctionDeclarationStatement) !?tt.SemaType {
+    pub fn functionSemType(sema: *Self, allocator: std.mem.Allocator, f: *const ast.FunctionDeclarationStatement) !?tt.SemaType {
         const ret_ptr = try allocator.create(tt.SemaType);
-        ret_ptr.* = try tt.SemaType.fromTypeExpression(allocator, f.return_type) orelse return null;
+        ret_ptr.* = try tt.SemaType.fromTypeExpression(sema, allocator, f.return_type) orelse return null;
 
         const params = try allocator.alloc(*tt.SemaType, f.parameters.len);
         for (f.parameters, 0..) |param, i| {
             const p = try allocator.create(tt.SemaType);
-            p.* = try tt.SemaType.fromTypeExpression(allocator, param.param_type) orelse return null;
+            p.* = try tt.SemaType.fromTypeExpression(sema, allocator, param.param_type) orelse return null;
             params[i] = p;
         }
 
@@ -106,7 +110,7 @@ pub const IglotSemanticAnalyzer = struct {
                     return null;
                 }
 
-                const function_sem_type = try functionSemType(allocator, f) orelse return null;
+                const function_sem_type = try functionSemType(self, allocator, f) orelse return null;
                 try self.type_table.declareIdentifier(allocator, f.identifier.value, .{
                     .span = f.span,
                     .sem_type = function_sem_type,
@@ -346,6 +350,72 @@ pub const IglotSemanticAnalyzer = struct {
         }
 
         return .float;
+    }
+
+    pub fn resolveArraySize(
+        self: *Self,
+        allocator: std.mem.Allocator,
+        e: *const ast.Expression,
+        span: Span,
+    ) !tt.SemaArraySize {
+        const n = try self.evalConstInt(e) orelse {
+            // const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+            //     .{
+            //         .help = .{
+            //             .message = "array sizes are evaluated at compile time. use literals, arithmetic on them, or `const` identifiers with a constant initializer",
+            //         },
+            //     },
+            // });
+
+            try self.reportError(allocator, .{
+                .span = span,
+                .kind = .ArraySizeNotConstant,
+                .annotations = &.{},
+            });
+            return .unknown;
+        };
+
+        if (n < 0 or n > std.math.maxInt(u64)) {
+            try self.reportError(allocator, .{
+                .span = span,
+                .kind = .{ .InvalidArraySize = .{ .value = n } },
+            });
+            return .unknown;
+        }
+
+        return .{ .known = @intCast(n) };
+    }
+
+    pub fn evalConstInt(self: *Self, e: *const ast.Expression) !?i128 {
+        return switch (e.expr) {
+            .integer => |v| v.value,
+            .identifier => @panic("TODO: const variables"),
+            .binary => |b| blk: {
+                const l = try self.evalConstInt(b.left) orelse break :blk null;
+                const r = try self.evalConstInt(b.right) orelse break :blk null;
+                break :blk switch (b.operator) {
+                    .plus => std.math.add(i128, l, r) catch null,
+                    .minus => std.math.sub(i128, l, r) catch null,
+                    .asterisk => std.math.mul(i128, l, r) catch null,
+                    .slash => if (r == 0) null else @divTrunc(l, r),
+                    else => null,
+                };
+            },
+            .unary => |b| blk: {
+                const v = try self.evalConstInt(b.rhs) orelse break :blk null;
+                break :blk switch (b.operator) {
+                    .minus => -v,
+                    else => null,
+                };
+            },
+
+            .wide_integer,
+            .float,
+            .string,
+            .assignment,
+            .call,
+            => null,
+        };
     }
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: IglotDiagnostic) !void {

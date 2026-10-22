@@ -1,11 +1,3 @@
-fn fib(n :: fin int) int {
-  n = 0;
-
-  if n <= 1: return n;
-  return fib(n - 1) + fib(n - 2);
-}
-
 fn main() void {
-  value ::= fib(20);
-  println(value);
+  arr :: [5]int = 5;
 }

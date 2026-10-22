@@ -6,7 +6,9 @@ const ast = @import("../ast.zig");
 const IglotDiagnostic = @import("../../../diagnostics/diagnostics.zig").IglotDiagnostic;
 
 const nud_lit = @import("../nud/literals.zig");
+const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const parseStatement = @import("../statements/parseStatement.zig").parseStatement;
+const parseIdentifier = @import("../nud/literals.zig").parseIdentifier;
 const Precedence = @import("../precedence.zig").Precedence;
 const IglotParser = @import("../parser.zig").IglotParser;
 
@@ -64,6 +66,39 @@ fn parseType(
             };
         },
 
+        .left_bracket => {
+            parser.nextToken();
+            if (parser.cur_tok.kind == .identifier and
+                std.mem.eql(u8, parser.cur_tok.lexeme, "_"))
+            {
+                try parser.reportError(allocator, .{
+                    .kind = .ArraySizeTypeInfer,
+                    .span = parser.cur_tok.span,
+                });
+                return null;
+            }
+
+            const size_expr = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+
+            if (!try parser.expectPeek(allocator, .right_bracket)) return null;
+            parser.nextToken();
+
+            const elem = try parseTypeExpression(parser, allocator) orelse return null;
+            const elem_ptr = try allocator.create(ast.TypeExpression);
+            elem_ptr.* = elem;
+
+            const size_expr_ptr = try allocator.create(ast.Expression);
+            size_expr_ptr.* = size_expr;
+
+            return .{
+                .span = .mergeFromSpans(tok.span, elem.span),
+                .kind = .{ .array = .{
+                    .size = .{ .expr = size_expr_ptr },
+                    .element_type = elem_ptr,
+                } },
+            };
+        },
+
         .@"fn" => {
             if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
 
@@ -97,7 +132,7 @@ fn parseType(
             ret_ptr.* = ret;
 
             return .{
-                .span = tokens.Span.mergeFromSpans(tok.span, ret.span),
+                .span = .mergeFromSpans(tok.span, ret.span),
                 .kind = .{
                     .function = .{
                         .parameters = try params.toOwnedSlice(allocator),

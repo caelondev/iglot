@@ -18,12 +18,12 @@ pub fn dumpAny(writer: *std.Io.Writer, value: anytype, indent: usize) anyerror!v
         },
         .@"struct" => |s| {
             try writer.writeByte('\n');
-            inline for (s.fields) |field| {
-                if (comptime std.mem.eql(u8, field.name, "span")) continue;
+            inline for (s.field_names) |name| {
+                if (comptime std.mem.eql(u8, name, "span")) continue;
 
                 try writeIndent(writer, indent + 1);
-                try writer.print("{s}: ", .{field.name});
-                try dumpAny(writer, @field(value, field.name), indent + 1);
+                try writer.print("{s}: ", .{name});
+                try dumpAny(writer, @field(value, name), indent + 1);
             }
         },
         .@"union" => |u| {

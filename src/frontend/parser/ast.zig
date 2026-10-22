@@ -56,7 +56,16 @@ pub const TypeExpression = struct {
             parameters: []*TypeExpression,
             return_type: *TypeExpression,
         },
+        array: struct {
+            size: ArraySize,
+            element_type: *TypeExpression,
+        },
     },
+
+    pub const ArraySize = union(enum) {
+        expr: *Expression,
+        infer, // [_]T{ ... }; for literals
+    };
 };
 
 pub const Expression = struct {

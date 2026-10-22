@@ -30,6 +30,8 @@ pub const IglotDiagnostic = struct {
         UnexpectedTokenInType: struct {
             found: tokens.TokenKind,
         },
+        ArraySizeTypeInfer,
+        IllegalArraySizeExpression,
 
         // Sema
         InvalidLeftHandSideAssignment,
@@ -67,6 +69,8 @@ pub const IglotDiagnostic = struct {
         TooFewArguments: struct { expected: usize, found: usize },
         TooManyArguments: struct { expected: usize, found: usize },
         NonVoidMainReturnType: struct { found: SemaType },
+        ArraySizeNotConstant,
+        InvalidArraySize: struct { value: i128 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -78,6 +82,8 @@ pub const IglotDiagnostic = struct {
                 .UnexpectedTokenInType => |u| try writer.print("unexpected token \"{s}\" in type expression", .{@tagName(u.found)}),
                 .UnexpectedToken => |u| try writer.print("unexpected token \"{s}\"", .{@tagName(u.found)}),
                 .RedundantFinal => try writer.print("redundant final modifier", .{}),
+                .ArraySizeTypeInfer => try writer.print("cannot infer array size at type level", .{}),
+                .IllegalArraySizeExpression => try writer.print("cannot use expression for array indexing", .{}),
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
@@ -98,6 +104,8 @@ pub const IglotDiagnostic = struct {
                 .TooFewArguments => |t| try writer.print("too few arguments. expected {d} but got {d} instead", .{ t.expected, t.found }),
                 .IllegalBreak => try writer.print("cannot break outside a loop", .{}),
                 .NonVoidMainReturnType => |f| try writer.print("\"main\" function must return a \"void\" type. found {f}", .{f.found}),
+                .ArraySizeNotConstant => try writer.writeAll("array size must be a compile-time constant"),
+                .InvalidArraySize => |a| try writer.print("invalid array size {d}", .{a.value}),
             }
         }
     };

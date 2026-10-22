@@ -1,6 +1,23 @@
 const std = @import("std");
 const Span = @import("../lexer/tokens.zig").Span;
 const TypeExpression = @import("../parser/ast.zig").TypeExpression;
+const IglotSemanticAnalyzer = @import("sema.zig").IglotSemanticAnalyzer;
+
+pub const SemaArraySize = union(enum) {
+    infer,
+    unknown, // const-eval failed, error already reported
+    known: u64,
+
+    pub fn compatible(a: SemaArraySize, b: SemaArraySize) bool {
+        return switch (a) {
+            .known => |x| switch (b) {
+                .known => |y| x == y,
+                else => true,
+            },
+            else => true,
+        };
+    }
+};
 
 pub const SemaType = union(enum) {
     string,
@@ -17,6 +34,11 @@ pub const SemaType = union(enum) {
         return_type: *SemaType,
     },
 
+    array: struct {
+        size: SemaArraySize,
+        element_type: *SemaType,
+    },
+
     // special type used for error messages
     number,
 
@@ -24,6 +46,7 @@ pub const SemaType = union(enum) {
     any,
 
     pub fn fromTypeExpression(
+        sema: *IglotSemanticAnalyzer,
         allocator: std.mem.Allocator,
         type_expr: TypeExpression,
     ) !?SemaType {
@@ -40,19 +63,19 @@ pub const SemaType = union(enum) {
 
         return switch (type_expr.kind) {
             .identifier => |i| types.get(i),
-            .final => |f| try fromTypeExpression(allocator, f.*),
+            .final => |f| try fromTypeExpression(sema, allocator, f.*),
             .function => |f| blk: {
                 var params: std.ArrayList(*SemaType) = .empty;
 
                 for (f.parameters) |te| {
-                    const sema = try fromTypeExpression(allocator, te.*) orelse return null;
-                    const sema_ptr = try allocator.create(SemaType);
-                    sema_ptr.* = sema;
+                    const typ = try fromTypeExpression(sema, allocator, te.*) orelse return null;
+                    const typ_ptr = try allocator.create(SemaType);
+                    typ_ptr.* = typ;
 
-                    try params.append(allocator, sema_ptr);
+                    try params.append(allocator, typ_ptr);
                 }
 
-                const ret_sema = try fromTypeExpression(allocator, f.return_type.*) orelse return null;
+                const ret_sema = try fromTypeExpression(sema, allocator, f.return_type.*) orelse return null;
                 const ret_ptr = try allocator.create(SemaType);
                 ret_ptr.* = ret_sema;
 
@@ -62,6 +85,17 @@ pub const SemaType = union(enum) {
                         .return_type = ret_ptr,
                     },
                 };
+            },
+            .array => |a| blk: {
+                const size: SemaArraySize = switch (a.size) {
+                    .infer => .infer,
+                    .expr => |e| try sema.resolveArraySize(allocator, e, type_expr.span),
+                };
+
+                const elem_ptr = try allocator.create(SemaType);
+                elem_ptr.* = try fromTypeExpression(sema, allocator, a.element_type.*) orelse return null;
+
+                break :blk .{ .array = .{ .size = size, .element_type = elem_ptr } };
             },
         };
     }
@@ -94,6 +128,15 @@ pub const SemaType = union(enum) {
                 try writer.writeAll(") ");
                 try writeSymbolString(writer, f.return_type.*);
             },
+            .array => |a| {
+                try writer.writeAll("[");
+                switch (a.size) {
+                    .infer, .unknown => try writer.writeAll("_"),
+                    .known => |n| try writer.print("{d}", .{n}),
+                }
+                try writer.writeAll("]");
+                try writeSymbolString(writer, a.element_type.*);
+            },
             .any => try writer.writeAll("any"),
         };
     }
@@ -114,6 +157,11 @@ pub const SemaType = union(enum) {
                 break :blk sf.return_type.eql(of.return_type.*);
             },
 
+            .array => |sa| blk: {
+                const oa = other.array;
+                if (!sa.element_type.eql(oa.element_type.*)) break :blk false;
+                break :blk sa.size.compatible(oa.size);
+            },
             else => true,
         };
     }

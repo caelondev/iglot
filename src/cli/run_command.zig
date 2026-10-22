@@ -87,8 +87,8 @@ pub fn run(ctx: *Context) !void {
     if (parser.diagnostics.items.len != 0)
         return;
 
-    // std.debug.print("parsed ast:\n", .{});
-    // try dumpAny(writer, ast, 0);
+    std.debug.print("parsed ast:\n", .{});
+    try dumpAny(writer, ast, 0);
 
     // Semantic analysis
     var sema: IglotSemanticAnalyzer = .init();
