@@ -62,12 +62,18 @@ pub const TypedExpr = struct {
         unary: TypedUnaryExpr,
         assignment: TypedAssignment,
         call: TypedCallExpr,
+        array: TypedArrayExpr,
     },
 };
 
 pub const TypedCallExpr = struct {
     callee: *TypedExpr,
     arguments: []*TypedExpr,
+    sema_type: tt.SemaType,
+};
+
+pub const TypedArrayExpr = struct {
+    elements: []*TypedExpr,
     sema_type: tt.SemaType,
 };
 

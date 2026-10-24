@@ -39,17 +39,61 @@ pub const SemaType = union(enum) {
         element_type: *SemaType,
     },
 
-    // special type used for error messages
-    number,
-
     // builtin params only, for now. used in args
     any,
 
+    // special type used for error messages
+    number,
+
+    /// strict: rejects array infer anywhere.
     pub fn fromTypeExpression(
         sema: *IglotSemanticAnalyzer,
         allocator: std.mem.Allocator,
         type_expr: TypeExpression,
     ) !?SemaType {
+        const t = try resolve(sema, allocator, type_expr) orelse return null;
+
+        if (t.hasInfer()) {
+            try sema.reportError(allocator, .{
+                .span = type_expr.span,
+                .kind = .ArraySizeTypeInfer,
+            });
+            return null;
+        }
+
+        return t;
+    }
+
+    /// only for array literal heads, where the outermost `_` is legal.
+    pub fn fromTypeExpressionAllowInfer(
+        sema: *IglotSemanticAnalyzer,
+        allocator: std.mem.Allocator,
+        type_expr: TypeExpression,
+    ) !?SemaType {
+        return resolve(sema, allocator, type_expr);
+    }
+
+    /// true if any array size in this type is inferred
+    pub fn hasInfer(self: SemaType) bool {
+        return switch (self) {
+            .array => |a| a.size == .infer or a.element_type.hasInfer(),
+            .function => |f| blk: {
+                for (f.parameters) |p| {
+                    if (p.hasInfer()) break :blk true;
+                }
+                break :blk f.return_type.hasInfer();
+            },
+            else => false,
+        };
+    }
+
+    /// the actual recursion. all nested calls go through `resolve`, never
+    /// the strict wrapper, so `[_][2]int` survives until validateArrayExpr.
+    fn resolve(
+        sema: *IglotSemanticAnalyzer,
+        allocator: std.mem.Allocator,
+        type_expr: TypeExpression,
+    ) anyerror!?SemaType {
         const types: std.StaticStringMap(SemaType) = .initComptime(.{
             .{ "string", .string },
             .{ "char", .char },
@@ -63,19 +107,19 @@ pub const SemaType = union(enum) {
 
         return switch (type_expr.kind) {
             .identifier => |i| types.get(i),
-            .final => |f| try fromTypeExpression(sema, allocator, f.*),
+            .final => |f| try resolve(sema, allocator, f.*),
             .function => |f| blk: {
                 var params: std.ArrayList(*SemaType) = .empty;
 
                 for (f.parameters) |te| {
-                    const typ = try fromTypeExpression(sema, allocator, te.*) orelse return null;
+                    const typ = try resolve(sema, allocator, te.*) orelse return null;
                     const typ_ptr = try allocator.create(SemaType);
                     typ_ptr.* = typ;
 
                     try params.append(allocator, typ_ptr);
                 }
 
-                const ret_sema = try fromTypeExpression(sema, allocator, f.return_type.*) orelse return null;
+                const ret_sema = try resolve(sema, allocator, f.return_type.*) orelse return null;
                 const ret_ptr = try allocator.create(SemaType);
                 ret_ptr.* = ret_sema;
 
@@ -93,7 +137,7 @@ pub const SemaType = union(enum) {
                 };
 
                 const elem_ptr = try allocator.create(SemaType);
-                elem_ptr.* = try fromTypeExpression(sema, allocator, a.element_type.*) orelse return null;
+                elem_ptr.* = try resolve(sema, allocator, a.element_type.*) orelse return null;
 
                 break :blk .{ .array = .{ .size = size, .element_type = elem_ptr } };
             },

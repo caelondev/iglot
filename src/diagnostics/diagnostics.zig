@@ -71,6 +71,7 @@ pub const IglotDiagnostic = struct {
         NonVoidMainReturnType: struct { found: SemaType },
         ArraySizeNotConstant,
         InvalidArraySize: struct { value: i128 },
+        ArraySizeMismatch: struct { expected: u64, found: u64 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -106,6 +107,7 @@ pub const IglotDiagnostic = struct {
                 .NonVoidMainReturnType => |f| try writer.print("\"main\" function must return a \"void\" type. found {f}", .{f.found}),
                 .ArraySizeNotConstant => try writer.writeAll("array size must be a compile-time constant"),
                 .InvalidArraySize => |a| try writer.print("invalid array size {d}", .{a.value}),
+                .ArraySizeMismatch => |a| try writer.print("expected {d} elements but got {d} instead", .{ a.expected, a.found }),
             }
         }
     };

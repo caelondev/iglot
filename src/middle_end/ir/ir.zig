@@ -210,6 +210,7 @@ pub const IglotIR = struct {
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
 
             .call => |*c| try buildCallExpr(self, allocator, c),
+            .array => unreachable,
         };
     }
 
