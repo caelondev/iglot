@@ -42,6 +42,10 @@ pub const SemaType = union(enum) {
     // builtin params only, for now. used in args
     any,
 
+    // poison type for error recovery so `eql`
+    // wont report again.
+    err,
+
     // special type used for error messages
     number,
 
@@ -182,10 +186,12 @@ pub const SemaType = union(enum) {
                 try writeSymbolString(writer, a.element_type.*);
             },
             .any => try writer.writeAll("any"),
+            .err => unreachable,
         };
     }
 
     pub fn eql(self: SemaType, other: SemaType) bool {
+        if (self == .err or other == .err) return true;
         if (std.meta.activeTag(self) != std.meta.activeTag(other)) return false;
 
         return switch (self) {
@@ -213,6 +219,7 @@ pub const SemaType = union(enum) {
     /// one-way check for args meeting params: `expected.accepts(found)`.
     /// `any` only works on the expected side and still rejects void
     pub fn accepts(self: SemaType, found: SemaType) bool {
+        if (self == .err or found == .err) return true;
         if (std.meta.activeTag(self) == .any) return std.meta.activeTag(found) != .void;
         return found.eql(self);
     }

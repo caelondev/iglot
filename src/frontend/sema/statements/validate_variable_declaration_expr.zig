@@ -69,7 +69,7 @@ pub fn validateVariableDeclaration(
             v.identifier.value,
             .{
                 .span = v.span,
-                .sem_type = var_type orelse .any,
+                .sem_type = var_type orelse .err,
                 .is_final = if (v.type) |t| t.kind == .final else false,
             },
         );
