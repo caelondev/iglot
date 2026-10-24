@@ -68,17 +68,19 @@ fn parseType(
 
         .left_bracket => {
             parser.nextToken();
-            if (parser.cur_tok.kind == .identifier and
-                std.mem.eql(u8, parser.cur_tok.lexeme, "_"))
-            {
-                try parser.reportError(allocator, .{
-                    .kind = .ArraySizeTypeInfer,
-                    .span = parser.cur_tok.span,
-                });
-                return null;
-            }
 
-            const size_expr = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+            const size: ast.TypeExpression.ArraySize = blk: {
+                if (parser.cur_tok.kind == .identifier and
+                    std.mem.eql(u8, parser.cur_tok.lexeme, "_"))
+                {
+                    break :blk .infer;
+                }
+
+                const size_expr = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+                const size_expr_ptr = try allocator.create(ast.Expression);
+                size_expr_ptr.* = size_expr;
+                break :blk .{ .expr = size_expr_ptr };
+            };
 
             if (!try parser.expectPeek(allocator, .right_bracket)) return null;
             parser.nextToken();
@@ -87,13 +89,10 @@ fn parseType(
             const elem_ptr = try allocator.create(ast.TypeExpression);
             elem_ptr.* = elem;
 
-            const size_expr_ptr = try allocator.create(ast.Expression);
-            size_expr_ptr.* = size_expr;
-
             return .{
                 .span = .mergeFromSpans(tok.span, elem.span),
                 .kind = .{ .array = .{
-                    .size = .{ .expr = size_expr_ptr },
+                    .size = size,
                     .element_type = elem_ptr,
                 } },
             };
