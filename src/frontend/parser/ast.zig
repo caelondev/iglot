@@ -85,6 +85,7 @@ pub const Expression = struct {
         unary: UnaryExpression,
         assignment: AssignmentExpression,
         array: ArrayExpression,
+        anon_array: AnonymousArrayExpression,
         call: CallExpression,
     };
 };
@@ -156,6 +157,10 @@ pub const ArrayExpression = struct {
 pub const CallExpression = struct {
     callee: *Expression,
     arguments: []*Expression,
+};
+
+pub const AnonymousArrayExpression = struct {
+    elements: []*Expression,
 };
 
 // STATEMENTS

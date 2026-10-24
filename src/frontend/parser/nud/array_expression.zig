@@ -19,9 +19,13 @@
 //!     [3]int{ 1, 2, 3 };
 //!     [_]int{ 1, 2, 3, };
 //!     [_][2]int{
-//!         [_]int{ 1, 2 },
+//!         { 1, 2 },
 //!         [_]int{ 3, 4 },
 //!     };
+//!
+//! An element may drop its type and be a bare `{ ... }`. This is only
+//! legal in element position, and sema gives it the element type of the
+//! enclosing literal. Bare literals nest: `[_][2][2]int{ { {1, 2}, {3, 4} } }`.
 //!
 //! The parser only checks syntax. Whether `_` is legal in the size slot,
 //! and whether the element count matches `n`, is left to sema.
@@ -56,13 +60,17 @@ pub fn parseArrayExpression(parser: *IglotParser, allocator: std.mem.Allocator) 
 
 /// assumes cur_tok is on '{'. leaves cur_tok on the last token of the
 /// final element or on the trailing ',', so the caller can expectPeek('}').
-pub fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) !?[]*ast.Expression {
+fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?[]*ast.Expression {
     var elements: std.ArrayList(*ast.Expression) = .empty;
 
     while (!parser.peekIs(.right_brace)) {
         parser.nextToken();
 
-        const expr = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+        const expr = if (parser.cur_tok.kind == .left_brace)
+            try parseBareLiteral(parser, allocator) orelse return null
+        else
+            try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+
         const expr_ptr = try allocator.create(ast.Expression);
         expr_ptr.* = expr;
         try elements.append(allocator, expr_ptr);
@@ -74,4 +82,18 @@ pub fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) !?[]*as
     }
 
     return try elements.toOwnedSlice(allocator);
+}
+
+/// assumes cur_tok is on '{'. element position only, the type comes
+/// from context in sema.
+fn parseBareLiteral(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?ast.Expression {
+    const l_brace = parser.cur_tok;
+
+    const elems = try parseElements(parser, allocator) orelse return null;
+    if (!try parser.expectPeek(allocator, .right_brace)) return null;
+
+    return .{
+        .span = .mergeFromSpans(l_brace.span, parser.cur_tok.span),
+        .expr = .{ .anon_array = .{ .elements = elems } },
+    };
 }

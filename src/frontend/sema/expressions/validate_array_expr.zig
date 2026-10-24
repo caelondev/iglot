@@ -20,6 +20,7 @@ pub fn validateArrayExpr(
 
     const elem_type = arr.element_type;
 
+    // only the outermost size may be inferred: [_][2]int ok, [_][_]int not
     if (elem_type.hasInfer()) {
         try sema.reportError(allocator, .{
             .span = span,
@@ -46,9 +47,72 @@ pub fn validateArrayExpr(
         },
     };
 
+    const elems = try validateElements(sema, allocator, a.elements, elem_type) orelse return null;
+
+    const result_type: tt.SemaType = .{ .array = .{
+        .size = size,
+        .element_type = elem_type,
+    } };
+
+    return try makeNode(allocator, span, result_type, elems);
+}
+
+/// bare `{ ... }` element. the type comes entirely from the expected type
+pub fn validateAnonymousArray(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    a: *const ast.AnonymousArrayExpression,
+    span: Span,
+    expected_type: ?tt.SemaType,
+) anyerror!?*typed_ast.TypedExpr {
+    const expected = expected_type orelse {
+        try sema.reportError(allocator, .{ .span = span, .kind = .CannotInferLiteralType });
+        return null;
+    };
+
+    const arr = switch (expected) {
+        .array => |x| x,
+        .err => return null, // already reported upstream
+        else => {
+            try sema.reportError(allocator, .{
+                .span = span,
+                .kind = .CannotInferLiteralType,
+            });
+            return null;
+        },
+    };
+
+    switch (arr.size) {
+        .known => |n| if (n != a.elements.len) {
+            try sema.reportError(allocator, .{
+                .span = span,
+                .kind = .{
+                    .ArraySizeMismatch = .{
+                        .expected = n,
+                        .found = a.elements.len,
+                    },
+                },
+            });
+            return null;
+        },
+        .infer => unreachable,
+        .unknown => return null,
+    }
+
+    const elems = try validateElements(sema, allocator, a.elements, arr.element_type) orelse return null;
+    return try makeNode(allocator, span, expected, elems);
+}
+
+/// shared by typed and bare literals. reports and returns null on failure
+fn validateElements(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    elements: []*ast.Expression,
+    elem_type: *tt.SemaType,
+) anyerror!?[]*typed_ast.TypedExpr {
     var typed_elems: std.ArrayList(*typed_ast.TypedExpr) = .empty;
 
-    for (a.elements) |expr| {
+    for (elements) |expr| {
         const typed = try sema.validateExpression(allocator, expr, expr.span, elem_type.*) orelse return null;
 
         if (!elem_type.eql(typed.sem_type)) {
@@ -65,22 +129,25 @@ pub fn validateArrayExpr(
         try typed_elems.append(allocator, typed);
     }
 
-    const result_type: tt.SemaType = .{
-        .array = .{
-            .size = size,
-            .element_type = elem_type,
-        },
-    };
+    return try typed_elems.toOwnedSlice(allocator);
+}
 
+fn makeNode(
+    allocator: std.mem.Allocator,
+    span: Span,
+    ty: tt.SemaType,
+    elems: []*typed_ast.TypedExpr,
+) !*typed_ast.TypedExpr {
     const node = try allocator.create(typed_ast.TypedExpr);
     node.* = .{
         .span = span,
-        .sem_type = result_type,
-        .kind = .{ .array = .{
-            .elements = try typed_elems.toOwnedSlice(allocator),
-            .sema_type = result_type,
-        } },
+        .sem_type = ty,
+        .kind = .{
+            .array = .{
+                .elements = elems,
+                .sema_type = ty,
+            },
+        },
     };
-
     return node;
 }
