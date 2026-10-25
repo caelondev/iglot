@@ -1,5 +1,17 @@
 fn main() void {
-  msg ::= prompt("say something: ");
-  print("You said: ");
-  println(msg);
+  loop {
+    name ::= prompt("what is your name? ");
+
+    if name == "": {
+      println("at least say something...");
+      break;
+    }
+
+    print("Hello, ");
+    println(name);
+
+    if name == "caelon": {
+      println("super kewl name!");
+    }
+  }
 }

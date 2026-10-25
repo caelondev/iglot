@@ -62,6 +62,9 @@ pub const IglotOpcode = enum(u8) {
     ig_eq_d = 0x94,
     ig_ne_d = 0x95,
 
+    ig_eq_str = 0x96,
+    ig_ne_str = 0x97,
+
     // data movement
     ig_mov = 0xA0,
     ig_load_global = 0xA1,
@@ -240,6 +243,8 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_ge_d,
         .ig_eq_d,
         .ig_ne_d,
+        .ig_eq_str,
+        .ig_ne_str,
         .ig_call,
         .ig_call_builtin,
         => .rrr,
