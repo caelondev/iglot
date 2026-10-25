@@ -12,7 +12,7 @@ pub const IglotRuntimeError = error{
     IntegerOverflow,
     NoEntryPoint,
     InvalidEntryReturnType,
-} || std.mem.Allocator.Error || std.Io.Writer.Error;
+} || builtins.BuiltinIglotFunctionError;
 
 pub const CallFrame = struct {
     code: []const bc.Instruction, // what this frame executes, fetched with code[pc]

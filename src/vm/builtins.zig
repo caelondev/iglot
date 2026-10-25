@@ -6,11 +6,13 @@ const IglotVM = @import("vm.zig").IglotVM;
 const Object = @import("object.zig").Object;
 const ObjectHeap = @import("object_heap.zig").ObjectHeap;
 
-const BuiltinIglotFunctionError = std.Io.Writer.Error;
+pub const BuiltinIglotFunctionError =
+    std.Io.Writer.Error || std.Io.Reader.Error || std.mem.Allocator.Error;
 
 pub const Context = struct {
     gpa: std.mem.Allocator,
     out: *std.Io.Writer,
+    in: *std.Io.Reader,
 };
 
 pub const BuiltinIglotFunction = *const fn (vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue;
@@ -37,6 +39,7 @@ pub const Builtin = struct {
 pub const table = [_]Builtin{
     .{ .name = "print", .params = &.{.any}, .ret_type = .void, .func = &print },
     .{ .name = "println", .params = &.{.any}, .ret_type = .void, .func = &println },
+    .{ .name = "prompt", .params = &.{.string}, .ret_type = .string, .func = &prompt },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {
@@ -59,6 +62,28 @@ fn println(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFu
     try writeValue(ctx.out, &vm.object_heap, args[0]);
     try ctx.out.writeByte('\n');
     return unit;
+}
+
+fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    try writeValue(ctx.out, &vm.object_heap, args[0]);
+    try ctx.out.flush();
+
+    var aw: std.Io.Writer.Allocating = .init(ctx.gpa);
+    defer aw.deinit();
+
+    _ = ctx.in.streamDelimiter(&aw.writer, '\n') catch |err| switch (err) {
+        error.EndOfStream => {},
+        error.ReadFailed => return error.ReadFailed,
+        error.WriteFailed => return error.OutOfMemory,
+    };
+
+    if (ctx.in.bufferedLen() > 0) ctx.in.toss(1);
+
+    // trim windows newline
+    const trimmed = std.mem.trimEnd(u8, aw.written(), "\r");
+
+    const ref = try vm.object_heap.createString(trimmed);
+    return .{ .heap_ref = ref };
 }
 
 fn writeHeapValue(out: *std.Io.Writer, obj: *Object) !void {

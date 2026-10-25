@@ -87,8 +87,8 @@ pub fn run(ctx: *Context) !void {
     if (parser.diagnostics.items.len != 0)
         return;
 
-    std.debug.print("parsed ast:\n", .{});
-    try dumpAny(writer, ast, 0);
+    // std.debug.print("parsed ast:\n", .{});
+    // try dumpAny(writer, ast, 0);
 
     // Semantic analysis
     var sema: IglotSemanticAnalyzer = .init();
@@ -122,9 +122,18 @@ pub fn run(ctx: *Context) !void {
     var codegen: IglotCodegen = .init();
     const module = try codegen.generate(allocator, ir_module);
 
-    // try dumpBytecode(writer, module);
+    try dumpBytecode(writer, module);
 
-    var iglot_vm: IglotVM = .init(module, .{ .out = ewriter, .gpa = ctx.allocator });
+    // stdin. buffer is just the read chunk size, prompt() streams
+    // into a growing allocator so line length isn't capped by it
+    var stdin_buf: [4096]u8 = undefined;
+    var stdin = std.Io.File.stdin().reader(ctx.io, &stdin_buf);
+
+    var iglot_vm: IglotVM = .init(module, .{
+        .out = writer,
+        .in = &stdin.interface,
+        .gpa = ctx.allocator,
+    });
     defer iglot_vm.deinit(allocator);
 
     _ = try iglot_vm.run(allocator, module.entry);

@@ -153,8 +153,16 @@ pub const IglotSemanticAnalyzer = struct {
     }
 
     pub fn initBuiltinIdentifiers(self: *Self, allocator: std.mem.Allocator) !void {
-        try self.type_table.declareIdentifier(allocator, "true", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
-        try self.type_table.declareIdentifier(allocator, "false", .{ .span = Span.empty(), .sem_type = .bool, .is_final = true });
+        try self.type_table.declareIdentifier(allocator, "true", .{
+            .span = Span.empty(),
+            .sem_type = .bool,
+            .is_final = true,
+        });
+        try self.type_table.declareIdentifier(allocator, "false", .{
+            .span = Span.empty(),
+            .sem_type = .bool,
+            .is_final = true,
+        });
 
         for (builtins_table) |b| {
             try self.type_table.declareIdentifier(allocator, b.name, .{
