@@ -1,17 +1,6 @@
 fn main() void {
-  loop {
-    name ::= prompt("what is your name? ");
+  value ::= 100 - 10; -- this is a comment :)
 
-    if name == "": {
-      println("at least say something...");
-      break;
-    }
-
-    print("Hello, ");
-    println(name);
-
-    if name == "caelon": {
-      println("super kewl name!");
-    }
-  }
+  -- dis should print 90
+  println(value);
 }

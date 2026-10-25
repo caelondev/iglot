@@ -157,6 +157,14 @@ pub const IglotLexer = struct {
                     },
                     '-' => {
                         self.advance();
+
+                        // comment
+                        if (self.cur() == '-') {
+                            while (self.cur() != '\n') {
+                                self.advance();
+                            }
+                            continue :lexer .start;
+                        }
                         return self.newToken(.minus, self.source[start..self.cursor]);
                     },
                     '*' => {
