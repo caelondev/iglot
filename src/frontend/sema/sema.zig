@@ -10,6 +10,7 @@ const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
 const lookupBuiltin = @import("../../vm/builtins.zig").lookupBuiltin;
+const checkArrayLen = @import("expressions/validate_array_expr.zig").checkArrayLen;
 const builtins_table = @import("../../vm/builtins.zig").table;
 
 const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
@@ -370,32 +371,39 @@ pub const IglotSemanticAnalyzer = struct {
         e: *const ast.Expression,
         span: Span,
     ) !tt.SemaArraySize {
-        const n = try self.evalConstInt(e) orelse {
-            // const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-            //     .{
-            //         .help = .{
-            //             .message = "array sizes are evaluated at compile time. use literals, arithmetic on them, or `const` identifiers with a constant initializer",
-            //         },
-            //     },
-            // });
+        const value = try self.evalConstInt(e) orelse {
+            const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+                .{
+                    .help = .{
+                        .message = "array sizes are evaluated at compile time. use literals, arithmetic on them, or `const` identifiers with a constant initializer",
+                    },
+                },
+            });
 
+            // NOTE: error msg not final yet
             try self.reportError(allocator, .{
                 .span = span,
                 .kind = .ArraySizeNotConstant,
-                .annotations = &.{},
+                .annotations = annotations,
             });
             return .unknown;
         };
 
-        if (n < 0 or n > std.math.maxInt(u64)) {
+        if (value <= 0) {
             try self.reportError(allocator, .{
                 .span = span,
-                .kind = .{ .InvalidArraySize = .{ .value = n } },
+                .kind = .{
+                    .InvalidArraySize = .{
+                        .value = value,
+                    },
+                },
             });
             return .unknown;
         }
 
-        return .{ .known = @intCast(n) };
+        if (!try checkArrayLen(self, allocator, value, span)) return .unknown;
+
+        return .{ .known = @intCast(value) };
     }
 
     pub fn evalConstInt(self: *Self, e: *const ast.Expression) !?i128 {

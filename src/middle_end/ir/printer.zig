@@ -60,7 +60,10 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
 
         .builtin => |b| try writer.print(" '{d}", .{b}),
 
-        .index => |idx| try writer.print(" #{d}", .{idx}),
+        .index => |idx| {
+            try writer.print(" #{d}", .{idx});
+            try printOperandList(writer, instr.operands, " ", ", ");
+        },
 
         .global => |g| {
             if (instr.operands.len > 0) {

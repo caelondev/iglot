@@ -31,10 +31,14 @@ pub const Opcode = enum {
 
     // data movement
     mov,
+    array_set,
+
+    // load
     load_global,
     store_global,
     load_fn,
     load_builtin_fn,
+    array_new,
 
     // control flow
     br,

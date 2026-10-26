@@ -23,6 +23,7 @@ const lit = @import("expressions/literal.zig");
 const buildUnaryExpr = @import("expressions/unary.zig").buildUnaryExpr;
 const buildBinaryExpr = @import("expressions/binary.zig").buildBinaryExpr;
 const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmentExpr;
+const buildArrayExpr = @import("expressions/array.zig").buildArrayExpr;
 const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 
 const LoopContext = struct {
@@ -210,7 +211,8 @@ pub const IglotIR = struct {
             .binary => |*b| try buildBinaryExpr(self, allocator, b),
 
             .call => |*c| try buildCallExpr(self, allocator, c),
-            .array => unreachable,
+            .array => |*a| try buildArrayExpr(self, allocator, a),
+
         };
     }
 

@@ -3,7 +3,10 @@ const tt = @import("../type_table.zig");
 const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
+const IglotDiagnostic = @import("../../../diagnostics/diagnostics.zig").IglotDiagnostic;
 const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
+
+const max_array_len: usize = std.math.maxInt(u32);
 
 pub fn validateArrayExpr(
     sema: *IglotSemanticAnalyzer,
@@ -11,6 +14,7 @@ pub fn validateArrayExpr(
     a: *const ast.ArrayExpression,
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
+    if (!try checkArrayLen(sema, allocator, a.elements.len, span)) return null;
     const full_type = try tt.SemaType.fromTypeExpressionAllowInfer(sema, allocator, a.element_type) orelse return null;
 
     const arr = switch (full_type) {
@@ -65,6 +69,7 @@ pub fn validateAnonymousArray(
     span: Span,
     expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
+    if (!try checkArrayLen(sema, allocator, a.elements.len, span)) return null;
     const expected = expected_type orelse {
         try sema.reportError(allocator, .{ .span = span, .kind = .CannotInferLiteralType });
         return null;
@@ -130,6 +135,36 @@ fn validateElements(
     }
 
     return try typed_elems.toOwnedSlice(allocator);
+}
+
+/// array_new takes a u32 imm, so anything bigger can't be encoded.
+/// reports and returns false if too big
+pub fn checkArrayLen(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    len: i128,
+    span: Span,
+) !bool {
+    if (len > max_array_len) {
+        const message = try allocator.print(
+            "bytecode instructions are a fixed 8 bytes and the array length lives in a 32-bit immediate, so the largest encodable length is {d}",
+            .{max_array_len},
+        );
+        const notes = try allocator.dupe(IglotDiagnostic.Annotation, &.{.{ .note = .{
+            .message = message,
+        } }});
+
+        try sema.reportError(allocator, .{
+            .span = span,
+            .kind = .{ .ArraySizeTooLarge = .{
+                .found = len,
+                .max = max_array_len,
+            } },
+            .annotations = notes,
+        });
+        return false;
+    }
+    return true;
 }
 
 fn makeNode(
