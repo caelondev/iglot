@@ -90,7 +90,22 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !voi
     switch (obj.*) {
         .string => |s| try out.writeAll(s.bytes),
         .array => |a| {
-            try out.writeAll("{ ");
+            if (a.elements.len == 0) {
+                try out.writeAll("{}");
+                return;
+            }
+
+            const is_array = switch (a.elements[0]) {
+                .heap_ref => |r| blk: {
+                    const v = obj_heap.resolveRef(r);
+                    break :blk v.* == .array;
+                },
+                else => false,
+            };
+
+            try out.writeAll("{");
+            if (is_array)
+                try out.writeAll(" ");
 
             for (a.elements, 0..) |value, i| {
                 try writeValue(out, obj_heap, value);
@@ -99,7 +114,9 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !voi
                 }
             }
 
-            try out.writeAll(" }");
+            if (is_array)
+                try out.writeAll(" ");
+            try out.writeAll("}");
         },
     }
 }
