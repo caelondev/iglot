@@ -157,8 +157,8 @@ pub const IglotVM = struct {
                 .ig_eq_d => regs[ins.a] = cmp(.double, .eq, regs[ins.b], regs[ins.c]),
                 .ig_ne_d => regs[ins.a] = cmp(.double, .neq, regs[ins.b], regs[ins.c]),
 
-                .ig_neg_i => regs[ins.a] = .{ .int = try negInt(i64, regs, ins) },
-                .ig_neg_w => regs[ins.a] = .{ .wideint = try negInt(i128, regs, ins) },
+                .ig_neg_i => regs[ins.a] = .{ .int = try negInt(regs, ins) },
+                .ig_neg_w => regs[ins.a] = .{ .wideint = try negWideInt(regs, ins) },
 
                 .ig_neg_f => regs[ins.a] = .{ .float = -regs[ins.b].float },
                 .ig_neg_d => regs[ins.a] = .{ .double = -regs[ins.b].double },
@@ -206,6 +206,10 @@ pub const IglotVM = struct {
 
                 .ig_load_fn, .ig_const_fn => regs[ins.a] = .{ .func = ins.imm() },
                 .ig_load_builtin_fn => regs[ins.a] = .{ .builtin_ref = ins.imm() },
+                .ig_array_pack => {
+                    const elems = regs[ins.b..][0..ins.c];
+                    regs[ins.a] = .{ .heap_ref = try self.object_heap.createArray(elems) };
+                },
 
                 .ig_call => {
                     const callee = regs[ins.a].func;
@@ -258,9 +262,20 @@ fn cmp(comptime kind: ValueKind, comptime op: std.math.CompareOperator, a: Iglot
     return .{ .bool = @intFromBool(std.math.compare(@field(a, field), op, @field(b, field))) };
 }
 
-fn negInt(comptime T: type, regs: []IglotValue, ins: bc.Instruction) !T {
+inline fn negWideInt(regs: []IglotValue, ins: bc.Instruction) !i128 {
+    const x = regs[ins.b].wideint;
+    const result = @subWithOverflow(@as(i128, 0), x);
+
+    if (result[1] != 0) {
+        return error.IntegerOverflow;
+    }
+
+    return result[0];
+}
+
+inline fn negInt(regs: []IglotValue, ins: bc.Instruction) !i64 {
     const x = regs[ins.b].int;
-    const result = @subWithOverflow(@as(T, 0), x);
+    const result = @subWithOverflow(@as(i64, 0), x);
 
     if (result[1] != 0) {
         return error.IntegerOverflow;

@@ -31,14 +31,13 @@ pub const Opcode = enum {
 
     // data movement
     mov,
-    array_set,
 
     // load
     load_global,
     store_global,
     load_fn,
     load_builtin_fn,
-    array_new,
+    array_pack,
 
     // control flow
     br,
@@ -74,7 +73,8 @@ pub const Instruction = struct {
         none: void,
         constant: ConstantValue,
         branch_target: BlockRef,
-        index: usize,
+        size: usize,
+        index: VReg,
         global: GlobalRef,
         builtin: u16,
         cond_branch: struct {

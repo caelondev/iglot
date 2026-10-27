@@ -2,7 +2,6 @@ const std = @import("std");
 
 pub const IglotOpcode = enum(u8) {
     // suffixes: i = int (i64), w = wideint (i128), f = float (f32), d = double (f64)
-
     ig_nop = 0x00,
 
     // arithmetic, one 16 slot block per type
@@ -101,6 +100,7 @@ pub const IglotOpcode = enum(u8) {
     //            c = caller register that receives the result (no_reg for void)
     //            arg count comes from the table entry, not the instruction
     ig_call_builtin = 0xD2,
+    ig_array_pack = 0xD4,
 
     // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
 
@@ -247,6 +247,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_ne_str,
         .ig_call,
         .ig_call_builtin,
+        .ig_array_pack,
         => .rrr,
 
         .ig_load_global,

@@ -94,6 +94,7 @@ pub const IglotCodegen = struct {
             .ret_void => try self.emit(allocator, .n(.ig_ret_void)),
             .store_global => try self.emit(allocator, .ri(.ig_store_global, try self.reg(ins.operands[0]), ins.data.global.id)),
             .load_global => try self.emit(allocator, .ri(.ig_load_global, try self.reg(ins.result.?), ins.data.global.id)),
+            .array_pack => try self.genArrayPack(allocator, ins),
 
             .param => try self.emit(allocator, .ri(.ig_load_param, try self.reg(ins.result.?), ins.operands[0].id)),
 
@@ -191,6 +192,8 @@ pub const IglotCodegen = struct {
     }
 
     fn instructionCount(ins: IrInstruction, next: ?u32) u32 {
+        if (ins.op == .array_pack) return 1 + @as(u32, @intCast(ins.operands.len));
+
         return switch (ins.data) {
             .branch_target => |t| if (next == t.id) 0 else 1,
             .cond_branch => |cb| if (next == cb.true_block.id or next == cb.false_block.id) 1 else 2,
@@ -231,5 +234,17 @@ pub const IglotCodegen = struct {
         const is_void = std.meta.activeTag(inst.sema_type.?) == .void;
         const dst = if (is_void) bc.no_reg else try self.reg(inst.result.?);
         try self.emit(allocator, .rrr(.ig_call_builtin, window, argc, dst));
+    }
+
+    fn genArrayPack(self: *Self, allocator: std.mem.Allocator, inst: IrInstruction) !void {
+        const count: u16 = @intCast(inst.operands.len);
+        const window = self.window_base;
+        if (@as(u32, window) + count >= bc.no_reg) return error.RegisterLimitExceeded;
+        self.reg_count = @max(self.reg_count, window + count);
+
+        for (inst.operands, 0..) |elem, i| {
+            try self.emit(allocator, .rr(.ig_mov, window + @as(u16, @intCast(i)), try self.reg(elem)));
+        }
+        try self.emit(allocator, .rrr(.ig_array_pack, try self.reg(inst.result.?), window, count));
     }
 };

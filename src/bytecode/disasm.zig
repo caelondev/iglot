@@ -87,6 +87,12 @@ fn printText(w: *std.Io.Writer, ins: bc.Instruction) !void {
             try printReg(w, ins.c);
         },
 
+        .ig_array_pack => {
+            try printReg(w, ins.a);
+            try printReg(w, ins.b);
+            try w.print("#{d}", .{ins.c});
+        },
+
         .ig_load_global, .ig_store_global => {
             try printReg(w, ins.a);
             try w.print(", @{d}", .{ins.imm()});

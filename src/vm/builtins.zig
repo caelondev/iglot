@@ -86,9 +86,21 @@ fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFun
     return .{ .heap_ref = ref };
 }
 
-fn writeHeapValue(out: *std.Io.Writer, obj: *Object) !void {
+fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !void {
     switch (obj.*) {
         .string => |s| try out.writeAll(s.bytes),
+        .array => |a| {
+            try out.writeAll("{ ");
+
+            for (a.elements, 0..) |value, i| {
+                try writeValue(out, obj_heap, value);
+                if (a.elements.len > i + 1) {
+                    try out.writeAll(", ");
+                }
+            }
+
+            try out.writeAll(" }");
+        },
     }
 }
 
@@ -103,7 +115,7 @@ fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue) std.Io.
         .builtin_ref => |ref| try out.print("<builtin fn [{d}]>", .{ref}),
         .heap_ref => |ref| {
             const val = obj_heap.resolveRef(ref);
-            try writeHeapValue(out, val);
+            try writeHeapValue(out, obj_heap, val);
         },
     }
 }
