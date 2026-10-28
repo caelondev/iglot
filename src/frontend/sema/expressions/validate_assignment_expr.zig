@@ -16,36 +16,41 @@ pub fn validateAssignmentExpr(
         .identifier => |i| {
             const entry = sema.type_table.lookupIdentifier(i.value) orelse return null;
 
-            if (entry.mutability == .final) {
-                const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-                    .{ .note = .{
-                        .message = "identifier declared here",
-                        .span = entry.span,
-                    } },
-                });
-                try sema.reportError(allocator, .{
-                    .span = a.assignee.span,
-                    .severity = .err,
-                    .annotations = annotations,
-                    .kind = .{ .FinalIdentifierAssignment = .{ .identifier = i.value } },
-                });
-                return null;
-            }
+            switch (entry.mutability) {
+                .final => {
+                    const annotations = try writeAnnotation(allocator, entry.span, "identifier declared here");
+                    try sema.reportError(allocator, .{
+                        .span = a.assignee.span,
+                        .severity = .err,
+                        .annotations = annotations,
+                        .kind = .{ .FinalIdentifierAssignment = .{ .identifier = i.value } },
+                    });
+                    return null;
+                },
 
-            if (entry.mutability == .constant) {
-                const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-                    .{ .note = .{
-                        .message = "identifier declared here",
-                        .span = entry.span,
-                    } },
-                });
-                try sema.reportError(allocator, .{
-                    .span = a.assignee.span,
-                    .severity = .err,
-                    .annotations = annotations,
-                    .kind = .{ .ConstIdentifierAssignment = .{ .identifier = i.value } },
-                });
-                return null;
+                .constant => {
+                    const annotations = try writeAnnotation(allocator, entry.span, "identifier declared here");
+                    try sema.reportError(allocator, .{
+                        .span = a.assignee.span,
+                        .severity = .err,
+                        .annotations = annotations,
+                        .kind = .{ .ConstIdentifierAssignment = .{ .identifier = i.value } },
+                    });
+                    return null;
+                },
+
+                .function => {
+                    const annotations = try writeAnnotation(allocator, entry.span, "function declared here");
+                    try sema.reportError(allocator, .{
+                        .span = a.assignee.span,
+                        .severity = .err,
+                        .annotations = annotations,
+                        .kind = .{ .FunctionAssignment = .{ .identifier = i.value } },
+                    });
+                    return null;
+                },
+
+                .mutable => {},
             }
 
             const typed_assignee = try sema.validateExpression(
@@ -102,4 +107,13 @@ pub fn validateAssignmentExpr(
             return null;
         },
     }
+}
+
+fn writeAnnotation(allocator: std.mem.Allocator, span: Span, msg: []const u8) ![]IglotDiagnostic.Annotation {
+    return try allocator.dupe(IglotDiagnostic.Annotation, &.{
+        .{ .note = .{
+            .message = msg,
+            .span = span,
+        } },
+    });
 }
