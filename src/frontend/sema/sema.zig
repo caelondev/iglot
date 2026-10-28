@@ -117,7 +117,7 @@ pub const IglotSemanticAnalyzer = struct {
                 try self.type_table.declareIdentifier(allocator, f.identifier.value, .{
                     .span = f.span,
                     .sem_type = function_sem_type,
-                    .is_final = false,
+                    .mutability = .function,
                 });
             },
             else => return,
@@ -157,19 +157,19 @@ pub const IglotSemanticAnalyzer = struct {
         try self.type_table.declareIdentifier(allocator, "true", .{
             .span = Span.empty(),
             .sem_type = .bool,
-            .is_final = true,
+            .mutability = .constant,
         });
         try self.type_table.declareIdentifier(allocator, "false", .{
             .span = Span.empty(),
             .sem_type = .bool,
-            .is_final = true,
+            .mutability = .constant,
         });
 
         for (builtins_table) |b| {
             try self.type_table.declareIdentifier(allocator, b.name, .{
                 .sem_type = try b.semaType(allocator),
                 .span = .empty(),
-                .is_final = true,
+                .mutability = .function,
                 .is_builtin = true,
             });
         }
@@ -292,12 +292,13 @@ pub const IglotSemanticAnalyzer = struct {
                     });
                     return null;
                 };
+
                 const node = try allocator.create(typed_ast.TypedExpr);
                 node.* = .{
                     .span = span,
                     .sem_type = ident_type.sem_type,
                     .kind = .{
-                        .identifier = .{ .value = i.value, .is_final = ident_type.is_final },
+                        .identifier = .{ .value = i.value, .mutability = ident_type.mutability },
                     },
                 };
                 break :blk node;
@@ -409,7 +410,13 @@ pub const IglotSemanticAnalyzer = struct {
     pub fn evalConstInt(self: *Self, e: *const ast.Expression) !?i128 {
         return switch (e.expr) {
             .integer => |v| v.value,
-            .identifier => @panic("TODO: const variables"),
+            .identifier => |i| {
+                const decl = self.type_table.lookupIdentifier(i.value) orelse return null;
+                if (decl.mutability != .constant)
+                    return null;
+
+                return self.evalConstInt(decl.init_expr.?);
+            },
             .binary => |b| blk: {
                 const l = try self.evalConstInt(b.left) orelse break :blk null;
                 const r = try self.evalConstInt(b.right) orelse break :blk null;

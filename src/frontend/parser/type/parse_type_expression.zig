@@ -33,12 +33,54 @@ pub fn parseTypeExpression(
                 return null;
             }
 
+            if (inner.kind == .constant) {
+                try parser.reportError(allocator, .{
+                    .span = inner.span,
+                    .severity = .err,
+                    .kind = .RedundantConst,
+                });
+                return null;
+            }
+
             const inner_ptr = try allocator.create(ast.TypeExpression);
             inner_ptr.* = inner;
 
             return .{
                 .span = tok.span,
+                .mutability = .final,
                 .kind = .{ .final = inner_ptr },
+            };
+        },
+
+        .@"const" => {
+            parser.nextToken();
+            const inner = try parseTypeExpression(parser, allocator) orelse return null;
+
+            if (inner.kind == .final) {
+                try parser.reportError(allocator, .{
+                    .span = inner.span,
+                    .severity = .err,
+                    .kind = .RedundantFinal,
+                });
+                return null;
+            }
+
+            if (inner.kind == .constant) {
+                try parser.reportError(allocator, .{
+                    .span = inner.span,
+                    .severity = .err,
+                    .kind = .RedundantConst,
+                });
+                return null;
+            }
+
+            const inner_ptr = try allocator.create(ast.TypeExpression);
+            inner_ptr.* = inner;
+
+            return .{
+                .span = tok.span,
+                .mutability = .constant,
+                .kind = .{ .constant = inner_ptr },
             };
         },
 
@@ -62,6 +104,7 @@ fn parseType(
         .identifier => {
             return .{
                 .span = tok.span,
+                .mutability = .mutable,
                 .kind = .{ .identifier = tok.lexeme },
             };
         },
@@ -91,6 +134,7 @@ fn parseType(
 
             return .{
                 .span = .mergeFromSpans(tok.span, elem.span),
+                .mutability = .mutable,
                 .kind = .{ .array = .{
                     .size = size,
                     .element_type = elem_ptr,
@@ -132,6 +176,7 @@ fn parseType(
 
             return .{
                 .span = .mergeFromSpans(tok.span, ret.span),
+                .mutability = .mutable,
                 .kind = .{
                     .function = .{
                         .parameters = try params.toOwnedSlice(allocator),

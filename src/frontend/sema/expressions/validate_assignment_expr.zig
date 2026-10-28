@@ -13,43 +13,78 @@ pub fn validateAssignmentExpr(
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
     switch (a.assignee.expr) {
-        .identifier => {
-            const typed_assignee = try sema.validateExpression(allocator, a.assignee, a.assignee.span, null) orelse return null;
-            const typed_value = try sema.validateExpression(allocator, a.value, a.value.span, null) orelse return null;
+        .identifier => |i| {
+            const entry = sema.type_table.lookupIdentifier(i.value) orelse return null;
 
-            const symbol = typed_assignee.kind.identifier;
-            if (symbol.is_final) {
+            if (entry.mutability == .final) {
+                const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+                    .{ .note = .{
+                        .message = "identifier declared here",
+                        .span = entry.span,
+                    } },
+                });
                 try sema.reportError(allocator, .{
                     .span = a.assignee.span,
                     .severity = .err,
-                    .kind = .{
-                        .FinalIdentifierAssignment = .{ .identifier = symbol.value },
-                    },
+                    .annotations = annotations,
+                    .kind = .{ .FinalIdentifierAssignment = .{ .identifier = i.value } },
                 });
                 return null;
             }
 
-            if (!typed_assignee.sem_type.eql(typed_value.sem_type)) {
+            if (entry.mutability == .constant) {
+                const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+                    .{ .note = .{
+                        .message = "identifier declared here",
+                        .span = entry.span,
+                    } },
+                });
+                try sema.reportError(allocator, .{
+                    .span = a.assignee.span,
+                    .severity = .err,
+                    .annotations = annotations,
+                    .kind = .{ .ConstIdentifierAssignment = .{ .identifier = i.value } },
+                });
+                return null;
+            }
+
+            const typed_assignee = try sema.validateExpression(
+                allocator,
+                a.assignee,
+                a.assignee.span,
+                null,
+            ) orelse return null;
+
+            const typed_value = try sema.validateExpression(
+                allocator,
+                a.value,
+                a.value.span,
+                entry.sem_type, // expected type hint, drop if validateExpression doesn't want it here
+            ) orelse return null;
+
+            if (!entry.sem_type.eql(typed_value.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = a.value.span,
                     .severity = .err,
                     .kind = .{
                         .TypeMismatch = .{
-                            .expected = typed_assignee.sem_type,
+                            .expected = entry.sem_type,
                             .found = typed_value.sem_type,
                         },
                     },
                 });
-
                 return null;
             }
 
             const node = try allocator.create(typed_ast.TypedExpr);
             node.* = .{
                 .span = span,
-                .sem_type = typed_assignee.sem_type,
+                .sem_type = entry.sem_type,
                 .kind = .{
-                    .assignment = .{ .assignee = typed_assignee, .value = typed_value },
+                    .assignment = .{
+                        .assignee = typed_assignee,
+                        .value = typed_value,
+                    },
                 },
             };
 

@@ -34,7 +34,7 @@ pub fn validateFunctionDeclaration(
         try sema.type_table.declareIdentifier(allocator, param.identifier.value, .{
             .span = param.span,
             .sem_type = param_sem_type,
-            .is_final = param.param_type.kind == .final,
+            .mutability = param.param_type.mutability,
         });
 
         params[i] = .{

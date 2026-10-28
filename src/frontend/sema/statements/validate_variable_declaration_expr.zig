@@ -11,6 +11,8 @@ pub fn validateVariableDeclaration(
     allocator: std.mem.Allocator,
     v: *const ast.VariableDeclarationStatement,
 ) anyerror!?typed_ast.TypedVariableDeclaration {
+    const mutability: ast.TypeExpression.Mutability = if (v.type) |t| t.mutability else .mutable;
+
     if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
         const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
             .{
@@ -70,7 +72,7 @@ pub fn validateVariableDeclaration(
             .{
                 .span = v.span,
                 .sem_type = var_type orelse .err,
-                .is_final = if (v.type) |t| t.kind == .final else false,
+                .mutability = mutability,
             },
         );
 
@@ -97,7 +99,7 @@ pub fn validateVariableDeclaration(
                 .{
                     .span = v.span,
                     .sem_type = vtype,
-                    .is_final = if (v.type) |t| t.kind == .final else false,
+                    .mutability = mutability,
                 },
             );
 
@@ -113,7 +115,8 @@ pub fn validateVariableDeclaration(
         .{
             .span = v.span,
             .sem_type = resolved_type,
-            .is_final = if (v.type) |t| t.kind == .final else false,
+            .mutability = mutability,
+            .init_expr = if (mutability == .constant) v.value else null,
         },
     );
 

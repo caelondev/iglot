@@ -24,7 +24,7 @@ pub const TypedExpressionStmt = struct {
 
 pub const TypedIdentifier = struct {
     value: []const u8,
-    is_final: bool,
+    mutability: ast.TypeExpression.Mutability,
 };
 
 pub const TypedBinaryExpr = struct {

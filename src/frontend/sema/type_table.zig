@@ -1,6 +1,6 @@
 const std = @import("std");
 const Span = @import("../lexer/tokens.zig").Span;
-const TypeExpression = @import("../parser/ast.zig").TypeExpression;
+const ast = @import("../parser/ast.zig");
 const IglotSemanticAnalyzer = @import("sema.zig").IglotSemanticAnalyzer;
 
 pub const SemaArraySize = union(enum) {
@@ -39,6 +39,8 @@ pub const SemaType = union(enum) {
         element_type: *SemaType,
     },
 
+    constant: *SemaType,
+
     // builtin params only, for now. used in args
     any,
 
@@ -53,7 +55,7 @@ pub const SemaType = union(enum) {
     pub fn fromTypeExpression(
         sema: *IglotSemanticAnalyzer,
         allocator: std.mem.Allocator,
-        type_expr: TypeExpression,
+        type_expr: ast.TypeExpression,
     ) !?SemaType {
         const t = try resolve(sema, allocator, type_expr) orelse return null;
 
@@ -72,7 +74,7 @@ pub const SemaType = union(enum) {
     pub fn fromTypeExpressionAllowInfer(
         sema: *IglotSemanticAnalyzer,
         allocator: std.mem.Allocator,
-        type_expr: TypeExpression,
+        type_expr: ast.TypeExpression,
     ) !?SemaType {
         return resolve(sema, allocator, type_expr);
     }
@@ -96,7 +98,7 @@ pub const SemaType = union(enum) {
     fn resolve(
         sema: *IglotSemanticAnalyzer,
         allocator: std.mem.Allocator,
-        type_expr: TypeExpression,
+        type_expr: ast.TypeExpression,
     ) anyerror!?SemaType {
         const types: std.StaticStringMap(SemaType) = .initComptime(.{
             .{ "string", .string },
@@ -145,6 +147,7 @@ pub const SemaType = union(enum) {
 
                 break :blk .{ .array = .{ .size = size, .element_type = elem_ptr } };
             },
+            .constant => |c| try resolve(sema, allocator, c.*),
         };
     }
 
@@ -185,6 +188,10 @@ pub const SemaType = union(enum) {
                 try writer.writeAll("]");
                 try writeSymbolString(writer, a.element_type.*);
             },
+            .constant => |c| {
+                try writer.writeAll("const ");
+                try writeSymbolString(writer, c.*);
+            },
             .any => try writer.writeAll("any"),
             .err => unreachable,
         };
@@ -195,6 +202,8 @@ pub const SemaType = union(enum) {
         if (std.meta.activeTag(self) != std.meta.activeTag(other)) return false;
 
         return switch (self) {
+            .constant => |c| c.eql(other.constant.*),
+
             .function => |sf| blk: {
                 const of = other.function;
 
@@ -212,6 +221,7 @@ pub const SemaType = union(enum) {
                 if (!sa.element_type.eql(oa.element_type.*)) break :blk false;
                 break :blk sa.size.compatible(oa.size);
             },
+
             else => true,
         };
     }
@@ -235,13 +245,17 @@ pub const SemaType = union(enum) {
 pub const TypeEntry = struct {
     sem_type: SemaType,
     span: Span,
-    is_final: bool,
+    mutability: ast.TypeExpression.Mutability,
     is_builtin: bool = false,
+
+    /// initializer expression for this symbol. only populated for constant
+    /// declarations, since those are the only ones with a compile-time value
+    /// evalConstInt can resolve. null for everything else (mutable, final, params, etc).
+    init_expr: ?*const ast.Expression = null,
 };
 
 pub const TypeTable = struct {
     scopes: std.ArrayList(SymbolTable),
-
     const SymbolTable = std.StringHashMapUnmanaged(TypeEntry);
 
     const Self = @This();

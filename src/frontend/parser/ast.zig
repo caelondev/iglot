@@ -49,9 +49,11 @@ pub const Node = struct {
 
 pub const TypeExpression = struct {
     span: tokens.Span,
+    mutability: Mutability,
     kind: union(enum) {
         identifier: []const u8,
         final: *TypeExpression,
+        constant: *TypeExpression,
         function: struct {
             parameters: []*TypeExpression,
             return_type: *TypeExpression,
@@ -65,6 +67,16 @@ pub const TypeExpression = struct {
     pub const ArraySize = union(enum) {
         expr: *Expression,
         infer, // [_]T{ ... }; for literals
+    };
+
+    pub const Mutability = enum {
+        mutable,
+        constant,
+        final,
+
+        // functions previously use `final` so
+        // u cannot accidentally reassign it to another value
+        function,
     };
 };
 
