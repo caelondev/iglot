@@ -22,7 +22,7 @@ Iglot is a statically-typed programming language built around clarity and contro
 ```bash
 git clone https://codeberg.org/caelondev/iglot.git
 cd iglot
-zig build
+zig build -Doptimize=ReleaseFast
 ```
 
 Run a Iglot program with:
