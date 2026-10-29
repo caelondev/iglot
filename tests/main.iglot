@@ -1,6 +1,5 @@
 fn main() void {
-  test = test2;
+  array ::= [_]int{ 1,2,3,4,5 };
+  print(array.[true]);
+  print(true.[3]);
 }
-
-fn test() void {}
-fn test2() void {}

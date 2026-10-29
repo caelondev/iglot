@@ -241,7 +241,13 @@ pub const IglotLexer = struct {
                         return self.newToken(.comma, self.source[start..self.cursor]);
                     },
                     '.' => {
+                        start = self.cursor;
                         self.advance();
+
+                        if (self.cur() == '[') {
+                            self.advance();
+                            return self.newToken(.dot_bracket, self.source[start..self.cursor]);
+                        }
                         return self.newToken(.dot, self.source[start..self.cursor]);
                     },
 

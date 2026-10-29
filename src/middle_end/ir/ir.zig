@@ -212,7 +212,7 @@ pub const IglotIR = struct {
 
             .call => |*c| try buildCallExpr(self, allocator, c),
             .array => |*a| try buildArrayExpr(self, allocator, a),
-
+            .index => unreachable,
         };
     }
 

@@ -18,6 +18,7 @@ const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validat
 const validateAssignmentExpr = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 const validateArrayExpr = @import("expressions/validate_array_expr.zig").validateArrayExpr;
 const validateAnonymousArray = @import("expressions/validate_array_expr.zig").validateAnonymousArray;
+const validateIndexExpr = @import("expressions/validate_index_expr.zig").validateIndexExpr;
 
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 const validateVariableDeclaration = @import("statements/validate_variable_declaration_expr.zig").validateVariableDeclaration;
@@ -309,6 +310,8 @@ pub const IglotSemanticAnalyzer = struct {
             .array => |*a| validateArrayExpr(self, allocator, a, span),
             .anon_array => |*a| validateAnonymousArray(self, allocator, a, span, expected_type),
             .call => |*c| validateCallExpr(self, allocator, c, span),
+
+            .index_expr => |*i| validateIndexExpr(self, allocator, i, span),
         };
     }
 
@@ -443,6 +446,7 @@ pub const IglotSemanticAnalyzer = struct {
             .call,
             .array,
             .anon_array,
+            .index_expr,
             => null,
         };
     }

@@ -63,6 +63,7 @@ pub const TypedExpr = struct {
         assignment: TypedAssignment,
         call: TypedCallExpr,
         array: TypedArrayExpr,
+        index: TypedIndexExpr,
     },
 };
 
@@ -75,6 +76,11 @@ pub const TypedCallExpr = struct {
 pub const TypedArrayExpr = struct {
     elements: []*TypedExpr,
     sema_type: tt.SemaType,
+};
+
+pub const TypedIndexExpr = struct {
+    left: *TypedExpr,
+    index: *TypedExpr,
 };
 
 pub const TypedFunctionParameter = struct {

@@ -134,6 +134,10 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .callback = @import("led/binary_expression.zig").parseBinaryExpression,
     },
     .{
+        .token_kind = .dot_bracket,
+        .callback = @import("led/index_expression.zig").parseIndexExpression,
+    },
+    .{
         .token_kind = .left_parenthesis,
         .callback = @import("led/call_expression.zig").parseCallExpression,
     },

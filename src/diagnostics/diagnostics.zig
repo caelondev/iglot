@@ -13,6 +13,8 @@ pub const IglotDiagnostic = struct {
         warning,
     };
 
+    pub const Indexable = enum { fixed_array };
+
     pub const Kind = union(enum) {
         // Parser
         ParseIntegerOverflow,
@@ -77,6 +79,8 @@ pub const IglotDiagnostic = struct {
         ArraySizeMismatch: struct { expected: u64, found: u64 },
         ArraySizeTooLarge: struct { found: i128, max: u64 },
         CannotInferLiteralType,
+        InvalidIndexOperand: struct { found_type: SemaType },
+        InvalidIndexType: struct { found: SemaType, left: Indexable },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -118,6 +122,8 @@ pub const IglotDiagnostic = struct {
                 .ArraySizeMismatch => |a| try writer.print("expected {d} elements but got {d} instead", .{ a.expected, a.found }),
                 .ArraySizeTooLarge => |a| try writer.print("compile-time array size {d} exceeds the maximum encodable value of {d}", .{ a.found, a.max }),
                 .CannotInferLiteralType => try writer.print("cannot infer the type of this literal, it needs an array type for context", .{}),
+                .InvalidIndexOperand => |f| try writer.print("cannot index value of type \"{f}\"", .{f.found_type}),
+                .InvalidIndexType => |f| try writer.print("invalid index type \"{f}\" to a {s}", .{ f.found, fmtIndexLeft(f.left) }),
             }
         }
     };
@@ -136,3 +142,9 @@ pub const IglotDiagnostic = struct {
         message: []const u8,
     };
 };
+
+fn fmtIndexLeft(idx: IglotDiagnostic.Indexable) []const u8 {
+    return switch (idx) {
+        .fixed_array => "fixed array",
+    };
+}

@@ -61,6 +61,7 @@ pub const TokenKind = enum {
     right_parenthesis,
     left_bracket,
     right_bracket,
+    dot_bracket,
 
     semicolon,
     colon,
