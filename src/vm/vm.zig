@@ -12,6 +12,7 @@ pub const IglotRuntimeError = error{
     IntegerOverflow,
     NoEntryPoint,
     InvalidEntryReturnType,
+    IndexOutOfBounds,
 } || builtins.BuiltinIglotFunctionError;
 
 pub const CallFrame = struct {
@@ -209,6 +210,18 @@ pub const IglotVM = struct {
                 .ig_array_pack => {
                     const elems = regs[ins.b..][0..ins.c];
                     regs[ins.a] = .{ .heap_ref = try self.object_heap.createArray(elems) };
+                },
+                .ig_array_get => {
+                    const idx = switch (regs[ins.c]) {
+                        .int => |i| i,
+                        .wideint => |i| i,
+                        else => unreachable,
+                    };
+
+                    const arr = self.object_heap.resolveRef(@intCast(ins.b)).array;
+                    if (idx < 0 or idx >= arr.len) return error.IndexOutOfBounds;
+
+                    regs[ins.a] = arr.elements[@intCast(idx)];
                 },
 
                 .ig_call => {

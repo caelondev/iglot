@@ -1,5 +1,11 @@
 fn main() void {
   array ::= [_]int{ 1,2,3,4,5 };
-  print(array.[true]);
-  print(true.[3]);
+  len ::= 5;
+
+  i ::= 0;
+  loop {
+    if i >= 5: return;
+    println(array.[i]);
+    i=i+1;
+  }
 }

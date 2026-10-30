@@ -124,6 +124,7 @@ pub const IglotCodegen = struct {
             .load_builtin_fn => try self.emit(allocator, .ri(.ig_load_builtin_fn, try self.reg(ins.result.?), ins.data.builtin)),
             .call => try self.getCall(allocator, ins),
             .call_builtin => try self.genBuiltinCall(allocator, ins),
+            .array_get => try self.emit(allocator, .rrr(.ig_array_get, try self.reg(ins.result.?), try self.reg(ins.operands[0]), try self.reg(ins.data.index))),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});

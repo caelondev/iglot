@@ -61,7 +61,7 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
         .builtin => |b| try writer.print(" '{d}", .{b}),
 
         .index => |idx| {
-            try writer.print(" #{d}", .{idx});
+            try writer.print(" #{d}", .{idx.id});
             try printOperandList(writer, instr.operands, " ", ", ");
         },
 
@@ -85,6 +85,10 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
             try writer.print(" [{d}](", .{c.callee.id});
             try printOperandList(writer, instr.operands, "", ", ");
             try writer.writeAll(")");
+        },
+
+        .size => |s| {
+            try writer.print(" #{d}", .{s});
         },
     }
 

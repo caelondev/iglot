@@ -81,6 +81,7 @@ pub const TypedArrayExpr = struct {
 pub const TypedIndexExpr = struct {
     left: *TypedExpr,
     index: *TypedExpr,
+    sema_type: tt.SemaType,
 };
 
 pub const TypedFunctionParameter = struct {

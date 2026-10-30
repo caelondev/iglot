@@ -37,7 +37,10 @@ pub const Opcode = enum {
     store_global,
     load_fn,
     load_builtin_fn,
+
+    // array
     array_pack,
+    array_get,
 
     // control flow
     br,

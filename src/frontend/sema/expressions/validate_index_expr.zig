@@ -49,6 +49,7 @@ pub fn validateIndexExpr(
             .index = .{
                 .left = left,
                 .index = index,
+                .sema_type = result_type,
             },
         },
     };
