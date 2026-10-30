@@ -102,6 +102,7 @@ pub const IglotOpcode = enum(u8) {
     ig_call_builtin = 0xD2,
     ig_array_pack = 0xD4,
     ig_array_get = 0xD5,
+    ig_array_set = 0xD6,
 
     // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
 
@@ -250,6 +251,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_call_builtin,
         .ig_array_pack,
         .ig_array_get,
+        .ig_array_set,
         => .rrr,
 
         .ig_load_global,

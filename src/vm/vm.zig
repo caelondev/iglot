@@ -224,6 +224,19 @@ pub const IglotVM = struct {
                     regs[ins.a] = arr.elements[@intCast(idx)];
                 },
 
+                .ig_array_set => {
+                    const idx = switch (regs[ins.b]) {
+                        .int => |i| i,
+                        .wideint => |i| i,
+                        else => unreachable,
+                    };
+
+                    const arr = self.object_heap.resolveRef(@intCast(ins.a)).array;
+                    if (idx < 0 or idx >= arr.len) return error.IndexOutOfBounds;
+
+                    arr.elements[@intCast(idx)] = regs[ins.c];
+                },
+
                 .ig_call => {
                     const callee = regs[ins.a].func;
                     const new_base = frame.base + ins.a + 1; // skip callee

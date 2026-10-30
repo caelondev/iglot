@@ -41,6 +41,7 @@ pub const Opcode = enum {
     // array
     array_pack,
     array_get,
+    array_set,
 
     // control flow
     br,
