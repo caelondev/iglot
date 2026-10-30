@@ -298,6 +298,10 @@ pub const IglotSemanticAnalyzer = struct {
                 node.* = .{
                     .span = span,
                     .sem_type = ident_type.sem_type,
+                    .place = .{ .place = .{
+                        .mutability = ident_type.mutability,
+                        .root = .{ .name = i.value, .span = ident_type.span },
+                    } },
                     .kind = .{
                         .identifier = .{ .value = i.value, .mutability = ident_type.mutability },
                     },

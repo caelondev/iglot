@@ -1,11 +1,8 @@
 fn main() void {
-  array ::= [_]int{ 1,2,3,4,5 };
-  len ::= 5;
+  array :: const [5]int = [_]int{ 1,2,3,4,5 };
+  println(array);
 
-  i ::= 0;
-  loop {
-    if i >= 5: return;
-    println(array.[i]);
-    i=i+1;
-  }
+  array = 0;
+  array.[0] = 100;
+  println(array);
 }

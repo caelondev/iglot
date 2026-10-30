@@ -45,6 +45,14 @@ pub fn validateIndexExpr(
     node.* = .{
         .span = span,
         .sem_type = result_type,
+        .place = switch (left.place) {
+            .value => .value,
+            .place => |p| .{ .place = .{
+                .mutability = p.mutability,
+                .root = p.root,
+                .projected = true,
+            } },
+        },
         .kind = .{
             .index = .{
                 .left = left,

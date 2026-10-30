@@ -49,9 +49,21 @@ pub const TypedAssignment = struct {
     value: *TypedExpr,
 };
 
+pub const Root = struct { name: []const u8, span: tokens.Span };
+
+pub const Place = union(enum) {
+    value,
+    place: struct {
+        mutability: ast.TypeExpression.Mutability,
+        projected: bool = false, // true once we've gone through an index (a[0], a[0][1])
+        root: ?Root, // null when mutability doesn't come from a named binding. (e.g. a direct index to an array lit)
+    },
+};
+
 pub const TypedExpr = struct {
     span: tokens.Span,
     sem_type: tt.SemaType,
+    place: Place = .value,
     kind: union(enum) {
         integer: ast.IntegerExpression,
         wide_integer: ast.WideIntegerExpression,
