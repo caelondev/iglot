@@ -29,15 +29,9 @@ pub const SemaType = union(enum) {
     double,
     void,
 
-    function: struct {
-        parameters: []*SemaType,
-        return_type: *SemaType,
-    },
+    function: Function,
 
-    array: struct {
-        size: SemaArraySize,
-        element_type: *SemaType,
-    },
+    array: Array,
 
     constant: *SemaType,
 
@@ -50,6 +44,16 @@ pub const SemaType = union(enum) {
 
     // special type used for error messages
     number,
+
+    pub const Function = struct {
+        parameters: []*SemaType,
+        return_type: *SemaType,
+    };
+
+    pub const Array = struct {
+        size: SemaArraySize,
+        element_type: *SemaType,
+    };
 
     /// strict: rejects array infer anywhere.
     pub fn fromTypeExpression(

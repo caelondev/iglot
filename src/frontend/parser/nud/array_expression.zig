@@ -66,19 +66,14 @@ fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?[
     while (!parser.peekIs(.right_brace)) {
         parser.nextToken();
 
-        const expr = if (parser.cur_tok.kind == .left_brace)
-            try parseBareLiteral(parser, allocator) orelse return null
-        else
-            try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+        const expr = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
 
         const expr_ptr = try allocator.create(ast.Expression);
         expr_ptr.* = expr;
         try elements.append(allocator, expr_ptr);
 
-        // no comma means last element, caller's expectPeek('}') reports
-        // the error if the next token isn't '}'
         if (!parser.peekIs(.comma)) break;
-        parser.nextToken(); // onto ','
+        parser.nextToken();
     }
 
     return try elements.toOwnedSlice(allocator);
@@ -86,7 +81,7 @@ fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?[
 
 /// assumes cur_tok is on '{'. element position only, the type comes
 /// from context in sema.
-fn parseBareLiteral(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?ast.Expression {
+pub fn parseAnonymousArray(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?ast.Expression {
     const l_brace = parser.cur_tok;
 
     const elems = try parseElements(parser, allocator) orelse return null;
