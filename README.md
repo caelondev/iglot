@@ -49,7 +49,7 @@ A simple program that prints a message to the console.
 
 ```
 fn main() void {
-  println("Hello, World!");
+  println({ "Hello, World!" });
 }
 ```
 
@@ -65,7 +65,7 @@ fn fib(n :: int) int {
 
 fn main() void {
   value ::= fib(20);
-  println(value);
+  println({ value });
 }
 ```
 

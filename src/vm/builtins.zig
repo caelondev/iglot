@@ -36,9 +36,17 @@ pub const Builtin = struct {
     }
 };
 
+var ANY_TYPE: SemaType = .any;
+const UNBOUNDED_ARRAY_ANY: SemaType = .{
+    .array = .{
+        .element_type = &ANY_TYPE,
+        .size = .unbounded,
+    },
+};
+
 pub const table = [_]Builtin{
-    .{ .name = "print", .params = &.{.any}, .ret_type = .void, .func = &print },
-    .{ .name = "println", .params = &.{.any}, .ret_type = .void, .func = &println },
+    .{ .name = "print", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &print },
+    .{ .name = "println", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &println },
     .{ .name = "prompt", .params = &.{.string}, .ret_type = .string, .func = &prompt },
 };
 
@@ -54,12 +62,12 @@ pub fn lookupBuiltin(name: []const u8) ?u16 {
 const unit: IglotValue = .{ .int = 0 };
 
 fn print(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, &vm.object_heap, args[0], false);
+    try writeArgs(ctx.out, &vm.object_heap, args[0]);
     return unit;
 }
 
 fn println(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, &vm.object_heap, args[0], false);
+    try writeArgs(ctx.out, &vm.object_heap, args[0]);
     try ctx.out.writeByte('\n');
     return unit;
 }
@@ -84,6 +92,16 @@ fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFun
 
     const ref = try vm.object_heap.createString(trimmed);
     return .{ .heap_ref = ref };
+}
+
+fn writeArgs(out: *std.Io.Writer, obj_heap: *ObjectHeap, args_value: IglotValue) std.Io.Writer.Error!void {
+    const obj = obj_heap.resolveRef(args_value.heap_ref);
+    const elems = obj.array.elements;
+
+    for (elems, 0..) |value, i| {
+        if (i != 0) try out.writeAll(" ");
+        try writeValue(out, obj_heap, value, false);
+    }
 }
 
 fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object, nested: bool) !void {

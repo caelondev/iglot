@@ -60,7 +60,7 @@ pub fn validateCallExpr(
     var arg_sem_types: std.ArrayList(*typed_ast.TypedExpr) = .empty;
 
     for (c.arguments, callee_fn.parameters) |a, param| {
-        const arg = try sema.validateExpression(allocator, a, a.span, null) orelse return null;
+        const arg = try sema.validateExpression(allocator, a, a.span, param.*) orelse return null;
 
         if (!param.accepts(arg.sem_type)) {
             try sema.reportError(allocator, .{

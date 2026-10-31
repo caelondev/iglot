@@ -7,6 +7,7 @@ pub const SemaArraySize = union(enum) {
     infer,
     unknown, // const-eval failed, error already reported
     known: u64,
+    unbounded, // unsed by builtin functions
 
     pub fn compatible(a: SemaArraySize, b: SemaArraySize) bool {
         return switch (a) {
@@ -188,6 +189,7 @@ pub const SemaType = union(enum) {
                 switch (a.size) {
                     .infer, .unknown => try writer.writeAll("_"),
                     .known => |n| try writer.print("{d}", .{n}),
+                    .unbounded => try writer.writeAll("unbounded"),
                 }
                 try writer.writeAll("]");
                 try writeSymbolString(writer, a.element_type.*);
@@ -230,12 +232,24 @@ pub const SemaType = union(enum) {
         };
     }
 
-    /// one-way check for args meeting params: `expected.accepts(found)`.
-    /// `any` only works on the expected side and still rejects void
+    /// Checks whether `found` satisfies the constraints of `self`:
+    /// `expected.accepts(found)`.
+    /// `any` accepts any non-void type, including array elements of differing types.
+    /// Unbounded arrays accept any length while still validating their element types.
     pub fn accepts(self: SemaType, found: SemaType) bool {
         if (self == .err or found == .err) return true;
-        if (std.meta.activeTag(self) == .any) return std.meta.activeTag(found) != .void;
-        return found.eql(self);
+
+        return switch (self) {
+            .any => return std.meta.activeTag(found) != .void,
+            .array => |a| blk: {
+                if (a.size == .unbounded) {
+                    break :blk a.element_type.accepts(found);
+                }
+
+                break :blk found.eql(self);
+            },
+            else => found.eql(self),
+        };
     }
 
     pub fn is_numerical(self: SemaType) bool {

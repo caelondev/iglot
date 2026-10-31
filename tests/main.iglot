@@ -1,6 +1,9 @@
-fn main() void {
-  array_1 ::= [5]int{50};
-  array_2 ::= [5]int{};
+fn fib(n :: int) int {
+  if n <= 1: return n;
+  return fib(n - 1) + fib(n - 2);
+}
 
-  println({array_1, array_2});
+fn main() void {
+  value ::= fib(20);
+  println({ value });
 }

@@ -35,7 +35,7 @@ pub fn validateArrayExpr(
 
     const size: tt.SemaArraySize = switch (arr.size) {
         .unknown => return null, // const-eval failed, already reported
-        .infer => .{ .known = a.elements.len },
+        .infer, .unbounded => .{ .known = a.elements.len },
         .known => |n| blk: {
             if (n < a.elements.len) {
                 try sema.reportError(allocator, .{
@@ -99,12 +99,24 @@ fn checkAgainstArray(
             });
             return null;
         },
+        .unbounded => {},
         .infer => unreachable,
         .unknown => return null,
     }
 
     const elems = try validateElements(sema, allocator, a.elements, arr.element_type) orelse return null;
-    return try makeNode(allocator, span, expected, elems);
+
+    // unbounded is a param-side constraint only. the literal itself always
+    // has a concrete size, which is what the IR needs
+    const result_type: tt.SemaType = if (arr.size == .unbounded)
+        .{ .array = .{
+            .size = .{ .known = a.elements.len },
+            .element_type = arr.element_type,
+        } }
+    else
+        expected;
+
+    return try makeNode(allocator, span, result_type, elems);
 }
 
 fn inferAnonymousArray(
@@ -163,7 +175,7 @@ fn validateElements(
     for (elements) |expr| {
         const typed = try sema.validateExpression(allocator, expr, expr.span, elem_type.*) orelse return null;
 
-        if (!elem_type.eql(typed.sem_type)) {
+        if (!elem_type.accepts(typed.sem_type)) {
             try sema.reportError(allocator, .{
                 .span = expr.span,
                 .kind = .{ .TypeMismatch = .{
