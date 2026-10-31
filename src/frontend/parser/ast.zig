@@ -114,6 +114,7 @@ pub const Statement = struct {
         scoped: ScopedStatement,
         loop: LoopStatement,
         break_stmt: BreakStatement,
+        struct_decl: StructDeclarationStatement,
     },
 };
 
@@ -181,6 +182,16 @@ pub const IndexExpression = struct {
     index: *Expression,
 };
 
+pub const StructLiteral = struct {
+    name: IdentifierExpression,
+    fields: []StructInitializer,
+
+    pub const StructInitializer = struct {
+        name: IdentifierExpression,
+        value: *Expression,
+    };
+};
+
 // STATEMENTS
 
 pub const ExpressionStatement = struct {
@@ -229,4 +240,14 @@ pub const LoopStatement = struct {
 
 pub const BreakStatement = struct {
     span: tokens.Span,
+};
+
+pub const StructDeclarationStatement = struct {
+    name: IdentifierExpression,
+    fields: []StructField,
+
+    pub const StructField = struct {
+        name: IdentifierExpression,
+        type_expr: TypeExpression,
+    };
 };

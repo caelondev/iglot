@@ -1,9 +1,13 @@
-fn fib(n :: int) int {
-  if n <= 1: return n;
-  return fib(n - 1) + fib(n - 2);
+struct User: {
+  name :: string,
+  age :: int,
 }
 
 fn main() void {
-  value ::= fib(20);
-  println({ value });
+--  user ::= User {
+--    name = "foo",
+--    age = 67,
+--  };
+
+--  print({ user });
 }

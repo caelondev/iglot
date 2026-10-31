@@ -168,6 +168,10 @@ pub const statements = [_]Statement{
         .token_kind = .@"break",
         .callback = @import("statements/break_statement.zig").parseBreakStatement,
     },
+    .{
+        .token_kind = .@"struct",
+        .callback = @import("statements/struct_declaration.zig").parseStructDeclarationStatement,
+    },
 };
 
 pub const IglotParser = struct {

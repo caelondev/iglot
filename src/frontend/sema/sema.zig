@@ -224,6 +224,7 @@ pub const IglotSemanticAnalyzer = struct {
                 const st = try validateBreakStatement(self, allocator, &b) orelse return null;
                 return .{ .break_stmt = st };
             },
+            .struct_decl => unreachable,
         }
     }
 
