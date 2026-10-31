@@ -1,3 +1,6 @@
 fn main() void {
-  println({ { 1,2,3,4,5 } });
+  array_1 ::= [5]int{50};
+  array_2 ::= [5]int{};
+
+  println({array_1, array_2});
 }

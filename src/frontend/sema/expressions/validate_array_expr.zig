@@ -37,7 +37,7 @@ pub fn validateArrayExpr(
         .unknown => return null, // const-eval failed, already reported
         .infer => .{ .known = a.elements.len },
         .known => |n| blk: {
-            if (n != a.elements.len) {
+            if (n < a.elements.len) {
                 try sema.reportError(allocator, .{
                     .span = span,
                     .kind = .{ .ArraySizeMismatch = .{

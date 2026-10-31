@@ -397,7 +397,7 @@ pub const IglotSemanticAnalyzer = struct {
             return .unknown;
         };
 
-        if (value <= 0) {
+        if (value < 0) {
             try self.reportError(allocator, .{
                 .span = span,
                 .kind = .{

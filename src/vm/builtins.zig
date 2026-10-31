@@ -54,18 +54,18 @@ pub fn lookupBuiltin(name: []const u8) ?u16 {
 const unit: IglotValue = .{ .int = 0 };
 
 fn print(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, &vm.object_heap, args[0]);
+    try writeValue(ctx.out, &vm.object_heap, args[0], false);
     return unit;
 }
 
 fn println(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, &vm.object_heap, args[0]);
+    try writeValue(ctx.out, &vm.object_heap, args[0], false);
     try ctx.out.writeByte('\n');
     return unit;
 }
 
 fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    try writeValue(ctx.out, &vm.object_heap, args[0]);
+    try writeValue(ctx.out, &vm.object_heap, args[0], false);
     try ctx.out.flush();
 
     var aw: std.Io.Writer.Allocating = .init(ctx.gpa);
@@ -86,9 +86,17 @@ fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFun
     return .{ .heap_ref = ref };
 }
 
-fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !void {
+fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object, nested: bool) !void {
     switch (obj.*) {
-        .string => |s| try out.writeAll(s.bytes),
+        .string => |s| {
+            if (nested) {
+                try out.writeAll("\"");
+                try out.writeAll(s.bytes);
+                try out.writeAll("\"");
+                return;
+            }
+            try out.writeAll(s.bytes);
+        },
         .array => |a| {
             if (a.elements.len == 0) {
                 try out.writeAll("{}");
@@ -108,7 +116,7 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !voi
                 try out.writeAll(" ");
 
             for (a.elements, 0..) |value, i| {
-                try writeValue(out, obj_heap, value);
+                try writeValue(out, obj_heap, value, true);
                 if (a.elements.len > i + 1) {
                     try out.writeAll(", ");
                 }
@@ -121,7 +129,7 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object) !voi
     }
 }
 
-fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue) std.Io.Writer.Error!void {
+fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue, nested: bool) std.Io.Writer.Error!void {
     switch (v) {
         .int => |x| try out.print("{d}", .{x}),
         .wideint => |x| try out.print("{d}", .{x}),
@@ -132,7 +140,7 @@ fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue) std.Io.
         .builtin_ref => |ref| try out.print("<builtin fn [{d}]>", .{ref}),
         .heap_ref => |ref| {
             const val = obj_heap.resolveRef(ref);
-            try writeHeapValue(out, obj_heap, val);
+            try writeHeapValue(out, obj_heap, val, nested);
         },
     }
 }
