@@ -43,6 +43,9 @@ pub const Opcode = enum {
     array_get,
     array_set,
 
+    // struct
+    struct_pack,
+
     // control flow
     br,
     cond_br,
@@ -81,6 +84,7 @@ pub const Instruction = struct {
         index: VReg,
         global: GlobalRef,
         builtin: u16,
+        struct_desc: u32,
         cond_branch: struct {
             true_block: BlockRef,
             false_block: BlockRef,

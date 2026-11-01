@@ -4,10 +4,16 @@ const Params = @import("function.zig").Params;
 const inst = @import("instruction.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 
+pub const StructDesc = struct {
+    name: []const u8,
+    field_names: []const []const u8,
+};
+
 pub const Module = struct {
     functions: std.ArrayListUnmanaged(*Function),
     function_names: std.StringHashMapUnmanaged(u32),
     globals: std.ArrayList(inst.Global),
+    struct_descs: std.ArrayList(StructDesc) = .empty,
     next_function_id: u32,
 
     pub fn init() Module {
@@ -26,6 +32,7 @@ pub const Module = struct {
 
         self.functions.deinit(allocator);
         self.function_names.deinit(allocator);
+        self.struct_descs.deinit(allocator);
         self.globals.deinit(allocator);
     }
 

@@ -26,6 +26,7 @@ const buildAssignmentExpr = @import("expressions/assignment.zig").buildAssignmen
 const buildArrayExpr = @import("expressions/array.zig").buildArrayExpr;
 const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 const buildIndexExpr = @import("expressions/index.zig").buildIndexExpr;
+const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructInitExpr;
 
 const LoopContext = struct {
     break_block: inst.BlockRef,
@@ -51,6 +52,7 @@ pub const IglotIR = struct {
     loop_stack: std.ArrayList(LoopContext),
 
     global_symtab: std.StringHashMapUnmanaged(inst.GlobalRef),
+    struct_ids: std.StringHashMapUnmanaged(u32),
 
     const Self = @This();
     pub fn init() Self {
@@ -63,6 +65,7 @@ pub const IglotIR = struct {
             .loop_stack = .empty,
 
             .global_symtab = .empty,
+            .struct_ids = .empty,
         };
     }
 
@@ -217,7 +220,7 @@ pub const IglotIR = struct {
             .array => |*a| try buildArrayExpr(self, allocator, a),
             .index => |*i| try buildIndexExpr(self, allocator, i),
 
-            .struct_init => unreachable,
+            .struct_init => |*s| try buildStructInitExpr(self, allocator, s, sema_type),
         };
     }
 
@@ -283,6 +286,21 @@ pub const IglotIR = struct {
         const ref = inst.GlobalRef{ .id = id };
         try self.global_symtab.put(allocator, global_name, ref);
         return ref;
+    }
+
+    /// descriptor id for a struct type, created on first use. keyed by name,
+    /// same as SemaType.eql. the descriptor holds the field names so debug
+    /// output and runtime printing can show them.
+    pub fn internStruct(self: *Self, allocator: std.mem.Allocator, s: tt.SemaType.Struct) !u32 {
+        if (self.struct_ids.get(s.name)) |id| return id;
+
+        const id: u32 = @intCast(self.module.struct_descs.items.len);
+        const names = try allocator.alloc([]const u8, s.fields.len);
+        for (s.fields, names) |f, *n| n.* = f.name;
+
+        try self.module.struct_descs.append(allocator, .{ .name = s.name, .field_names = names });
+        try self.struct_ids.put(allocator, s.name, id);
+        return id;
     }
 
     pub fn goToBlock(self: *Self, block: *BasicBlock) void {

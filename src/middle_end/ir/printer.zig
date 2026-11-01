@@ -5,12 +5,26 @@ const Function = @import("function.zig").Function;
 const Module = @import("module.zig").Module;
 
 pub fn printModule(writer: *std.Io.Writer, module: Module) !void {
+    try printStructs(writer, module);
     try printGlobals(writer, module);
     for (module.functions.items, 0..) |function, i| {
         try printFunction(writer, function.*);
         if (i != module.functions.items.len)
             try writer.writeByte('\n');
     }
+}
+
+pub fn printStructs(writer: *std.Io.Writer, module: Module) !void {
+    for (module.struct_descs.items, 0..) |desc, id| {
+        try writer.print("struct ${d} {s} {{", .{ id, desc.name });
+        for (desc.field_names, 0..) |name, i| {
+            try writer.writeAll(if (i == 0) " " else ", ");
+            try writer.writeAll(name);
+        }
+        if (desc.field_names.len > 0) try writer.writeAll(" ");
+        try writer.writeAll("}\n");
+    }
+    if (module.struct_descs.items.len > 0) try writer.writeAll("\n");
 }
 
 pub fn printGlobals(writer: *std.Io.Writer, module: Module) !void {
@@ -89,6 +103,12 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
 
         .size => |s| {
             try writer.print(" #{d}", .{s});
+        },
+
+        .struct_desc => |d| {
+            try writer.print(" ${d}(", .{d});
+            try printOperandList(writer, instr.operands, "", ", ");
+            try writer.writeAll(")");
         },
     }
 
