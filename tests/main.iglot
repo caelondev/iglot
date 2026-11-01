@@ -1,14 +1,17 @@
-struct User: {
-  name :: string,
-  age :: int,
+struct Bar: {
+  value :: string,
+}
+
+struct Foo: {
+  value :: int,
+  bar :: Bar,
 }
 
 fn main() void {
-  array :: [10]int = {};
-  user :: User = {
-    name = "foo",
-    age = 67,
+  foo :: Foo = {
+    value = 100,
+    bar = { value = "hello!" },
   };
 
-  print({ "hello" });
+  print({ foo });
 }

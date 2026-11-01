@@ -60,10 +60,12 @@ pub const IglotDiagnostic = struct {
             found: SemaType,
         },
         UndefinedIdentifier: struct { identifier: []const u8 },
+        UndefinedType: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
         ConstIdentifierAssignment: struct { identifier: []const u8 },
         ConstIdentifierMutation: struct { identifier: []const u8 },
         FunctionAssignment: struct { identifier: []const u8 },
+        StructAssignment: struct { identifier: []const u8 },
         VoidValueStorage: struct { identifier: []const u8 },
         MissingReturn: struct { name: []const u8 },
         IntegerOverflow,
@@ -83,6 +85,10 @@ pub const IglotDiagnostic = struct {
         InvalidIndexOperand: struct { found_type: SemaType },
         InvalidIndexType: struct { found: SemaType, left: Indexable },
         NamedFieldsRequireStruct: struct { found: SemaType },
+        DuplicateField: struct { name: []const u8 },
+        DuplicateFieldInit: struct { name: []const u8 },
+        UnknownField: struct { name: []const u8, struct_name: []const u8 },
+        MissingField: struct { name: []const u8, struct_name: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -105,10 +111,12 @@ pub const IglotDiagnostic = struct {
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
+                .UndefinedType => |i| try writer.print("cannot resolve type \"{s}\"", .{i.identifier}),
                 .FinalIdentifierAssignment => |f| try writer.print("cannot assign to final identifier \"{s}\"", .{f.identifier}),
                 .ConstIdentifierAssignment => |f| try writer.print("cannot assign to constant identifier \"{s}\"", .{f.identifier}),
                 .ConstIdentifierMutation => |f| try writer.print("cannot mutate constant identifier \"{s}\"", .{f.identifier}),
                 .FunctionAssignment => |f| try writer.print("cannot assign to a function \"{s}\"", .{f.identifier}),
+                .StructAssignment => |f| try writer.print("cannot assign to a struct \"{s}\"", .{f.identifier}),
                 .VoidValueStorage => |v| try writer.print("cannot store a value of type \"void\" to \"{s}\"", .{v.identifier}),
                 .IllegalReturn => try writer.print("cannot return from outside a function", .{}),
                 .IntegerOverflow => try writer.print("integer value overflowed", .{}),
@@ -128,6 +136,10 @@ pub const IglotDiagnostic = struct {
                 .InvalidIndexOperand => |f| try writer.print("cannot index value of type \"{f}\"", .{f.found_type}),
                 .InvalidIndexType => |f| try writer.print("invalid index type \"{f}\" to a {s}", .{ f.found, fmtIndexLeft(f.left) }),
                 .NamedFieldsRequireStruct => |n| try writer.print("named fields can only initialize a struct, found type \"{f}\"", .{n.found}),
+                .DuplicateField => |d| try writer.print("duplicate field \"{s}\"", .{d.name}),
+                .DuplicateFieldInit => |d| try writer.print("field \"{s}\" is initialized more than once", .{d.name}),
+                .UnknownField => |u| try writer.print("struct \"{s}\" has no field \"{s}\"", .{ u.struct_name, u.name }),
+                .MissingField => |m| try writer.print("missing field \"{s}\" in initializer of struct \"{s}\"", .{ m.name, m.struct_name }),
             }
         }
     };

@@ -162,6 +162,7 @@ pub const IglotIR = struct {
     pub fn buildTopLevelStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) !?void {
         switch (stmt) {
             .function_decl => |*f| try buildFunctionDecl(self, allocator, f) orelse return null,
+            .struct_decl => {},
             .variable_declaration => |*v| {
                 const ref = try self.addGlobal(allocator, v.identifier.value, v.sema_type);
                 const value_reg = try self.buildExpression(allocator, &v.value.*) orelse unreachable;
@@ -193,6 +194,7 @@ pub const IglotIR = struct {
             .scoped => |s| try self.buildScopedStmt(allocator, s) orelse return null,
             .block => |b| try self.buildBodyStmt(allocator, b) orelse return null,
 
+            .struct_decl => {},
             .function_decl => unreachable,
         }
     }
@@ -214,6 +216,8 @@ pub const IglotIR = struct {
             .call => |*c| try buildCallExpr(self, allocator, c),
             .array => |*a| try buildArrayExpr(self, allocator, a),
             .index => |*i| try buildIndexExpr(self, allocator, i),
+
+            .struct_init => unreachable,
         };
     }
 

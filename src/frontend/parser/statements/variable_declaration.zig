@@ -39,7 +39,7 @@ pub fn parseVariableDeclaration(
         .span = span,
         .kind = .{
             .variable_declaration = .{
-                .identifier = .{ .value = var_name.lexeme },
+                .identifier = .{ .value = var_name.lexeme, .span = var_name.span },
                 .type = decl_type,
                 .value = val_ptr,
                 .span = span,

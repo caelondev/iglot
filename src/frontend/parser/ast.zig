@@ -77,6 +77,7 @@ pub const TypeExpression = struct {
         // functions previously use `final` so
         // u cannot accidentally reassign it to another value
         function,
+        @"struct",
     };
 };
 
@@ -138,6 +139,7 @@ pub const StringExpression = struct {
 
 pub const IdentifierExpression = struct {
     value: []const u8,
+    span: tokens.Span,
 };
 
 pub const BinaryExpression = struct {
@@ -256,9 +258,11 @@ pub const BreakStatement = struct {
 pub const StructDeclarationStatement = struct {
     name: IdentifierExpression,
     fields: []StructField,
+    span: tokens.Span,
 
     pub const StructField = struct {
         name: IdentifierExpression,
         type_expr: TypeExpression,
+        span: tokens.Span,
     };
 };

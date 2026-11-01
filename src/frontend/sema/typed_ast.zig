@@ -9,6 +9,7 @@ pub const TypedProgram = struct {
 pub const TypedStmt = union(enum) {
     expression: TypedExpressionStmt,
     function_decl: TypedFunctionDeclarationStatement,
+    struct_decl: TypedStructDeclarationStatement,
     return_stmt: TypedReturnStatement,
     block: TypedBlockStatement,
     scoped: TypedScopedStatement,
@@ -44,6 +45,15 @@ pub const TypedVariableDeclaration = struct {
     value: *TypedExpr,
 };
 
+pub const TypedStructDeclarationStatement = struct {
+    name: ast.IdentifierExpression,
+    fields: []tt.SemaType.Struct.Field,
+};
+
+pub const TypedStructInitializationExpression = struct {
+    fields: []*TypedExpr,
+};
+
 pub const TypedAssignment = struct {
     assignee: *TypedExpr,
     value: *TypedExpr,
@@ -76,6 +86,7 @@ pub const TypedExpr = struct {
         call: TypedCallExpr,
         array: TypedArrayExpr,
         index: TypedIndexExpr,
+        struct_init: TypedStructInitializationExpression,
     },
 };
 

@@ -83,6 +83,7 @@ fn indexResultType(left_t: tt.SemaType) ?tt.SemaType {
         .number,
         .void,
         .wideint,
+        .@"struct",
         => null,
     };
 }
@@ -104,6 +105,7 @@ fn requiresIntegerIndex(left_t: tt.SemaType) bool {
         .string,
         .void,
         .wideint,
+        .@"struct",
         => false,
     };
 }
@@ -126,6 +128,7 @@ fn isIntegerType(idx: tt.SemaType) bool {
         .number,
         .string,
         .void,
+        .@"struct",
         => false,
     };
 }

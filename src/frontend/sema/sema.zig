@@ -22,6 +22,7 @@ const validateIndexExpr = @import("expressions/validate_index_expr.zig").validat
 
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 const validateVariableDeclaration = @import("statements/validate_variable_declaration_expr.zig").validateVariableDeclaration;
+const validateStructDeclaration = @import("statements/validate_struct_declaration.zig").validateStructDeclaration;
 const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
@@ -131,6 +132,12 @@ pub const IglotSemanticAnalyzer = struct {
                 const decl = try validateVariableDeclaration(self, allocator, v) orelse return null;
                 return .{
                     .variable_declaration = decl,
+                };
+            },
+            .struct_decl => |*s| {
+                const decl = try validateStructDeclaration(self, allocator, s) orelse return null;
+                return .{
+                    .struct_decl = decl
                 };
             },
             .function_decl => |f| {

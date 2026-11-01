@@ -78,6 +78,7 @@ fn emitZero(ir: *IglotIR, allocator: std.mem.Allocator, ty: SemaType) anyerror!i
         .function,
         .number,
         .void,
+        .@"struct", // TODO
         => unreachable, // sema should reject types with no zero value
     }
 

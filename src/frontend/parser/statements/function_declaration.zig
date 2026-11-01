@@ -43,7 +43,7 @@ pub fn parseFunctionDeclarationStatement(
         .span = Span.mergeFromSpans(keyword.span, body.span),
         .kind = .{
             .function_decl = .{
-                .identifier = .{ .value = fn_name.lexeme },
+                .identifier = .{ .value = fn_name.lexeme, .span = fn_name.span },
                 .return_type = return_type,
                 .parameters = fn_params,
                 .body = body,
@@ -74,7 +74,7 @@ fn parseFunctionParameters(
 
     try params.append(allocator, .{
         .span = first_param_span,
-        .identifier = .{ .value = first_ident.lexeme },
+        .identifier = .{ .value = first_ident.lexeme, .span = first_ident.span },
         .param_type = first_ident_type,
     });
 
@@ -90,7 +90,7 @@ fn parseFunctionParameters(
 
         try params.append(allocator, .{
             .span = param_span,
-            .identifier = .{ .value = ident.lexeme },
+            .identifier = .{ .value = ident.lexeme, .span = ident.span },
             .param_type = ident_type,
         });
     }

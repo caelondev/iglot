@@ -136,6 +136,18 @@ fn ensureAssignable(
             return null;
         },
 
+        .@"struct" => {
+            const r = root.?;
+            const annotations = try writeAnnotation(allocator, r.span, "struct declared here");
+            try sema.reportError(allocator, .{
+                .span = a.assignee.span,
+                .severity = .err,
+                .annotations = annotations,
+                .kind = .{ .StructAssignment = .{ .identifier = r.name } },
+            });
+            return null;
+        },
+
         .mutable => {},
     }
 }

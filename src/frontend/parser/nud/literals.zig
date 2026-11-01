@@ -120,7 +120,7 @@ pub fn parseFloat(parser: *IglotParser, _: std.mem.Allocator) !?ast.Expression {
 
 pub fn parseIdentifier(parser: *IglotParser, _: std.mem.Allocator) !?ast.Expression {
     const lit_raw = parser.cur_tok;
-    const ident_expr: ast.IdentifierExpression = .{ .value = lit_raw.lexeme };
+    const ident_expr: ast.IdentifierExpression = .{ .value = lit_raw.lexeme, .span = lit_raw.span };
     return .{
         .expr = .{ .identifier = ident_expr },
         .span = lit_raw.span,

@@ -26,8 +26,9 @@ pub fn parseStructDeclarationStatement(
         .span = .mergeFromSpans(struct_tok.span, parser.cur_tok.span),
         .kind = .{
             .struct_decl = .{
-                .name = .{ .value = struct_name.lexeme },
+                .name = .{ .value = struct_name.lexeme, .span = struct_name.span },
                 .fields = fields,
+                .span = .mergeFromSpans(struct_tok.span, parser.cur_tok.span),
             },
         },
     };
@@ -50,8 +51,9 @@ fn parseStructFields(
         const field_type = try pt.parseTypeExpression(parser, allocator) orelse return null;
 
         try fields.append(allocator, .{
-            .name = .{ .value = field_name.lexeme },
+            .name = .{ .value = field_name.lexeme, .span = field_name.span },
             .type_expr = field_type,
+            .span = .mergeFromSpans(field_name.span, field_type.span),
         });
 
         if (parser.peekTokenIs(.right_brace)) break;

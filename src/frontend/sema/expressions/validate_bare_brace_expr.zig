@@ -34,7 +34,8 @@
 //! Named literals take the struct route. With an expected struct type,
 //! each field is checked against the declared field type, and missing,
 //! duplicate and unknown fields are reported. `{}` against a struct type
-//! is an empty struct init, so every field must have a default.
+//! is a named literal with no fields, so it is only valid for a struct
+//! with none.
 //!
 //! A literal with nothing to infer from (`{}` with no expected type, or a
 //! named literal with no expected type) is reported as
@@ -50,6 +51,7 @@ const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
 
 const max_array_len: usize = std.math.maxInt(u32);
 const no_elements: []*ast.Expression = &.{};
+const no_fields: []ast.BareBraceExpression.FieldInit = &.{};
 
 pub fn validateBareBraceExpr(
     sema: *IglotSemanticAnalyzer,
@@ -59,8 +61,13 @@ pub fn validateBareBraceExpr(
     expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
     return switch (a.body) {
-        // TODO(struct): use validateNamedRoute if expected type is a struct
-        .empty => validateArrayRoute(sema, allocator, no_elements, span, expected_type),
+        // `{}` is a struct init when the context wants a struct, so it has
+        // to be checked before the array route claims it
+        .empty => blk: {
+            if (expected_type) |e| if (e == .@"struct")
+                break :blk validateNamedRoute(sema, allocator, no_fields, span, expected_type);
+            break :blk validateArrayRoute(sema, allocator, no_elements, span, expected_type);
+        },
         .positional => |elements| validateArrayRoute(sema, allocator, elements, span, expected_type),
         .named => |fields| validateNamedRoute(sema, allocator, fields, span, expected_type),
     };
@@ -86,9 +93,7 @@ fn validateArrayRoute(
     return try inferArray(sema, allocator, elements, span);
 }
 
-/// `{ name = value, ... }`. TODO(struct): resolve expected_type to a struct
-/// decl, then check missing / duplicate / unknown fields and each value
-/// against its field type. add that arm before the fallthrough below.
+/// `{ name = value, ... }`. resolves against an expected struct type.
 fn validateNamedRoute(
     sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
@@ -96,20 +101,110 @@ fn validateNamedRoute(
     span: Span,
     expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
-    _ = fields;
-
     const expected = expected_type orelse {
         try sema.reportError(allocator, .{ .span = span, .kind = .CannotInferLiteralType });
         return null;
     };
 
     if (expected == .err) return null;
+    if (expected != .@"struct") {
+        try sema.reportError(allocator, .{
+            .span = span,
+            .kind = .{ .NamedFieldsRequireStruct = .{ .found = expected } },
+        });
+        return null;
+    }
 
-    try sema.reportError(allocator, .{
+    const values = try validateFieldValues(sema, allocator, fields, expected.@"struct", span) orelse return null;
+
+    const node = try allocator.create(typed_ast.TypedExpr);
+    node.* = .{
         .span = span,
-        .kind = .{ .NamedFieldsRequireStruct = .{ .found = expected } },
-    });
-    return null;
+        .sem_type = expected,
+        .kind = .{ .struct_init = .{ .fields = values } },
+    };
+    return node;
+}
+
+/// checks every field init against the declaration and returns the values
+/// in declaration order, so `values[i]` is field `i`. codegen never needs
+/// names. reports every problem it finds before returning null.
+fn validateFieldValues(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    fields: []ast.BareBraceExpression.FieldInit,
+    decl: tt.SemaType.Struct,
+    span: Span,
+) anyerror!?[]*typed_ast.TypedExpr {
+    const slots = try allocator.alloc(?*typed_ast.TypedExpr, decl.fields.len);
+    const seen = try allocator.alloc(bool, decl.fields.len);
+    @memset(slots, null);
+    @memset(seen, false);
+
+    var had_error = false;
+
+    for (fields) |f| {
+        const idx = decl.name_index_map.get(f.name.lexeme) orelse {
+            try sema.reportError(allocator, .{
+                .span = f.name.span,
+                .kind = .{ .UnknownField = .{
+                    .name = f.name.lexeme,
+                    .struct_name = decl.name,
+                } },
+            });
+            had_error = true;
+            continue;
+        };
+
+        if (seen[idx]) {
+            try sema.reportError(allocator, .{
+                .span = f.name.span,
+                .kind = .{ .DuplicateFieldInit = .{ .name = f.name.lexeme } },
+            });
+            had_error = true;
+            continue;
+        }
+        seen[idx] = true;
+
+        const field_type = decl.fields[idx].sema_type;
+
+        const typed = try sema.validateExpression(allocator, f.value, f.value.span, field_type.*) orelse {
+            had_error = true;
+            continue;
+        };
+
+        if (!field_type.accepts(typed.sem_type)) {
+            try sema.reportError(allocator, .{
+                .span = f.value.span,
+                .kind = .{ .TypeMismatch = .{
+                    .expected = field_type.*,
+                    .found = typed.sem_type,
+                } },
+            });
+            had_error = true;
+            continue;
+        }
+
+        slots[idx] = typed;
+    }
+
+    for (decl.fields, seen) |field, was_seen| {
+        if (was_seen) continue;
+        try sema.reportError(allocator, .{
+            .span = span,
+            .kind = .{ .MissingField = .{
+                .name = field.name,
+                .struct_name = decl.name,
+            } },
+        });
+        had_error = true;
+    }
+
+    if (had_error) return null;
+
+    const values = try allocator.alloc(*typed_ast.TypedExpr, slots.len);
+    for (slots, 0..) |slot, i| values[i] = slot.?;
+    return values;
 }
 
 fn checkAgainstArray(

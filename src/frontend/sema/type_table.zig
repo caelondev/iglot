@@ -31,9 +31,8 @@ pub const SemaType = union(enum) {
     void,
 
     function: Function,
-
+    @"struct": Struct,
     array: Array,
-
     constant: *SemaType,
 
     // builtin params only, for now. used in args
@@ -54,6 +53,18 @@ pub const SemaType = union(enum) {
     pub const Array = struct {
         size: SemaArraySize,
         element_type: *SemaType,
+    };
+
+    pub const Struct = struct {
+        name: []const u8,
+        fields: []Field,
+        name_index_map: std.StringHashMap(u32),
+
+        pub const Field = struct {
+            name: []const u8,
+            sema_type: *SemaType,
+            span: Span,
+        };
     };
 
     /// strict: rejects array infer anywhere.
@@ -117,7 +128,18 @@ pub const SemaType = union(enum) {
         });
 
         return switch (type_expr.kind) {
-            .identifier => |i| types.get(i),
+            .identifier => |i| blk: {
+                if (types.get(i)) |t| break :blk t;
+                if (sema.type_table.lookupIdentifier(i)) |e| {
+                    break :blk e.sem_type;
+                }
+
+                try sema.reportError(allocator, .{
+                    .span = type_expr.span,
+                    .kind = .{ .UndefinedType = .{ .identifier = i } },
+                });
+                break :blk null;
+            },
             .final => |f| try resolve(sema, allocator, f.*),
             .function => |f| blk: {
                 var params: std.ArrayList(*SemaType) = .empty;
@@ -199,6 +221,7 @@ pub const SemaType = union(enum) {
                 try writeSymbolString(writer, c.*);
             },
             .any => try writer.writeAll("any"),
+            .@"struct" => |s| try writer.writeAll(s.name),
             .err => unreachable,
         };
     }
@@ -209,7 +232,6 @@ pub const SemaType = union(enum) {
 
         return switch (self) {
             .constant => |c| c.eql(other.constant.*),
-
             .function => |sf| blk: {
                 const of = other.function;
 
@@ -228,6 +250,7 @@ pub const SemaType = union(enum) {
                 break :blk sa.size.compatible(oa.size);
             },
 
+            .@"struct" => |s| std.mem.eql(u8, s.name, other.@"struct".name),
             else => true,
         };
     }
@@ -243,7 +266,8 @@ pub const SemaType = union(enum) {
             .any => return std.meta.activeTag(found) != .void,
             .array => |a| blk: {
                 if (a.size == .unbounded) {
-                    break :blk a.element_type.accepts(found);
+                    if (found != .array) break :blk false;
+                    break :blk a.element_type.accepts(found.array.element_type.*);
                 }
 
                 break :blk found.eql(self);
