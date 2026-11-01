@@ -130,7 +130,7 @@ pub const SemaType = union(enum) {
         return switch (type_expr.kind) {
             .identifier => |i| blk: {
                 if (types.get(i)) |t| break :blk t;
-                if (sema.type_table.lookupIdentifier(i)) |e| {
+                if (sema.type_table.lookupType(i)) |e| {
                     break :blk e.sem_type;
                 }
 
@@ -296,29 +296,41 @@ pub const TypeEntry = struct {
     init_expr: ?*const ast.Expression = null,
 };
 
+/// scoped symbol storage with two separate namespaces per scope:
+/// values (variables, params, functions) and types (struct decls).
+/// types only appear in type position, so a value can never be used as
+/// a type: `bar :: foo = {}` errors when `foo` is a variable.
 pub const TypeTable = struct {
-    scopes: std.ArrayList(SymbolTable),
+    scopes: std.ArrayList(Scope),
+
     const SymbolTable = std.StringHashMapUnmanaged(TypeEntry);
+
+    /// both maps live in one scope so they can't desync.
+    const Scope = struct {
+        values: SymbolTable = .empty,
+        types: SymbolTable = .empty,
+
+        fn deinit(self: *Scope, allocator: std.mem.Allocator) void {
+            self.values.deinit(allocator);
+            self.types.deinit(allocator);
+        }
+    };
 
     const Self = @This();
 
     pub fn init(allocator: std.mem.Allocator) !Self {
-        var self = Self{
-            .scopes = .empty,
-        };
+        var self = Self{ .scopes = .empty };
         try self.enterScope(allocator);
         return self;
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        for (self.scopes.items) |*scope| {
-            scope.deinit(allocator);
-        }
+        for (self.scopes.items) |*scope| scope.deinit(allocator);
         self.scopes.deinit(allocator);
     }
 
     pub fn enterScope(self: *Self, allocator: std.mem.Allocator) !void {
-        try self.scopes.append(allocator, .empty);
+        try self.scopes.append(allocator, .{});
     }
 
     pub fn leaveScope(self: *Self, allocator: std.mem.Allocator) void {
@@ -326,23 +338,43 @@ pub const TypeTable = struct {
         scope.deinit(allocator);
     }
 
+    fn current(self: *Self) *Scope {
+        return &self.scopes.items[self.scopes.items.len - 1];
+    }
+
+    /// values: variables, params, functions.
     pub fn declareIdentifier(self: *Self, allocator: std.mem.Allocator, identifier: []const u8, entry: TypeEntry) !void {
-        const current = &self.scopes.items[self.scopes.items.len - 1];
-        try current.put(allocator, identifier, entry);
+        try self.current().values.put(allocator, identifier, entry);
     }
 
     pub fn lookupCurrentScope(self: *Self, identifier: []const u8) ?TypeEntry {
-        const cur = self.scopes.items[self.scopes.items.len - 1];
-        return cur.get(identifier);
+        return self.current().values.get(identifier);
     }
 
     pub fn lookupIdentifier(self: *Self, identifier: []const u8) ?TypeEntry {
         var i = self.scopes.items.len;
         while (i > 0) {
             i -= 1;
-            if (self.scopes.items[i].get(identifier)) |entry| {
-                return entry;
-            }
+            if (self.scopes.items[i].values.get(identifier)) |entry| return entry;
+        }
+        return null;
+    }
+
+    /// types: struct declarations. resolved by type expressions only,
+    /// so they never see variables.
+    pub fn declareType(self: *Self, allocator: std.mem.Allocator, identifier: []const u8, entry: TypeEntry) !void {
+        try self.current().types.put(allocator, identifier, entry);
+    }
+
+    pub fn lookupTypeCurrentScope(self: *Self, identifier: []const u8) ?TypeEntry {
+        return self.current().types.get(identifier);
+    }
+
+    pub fn lookupType(self: *Self, identifier: []const u8) ?TypeEntry {
+        var i = self.scopes.items.len;
+        while (i > 0) {
+            i -= 1;
+            if (self.scopes.items[i].types.get(identifier)) |entry| return entry;
         }
         return null;
     }

@@ -43,7 +43,7 @@ pub fn validateStructDeclaration(
     // declared even when a field failed, so later uses of the struct don't
     // pile "undefined identifier" errors on top of the real one. bad fields
     // carry the `.err` poison type, which stops follow-up reports.
-    try sema.type_table.declareIdentifier(allocator, s.name.value, .{
+    try sema.type_table.declareType(allocator, s.name.value, .{
         .span = s.span,
         .mutability = .@"struct",
         .sem_type = .{
