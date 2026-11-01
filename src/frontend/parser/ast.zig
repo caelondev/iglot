@@ -97,7 +97,7 @@ pub const Expression = struct {
         unary: UnaryExpression,
         assignment: AssignmentExpression,
         array: ArrayExpression,
-        anon_array: AnonymousArrayExpression,
+        bare_brace: BareBraceExpression,
         index_expr: IndexExpression,
         call: CallExpression,
     };
@@ -173,8 +173,19 @@ pub const CallExpression = struct {
     arguments: []*Expression,
 };
 
-pub const AnonymousArrayExpression = struct {
-    elements: []*Expression,
+pub const BareBraceExpression = struct {
+    body: Body,
+
+    pub const Body = union(enum) {
+        empty,
+        positional: []*Expression,
+        named: []FieldInit,
+    };
+
+    pub const FieldInit = struct {
+        name: tokens.Token,
+        value: *Expression,
+    };
 };
 
 pub const IndexExpression = struct {

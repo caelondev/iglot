@@ -82,6 +82,7 @@ pub const IglotDiagnostic = struct {
         CannotInferLiteralType,
         InvalidIndexOperand: struct { found_type: SemaType },
         InvalidIndexType: struct { found: SemaType, left: Indexable },
+        NamedFieldsRequireStruct: struct { found: SemaType },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -121,11 +122,12 @@ pub const IglotDiagnostic = struct {
                 .NonVoidMainReturnType => |f| try writer.print("\"main\" function must return a \"void\" type. found {f}", .{f.found}),
                 .ArraySizeNotConstant => try writer.writeAll("array size must be a compile-time constant"),
                 .InvalidArraySize => |a| try writer.print("invalid array size {d}", .{a.value}),
-                .ArraySizeMismatch => |a| try writer.print("expected {d} elements but got {d} instead", .{ a.expected, a.found }),
+                .ArraySizeMismatch => |a| try writer.print("expected at most {d} elements but got {d} instead", .{ a.expected, a.found }),
                 .ArraySizeTooLarge => |a| try writer.print("compile-time array size {d} exceeds the maximum encodable value of {d}", .{ a.found, a.max }),
-                .CannotInferLiteralType => try writer.print("cannot infer the type of this literal, it needs an array type for context", .{}),
+                .CannotInferLiteralType => try writer.print("cannot infer the type of this literal, it needs a type for context", .{}),
                 .InvalidIndexOperand => |f| try writer.print("cannot index value of type \"{f}\"", .{f.found_type}),
                 .InvalidIndexType => |f| try writer.print("invalid index type \"{f}\" to a {s}", .{ f.found, fmtIndexLeft(f.left) }),
+                .NamedFieldsRequireStruct => |n| try writer.print("named fields can only initialize a struct, found type \"{f}\"", .{n.found}),
             }
         }
     };

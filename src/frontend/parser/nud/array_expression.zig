@@ -78,17 +78,3 @@ fn parseElements(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?[
 
     return try elements.toOwnedSlice(allocator);
 }
-
-/// assumes cur_tok is on '{'. element position only, the type comes
-/// from context in sema.
-pub fn parseAnonymousArray(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?ast.Expression {
-    const l_brace = parser.cur_tok;
-
-    const elems = try parseElements(parser, allocator) orelse return null;
-    if (!try parser.expectPeek(allocator, .right_brace)) return null;
-
-    return .{
-        .span = .mergeFromSpans(l_brace.span, parser.cur_tok.span),
-        .expr = .{ .anon_array = .{ .elements = elems } },
-    };
-}

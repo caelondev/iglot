@@ -17,7 +17,7 @@ const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").valid
 const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;
 const validateAssignmentExpr = @import("expressions/validate_assignment_expr.zig").validateAssignmentExpr;
 const validateArrayExpr = @import("expressions/validate_array_expr.zig").validateArrayExpr;
-const validateAnonymousArray = @import("expressions/validate_array_expr.zig").validateAnonymousArray;
+const validateBareBrace = @import("expressions/validate_bare_brace_expr.zig").validateBareBraceExpr;
 const validateIndexExpr = @import("expressions/validate_index_expr.zig").validateIndexExpr;
 
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
@@ -313,7 +313,7 @@ pub const IglotSemanticAnalyzer = struct {
             .unary => |*u| validateUnaryExpr(self, allocator, u, span, expected_type),
             .assignment => |*a| validateAssignmentExpr(self, allocator, a, span),
             .array => |*a| validateArrayExpr(self, allocator, a, span),
-            .anon_array => |*a| validateAnonymousArray(self, allocator, a, span, expected_type),
+            .bare_brace => |*b| validateBareBrace(self, allocator, b, span, expected_type),
             .call => |*c| validateCallExpr(self, allocator, c, span),
 
             .index_expr => |*i| validateIndexExpr(self, allocator, i, span),
@@ -450,7 +450,7 @@ pub const IglotSemanticAnalyzer = struct {
             .assignment,
             .call,
             .array,
-            .anon_array,
+            .bare_brace,
             .index_expr,
             => null,
         };

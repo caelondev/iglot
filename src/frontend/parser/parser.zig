@@ -72,7 +72,7 @@ pub const nud_exprs = [_]NullDenotedExpr{
     },
     .{
         .token_kind = .left_brace,
-        .callback = @import("nud/array_expression.zig").parseAnonymousArray,
+        .callback = @import("nud/bare_brace_expression.zig").parseBareBraceExpression,
     },
     .{
         .token_kind = .minus,

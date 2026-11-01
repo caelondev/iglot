@@ -4,10 +4,11 @@ struct User: {
 }
 
 fn main() void {
---  user ::= User {
---    name = "foo",
---    age = 67,
---  };
+  array :: [10]int = {};
+  user :: User = {
+    name = "foo",
+    age = 67,
+  };
 
---  print({ user });
+  print({ "hello" });
 }
