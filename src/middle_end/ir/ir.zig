@@ -141,6 +141,7 @@ pub const IglotIR = struct {
     pub fn initIglotBuiltins(self: *Self, allocator: std.mem.Allocator) !void {
         try self.buildBuiltinGlobal(allocator, "true", .bool, .{ .op = .const_bool, .const_data = .{ .bool = true } });
         try self.buildBuiltinGlobal(allocator, "false", .bool, .{ .op = .const_bool, .const_data = .{ .bool = false } });
+        try self.buildBuiltinGlobal(allocator, "null", .null, .{ .op = .const_bool, .const_data = .null });
     }
 
     fn buildBuiltinGlobal(self: *Self, allocator: std.mem.Allocator, global_name: []const u8, sema_type: tt.SemaType, lit_instr: struct { op: inst.Opcode, const_data: inst.ConstantValue }) !void {
