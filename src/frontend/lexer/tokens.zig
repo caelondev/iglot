@@ -47,6 +47,7 @@ pub const TokenKind = enum {
     assign,
 
     bang,
+    question,
 
     less,
     greater,

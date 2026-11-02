@@ -11,18 +11,21 @@ pub const IglotOpcode = enum(u8) {
     ig_div_i = 0x13,
     ig_mod_i = 0x14,
     ig_neg_i = 0x15,
+
     ig_add_w = 0x20,
     ig_sub_w = 0x21,
     ig_mul_w = 0x22,
     ig_div_w = 0x23,
     ig_mod_w = 0x24,
     ig_neg_w = 0x25,
+
     ig_add_f = 0x30,
     ig_sub_f = 0x31,
     ig_mul_f = 0x32,
     ig_div_f = 0x33,
     ig_mod_f = 0x34,
     ig_neg_f = 0x35,
+
     ig_add_d = 0x40,
     ig_sub_d = 0x41,
     ig_mul_d = 0x42,
@@ -42,18 +45,21 @@ pub const IglotOpcode = enum(u8) {
     ig_ge_i = 0x63,
     ig_eq_i = 0x64,
     ig_ne_i = 0x65,
+
     ig_lt_w = 0x70,
     ig_le_w = 0x71,
     ig_gt_w = 0x72,
     ig_ge_w = 0x73,
     ig_eq_w = 0x74,
     ig_ne_w = 0x75,
+
     ig_lt_f = 0x80,
     ig_le_f = 0x81,
     ig_gt_f = 0x82,
     ig_ge_f = 0x83,
     ig_eq_f = 0x84,
     ig_ne_f = 0x85,
+
     ig_lt_d = 0x90,
     ig_le_d = 0x91,
     ig_gt_d = 0x92,
@@ -69,9 +75,8 @@ pub const IglotOpcode = enum(u8) {
     ig_load_global = 0xA1,
     ig_store_global = 0xA2,
     ig_load_fn = 0xA3,
-    ig_load_builtin_fn = 0xD3,
 
-    // constants (constant pool index, except bool)
+    // constants (constant pool index, except bool and null)
     ig_const_i = 0xB0,
     ig_const_w = 0xB1,
     ig_const_f = 0xB2,
@@ -79,6 +84,7 @@ pub const IglotOpcode = enum(u8) {
     ig_const_str = 0xB4,
     ig_const_bool = 0xB5,
     ig_const_fn = 0xB6,
+    ig_const_null = 0xB7,
 
     // control flow
     ig_jmp = 0xC0,
@@ -88,8 +94,8 @@ pub const IglotOpcode = enum(u8) {
     ig_ret_void = 0xC4,
 
     // calls
-    //   ig_call  a = window start: function id in r[a], arguments in r[a+1 .. a+b]
-    //            b = argument count (a count, not a register)
+    //   ig_call  a = window start: function id in r[a], arguments in r[a+1 .. r[a+b]]
+    //            b = argument count
     //            c = caller register that receives the result (no_reg for void)
     //   the callee's frame starts at r[a+1], so its r0 is argument 0
     ig_load_param = 0xD0,
@@ -100,17 +106,22 @@ pub const IglotOpcode = enum(u8) {
     //            c = caller register that receives the result (no_reg for void)
     //            arg count comes from the table entry, not the instruction
     ig_call_builtin = 0xD2,
+    ig_load_builtin_fn = 0xD3,
+
     ig_array_pack = 0xD4,
     ig_array_get = 0xD5,
     ig_array_set = 0xD6,
     ig_struct_pack = 0xD7,
 
-    ig_extra = 0xD8, // payload word for the previous instruction, never dispatched
-    // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
+    // payload word for the previous instruction, never dispatched
+    ig_extra = 0xD8,
+
+    // 0xE0 to 0xFE reserved for future instructions
 
     ig_trap = 0xFF, // ir @"unreachable"
 
     const Self = @This();
+
     pub fn fromByte(byte: u8) Self {
         return @enumFromInt(byte);
     }

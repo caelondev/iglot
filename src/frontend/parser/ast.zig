@@ -54,6 +54,7 @@ pub const TypeExpression = struct {
         identifier: []const u8,
         final: *TypeExpression,
         constant: *TypeExpression,
+        nullable: *TypeExpression,
         function: struct {
             parameters: []*TypeExpression,
             return_type: *TypeExpression,

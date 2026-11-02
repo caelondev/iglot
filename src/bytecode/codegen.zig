@@ -149,6 +149,7 @@ pub const IglotCodegen = struct {
             .string => |s| try self.emit(allocator, I.ri(.ig_const_str, dest, try pool.addString(allocator, s))),
             .bool => |b| try self.emit(allocator, I.ri(.ig_const_bool, dest, @intFromBool(b))),
             .func => |f| try self.emit(allocator, I.ri(.ig_const_fn, dest, f.id)),
+            .null => try self.emit(allocator, I.r(.ig_const_null, dest)),
         }
 
         return dest;

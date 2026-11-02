@@ -65,6 +65,7 @@ pub const Opcode = enum {
     const_string,
     const_bool,
     const_fn,
+    const_null,
 
     @"unreachable",
 };
@@ -101,6 +102,7 @@ pub const ConstantValue = union(enum) {
     string: []const u8,
     bool: bool,
     func: FunctionRef,
+    null,
 };
 
 pub const Place = union(enum) {

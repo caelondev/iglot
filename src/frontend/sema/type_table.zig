@@ -34,6 +34,8 @@ pub const SemaType = union(enum) {
     @"struct": Struct,
     array: Array,
     constant: *SemaType,
+    nullable: *SemaType,
+    null,
 
     // builtin params only, for now. used in args
     any,
@@ -178,6 +180,21 @@ pub const SemaType = union(enum) {
                 break :blk .{ .array = .{ .size = size, .element_type = elem_ptr } };
             },
             .constant => |c| try resolve(sema, allocator, c.*),
+            .nullable => |inner| blk: {
+                const t = try fromTypeExpression(sema, allocator, inner.*) orelse return null;
+
+                if (t == .nullable) {
+                    try sema.reportError(allocator, .{
+                        .span = type_expr.span,
+                        .kind = .{ .InvalidNullableType = .{ .inner = t } },
+                    });
+                    return null;
+                }
+
+                const p = try allocator.create(SemaType);
+                p.* = t;
+                break :blk .{ .nullable = p };
+            },
         };
     }
 
@@ -212,6 +229,8 @@ pub const SemaType = union(enum) {
             .bool => writer.print("bool", .{}),
             .number => writer.print("number", .{}),
             .void => writer.print("void", .{}),
+            .nullable => |n| writer.print("?{f}", .{n.*}),
+            .null => try writer.writeAll("null"),
             .function => |f| {
                 try writer.writeAll("fn (");
 
@@ -270,6 +289,7 @@ pub const SemaType = union(enum) {
             },
 
             .@"struct" => |s| std.mem.eql(u8, s.name, other.@"struct".name),
+            .nullable => |n| n.eql(other.nullable.*),
             else => true,
         };
     }
@@ -290,6 +310,11 @@ pub const SemaType = union(enum) {
                 }
 
                 break :blk found.eql(self);
+            },
+            .nullable => |inner| switch (found) {
+                .null => true,
+                .nullable => |f| inner.accepts(f.*),
+                else => inner.accepts(found),
             },
             else => found.eql(self),
         };

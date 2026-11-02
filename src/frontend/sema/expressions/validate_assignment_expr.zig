@@ -44,7 +44,7 @@ pub fn validateAssignmentExpr(
         typed_assignee.sem_type,
     ) orelse return null;
 
-    if (!typed_assignee.sem_type.eql(typed_value.sem_type)) {
+    if (!typed_assignee.sem_type.accepts(typed_value.sem_type)) {
         try sema.reportError(allocator, .{
             .span = a.value.span,
             .severity = .err,

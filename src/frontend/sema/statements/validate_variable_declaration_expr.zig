@@ -60,7 +60,7 @@ pub fn validateVariableDeclaration(
     }
 
     if (var_type) |vtype| {
-        if (!vtype.eql(value.sem_type)) {
+        if (!vtype.accepts(value.sem_type)) {
             try sema.reportError(allocator, .{
                 .span = v.value.span,
                 .severity = .err,

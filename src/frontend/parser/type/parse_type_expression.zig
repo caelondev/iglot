@@ -170,7 +170,7 @@ fn parseType(
 
             parser.nextToken();
 
-            const ret = try parseTypeExpression(parser, allocator) orelse return null;
+            const ret = try parseReturnTypeExpression(parser, allocator) orelse return null;
             const ret_ptr = try allocator.create(ast.TypeExpression);
             ret_ptr.* = ret;
 
@@ -182,6 +182,21 @@ fn parseType(
                         .parameters = try params.toOwnedSlice(allocator),
                         .return_type = ret_ptr,
                     },
+                },
+            };
+        },
+
+        .question => {
+            parser.nextToken();
+            const nullable_type = try parseType(parser, allocator, parser.cur_tok) orelse return null;
+            const nullable_type_ptr = try allocator.create(ast.TypeExpression);
+            nullable_type_ptr.* = nullable_type;
+
+            return .{
+                .span = .mergeFromSpans(tok.span, nullable_type.span),
+                .mutability = .mutable,
+                .kind = .{
+                    .nullable = nullable_type_ptr,
                 },
             };
         },

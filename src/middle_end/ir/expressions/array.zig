@@ -56,6 +56,8 @@ fn emitZero(ir: *IglotIR, allocator: std.mem.Allocator, ty: SemaType) anyerror!i
         .double => try emitConst(ir, allocator, .const_double, ty, dest, .{ .double = 0.0 }),
         .bool => try emitConst(ir, allocator, .const_bool, ty, dest, .{ .bool = false }),
         .string => try emitConst(ir, allocator, .const_string, ty, dest, .{ .string = "" }),
+        .nullable => try emitConst(ir, allocator, .const_null, ty, dest, .null),
+
         .array => |inner| {
             const n: usize = @intCast(inner.size.known);
             const elems = try allocator.alloc(inst.VReg, n);
@@ -78,7 +80,8 @@ fn emitZero(ir: *IglotIR, allocator: std.mem.Allocator, ty: SemaType) anyerror!i
         .function,
         .number,
         .void,
-        .@"struct", // TODO
+        .null, // the literal's own type, never an element type
+        .@"struct",
         => unreachable, // sema should reject types with no zero value
     }
 

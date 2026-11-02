@@ -1,5 +1,7 @@
-struct Foo: {
-  value :: void, -- should error now
-}
+fn main() void {
+  message :: ?string = null;
+  println({ message });
 
-fn main() void {}
+  message = "hello, world!";
+  println({ message });
+}

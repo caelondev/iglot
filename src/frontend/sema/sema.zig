@@ -170,6 +170,11 @@ pub const IglotSemanticAnalyzer = struct {
             .sem_type = .bool,
             .mutability = .constant,
         });
+        try self.type_table.declareIdentifier(allocator, "null", .{
+            .span = Span.empty(),
+            .sem_type = .null,
+            .mutability = .constant,
+        });
 
         for (builtins_table) |b| {
             try self.type_table.declareIdentifier(allocator, b.name, .{

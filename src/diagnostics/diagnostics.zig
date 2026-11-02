@@ -90,6 +90,7 @@ pub const IglotDiagnostic = struct {
         UnknownField: struct { name: []const u8, struct_name: []const u8 },
         MissingField: struct { name: []const u8, struct_name: []const u8 },
         InvalidVoidType: struct { context: []const u8 },
+        InvalidNullableType: struct { inner: SemaType },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -107,8 +108,20 @@ pub const IglotDiagnostic = struct {
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
-                .TypeMismatch => |e| try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found }),
-                .ReturnTypeMismatch => |e| try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found }),
+                .TypeMismatch => |e| switch (e.expected) {
+                    .nullable => |inner| if (e.found == .nullable)
+                        try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found })
+                    else
+                        try writer.print("expected \"{f}\", \"{f}\" or null, found type \"{f}\" instead", .{ inner.*, e.expected, e.found }),
+                    else => try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found }),
+                },
+                .ReturnTypeMismatch => |e| switch (e.expected) {
+                    .nullable => |inner| if (e.found == .nullable)
+                        try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found })
+                    else
+                        try writer.print("expected return type \"{f}\", \"{f}\" or null, found return type \"{f}\" instead", .{ inner.*, e.expected, e.found }),
+                    else => try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found }),
+                },
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
@@ -142,6 +155,7 @@ pub const IglotDiagnostic = struct {
                 .UnknownField => |u| try writer.print("struct \"{s}\" has no field \"{s}\"", .{ u.struct_name, u.name }),
                 .MissingField => |m| try writer.print("missing field \"{s}\" in initializer of struct \"{s}\"", .{ m.name, m.struct_name }),
                 .InvalidVoidType => |v| try writer.print("\"void\" cannot be used as {s}", .{v.context}),
+                .InvalidNullableType => |t| try writer.print("cannot make type \"{f}\" nullable", .{t.inner}),
             }
         }
     };
