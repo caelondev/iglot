@@ -1,5 +1,5 @@
 fn main() void {
-  foo :: [10]void = {};
-  println({ foo });
+  foo ::= returns_void();
 }
 
+fn returns_void() void {}

@@ -15,46 +15,29 @@ pub fn validateVariableDeclaration(
 
     if (sema.type_table.lookupCurrentScope(v.identifier.value)) |i| {
         const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-            .{
-                .note = .{
-                    .message = "identifier declared here",
-                    .span = i.span,
-                },
-            },
+            .{ .note = .{ .message = "identifier declared here", .span = i.span } },
         });
 
         try sema.reportError(allocator, .{
             .span = v.span,
             .severity = .err,
-            .kind = .{
-                .IdentifierAlreadyExist = .{
-                    .identifier = v.identifier.value,
-                },
-            },
+            .kind = .{ .IdentifierAlreadyExist = .{ .identifier = v.identifier.value } },
             .annotations = if (i.is_builtin) &.{} else annotations,
         });
-
         return null;
     }
 
     var var_type: ?tt.SemaType = null;
 
     if (v.type) |t| {
-        var_type = try tt.SemaType.fromTypeExpression(sema, allocator, t) orelse return null;
-    }
+        var_type = try tt.SemaType.fromTypeExpression(sema, allocator, t) orelse {
+            try declare(sema, allocator, v, .err, mutability);
+            return null;
+        };
 
-    if (var_type) |ty| {
-        if (ty == .void) {
-            try sema.reportError(allocator, .{
-                .span = v.type.?.span,
-                .severity = .err,
-                .kind = .{
-                    .VoidValueStorage = .{
-                        .identifier = v.identifier.value,
-                    },
-                },
-            });
-
+        if (var_type.? == .void) {
+            try reportVoidStorage(sema, allocator, v, t.span);
+            try declare(sema, allocator, v, .err, mutability);
             return null;
         }
     }
@@ -66,63 +49,64 @@ pub fn validateVariableDeclaration(
         var_type,
     ) orelse {
         // still declare so errors won't cascade
-        try sema.type_table.declareIdentifier(
-            allocator,
-            v.identifier.value,
-            .{
-                .span = v.span,
-                .sem_type = var_type orelse .err,
-                .mutability = mutability,
-            },
-        );
-
+        try declare(sema, allocator, v, var_type orelse .err, mutability);
         return null;
     };
+
+    if (value.sem_type == .void) {
+        try reportVoidStorage(sema, allocator, v, v.value.span);
+        try declare(sema, allocator, v, .err, mutability);
+        return null;
+    }
 
     if (var_type) |vtype| {
         if (!vtype.eql(value.sem_type)) {
             try sema.reportError(allocator, .{
                 .span = v.value.span,
                 .severity = .err,
-                .kind = .{
-                    .TypeMismatch = .{
-                        .expected = vtype,
-                        .found = value.sem_type,
-                    },
-                },
+                .kind = .{ .TypeMismatch = .{ .expected = vtype, .found = value.sem_type } },
             });
 
             // preserve the declared type during error recovery
-            try sema.type_table.declareIdentifier(
-                allocator,
-                v.identifier.value,
-                .{
-                    .span = v.span,
-                    .sem_type = vtype,
-                    .mutability = mutability,
-                },
-            );
-
+            try declare(sema, allocator, v, vtype, mutability);
             return null;
         }
     }
 
     const resolved_type = var_type orelse value.sem_type;
-
-    try sema.type_table.declareIdentifier(
-        allocator,
-        v.identifier.value,
-        .{
-            .span = v.span,
-            .sem_type = resolved_type,
-            .mutability = mutability,
-            .init_expr = if (mutability == .constant) v.value else null,
-        },
-    );
+    try declare(sema, allocator, v, resolved_type, mutability);
 
     return .{
         .identifier = v.identifier,
         .sema_type = resolved_type,
         .value = value,
     };
+}
+
+fn declare(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    v: *const ast.VariableDeclarationStatement,
+    sem_type: tt.SemaType,
+    mutability: ast.TypeExpression.Mutability,
+) !void {
+    try sema.type_table.declareIdentifier(allocator, v.identifier.value, .{
+        .span = v.span,
+        .sem_type = sem_type,
+        .mutability = mutability,
+        .init_expr = if (mutability == .constant and sem_type != .err) v.value else null,
+    });
+}
+
+fn reportVoidStorage(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    v: *const ast.VariableDeclarationStatement,
+    span: Span,
+) !void {
+    try sema.reportError(allocator, .{
+        .span = span,
+        .severity = .err,
+        .kind = .{ .VoidValueStorage = .{ .identifier = v.identifier.value } },
+    });
 }
