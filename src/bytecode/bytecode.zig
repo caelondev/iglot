@@ -103,7 +103,9 @@ pub const IglotOpcode = enum(u8) {
     ig_array_pack = 0xD4,
     ig_array_get = 0xD5,
     ig_array_set = 0xD6,
+    ig_struct_pack = 0xD7,
 
+    ig_extra = 0xD8, // payload word for the previous instruction, never dispatched
     // 0xE0 to 0xFE reserved for future stuff (casts, memory, structs, etc)
 
     ig_trap = 0xFF, // ir @"unreachable"
@@ -197,6 +199,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_neg_d,
         .ig_not,
         .ig_mov,
+        .ig_struct_pack,
         => .rr,
 
         .ig_add_i,
@@ -270,7 +273,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_jmp_ifnot,
         => .ri,
 
-        .ig_jmp => .i,
+        .ig_jmp, .ig_extra => .i,
     };
 }
 

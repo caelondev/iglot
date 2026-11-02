@@ -144,6 +144,22 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object, nest
                 try out.writeAll(" ");
             try out.writeAll("}");
         },
+        .struct_init => |s| {
+            try out.writeAll(s.desc.name);
+
+            if (s.fields.len == 0) {
+                try out.writeAll(": {}");
+                return;
+            }
+
+            try out.writeAll(" { ");
+            for (s.fields, s.desc.field_names, 0..) |value, name, i| {
+                if (i != 0) try out.writeAll(", ");
+                try out.print("{s} = ", .{name});
+                try writeValue(out, obj_heap, value, true);
+            }
+            try out.writeAll(" }");
+        },
     }
 }
 

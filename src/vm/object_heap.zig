@@ -1,6 +1,7 @@
 const std = @import("std");
 const Object = @import("object.zig").Object;
 const IglotValue = @import("values.zig").IglotValue;
+const StructDesc = @import("../middle_end/ir/module.zig").StructDesc;
 
 pub const ObjectHeap = struct {
     allocator: std.mem.Allocator,
@@ -41,6 +42,21 @@ pub const ObjectHeap = struct {
         return self.appendObject(obj);
     }
 
+    pub fn createStructInit(self: *Self, desc: *const StructDesc, fields: []IglotValue) !usize {
+        const f = try self.allocator.dupe(IglotValue, fields);
+        errdefer self.allocator.free(f);
+
+        const obj = try self.allocator.create(Object);
+        errdefer self.allocator.destroy(obj);
+
+        obj.* = .{ .struct_init = .{
+            .desc = desc,
+            .fields = f,
+        } };
+
+        return self.appendObject(obj);
+    }
+
     fn appendObject(self: *Self, object: *Object) !usize {
         const ref = self.objects.items.len;
         try self.objects.append(self.allocator, object);
@@ -56,6 +72,7 @@ pub const ObjectHeap = struct {
             switch (obj.*) {
                 .string => |s| self.allocator.free(s.bytes),
                 .array => |a| self.allocator.free(a.elements),
+                .struct_init => |s| self.allocator.free(s.fields),
             }
             self.allocator.destroy(obj);
         }

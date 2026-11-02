@@ -211,6 +211,14 @@ pub const IglotVM = struct {
                     const elems = regs[ins.b..][0..ins.c];
                     regs[ins.a] = .{ .heap_ref = try self.object_heap.createArray(elems) };
                 },
+                .ig_struct_pack => {
+                    const extra = frame.code[frame.pc];
+                    frame.pc += 1;
+
+                    const desc = &self.module.struct_descs.items[extra.imm()];
+                    const fields = regs[ins.b..][0..desc.field_names.len];
+                    regs[ins.a] = .{ .heap_ref = try self.object_heap.createStructInit(desc, fields) };
+                },
                 .ig_array_get => {
                     const idx = switch (regs[ins.c]) {
                         .int => |i| i,

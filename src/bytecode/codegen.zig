@@ -38,6 +38,7 @@ pub const IglotCodegen = struct {
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator, ir_module: *const IrModule) !*Module {
         self.module.global_count = @intCast(ir_module.globals.items.len);
+        try self.module.struct_descs.appendSlice(allocator, ir_module.struct_descs.items);
 
         for (ir_module.functions.items) |f| {
             const id = try self.module.declareFunction(allocator, f.function_name, @intCast(f.params.items.len), f.ret_type);
@@ -95,6 +96,7 @@ pub const IglotCodegen = struct {
             .store_global => try self.emit(allocator, .ri(.ig_store_global, try self.reg(ins.operands[0]), ins.data.global.id)),
             .load_global => try self.emit(allocator, .ri(.ig_load_global, try self.reg(ins.result.?), ins.data.global.id)),
             .array_pack => try self.genArrayPack(allocator, ins),
+            .struct_pack => try self.genStructPack(allocator, ins),
 
             .param => try self.emit(allocator, .ri(.ig_load_param, try self.reg(ins.result.?), ins.operands[0].id)),
 
@@ -195,6 +197,7 @@ pub const IglotCodegen = struct {
 
     fn instructionCount(ins: IrInstruction, next: ?u32) u32 {
         if (ins.op == .array_pack) return 1 + @as(u32, @intCast(ins.operands.len));
+        if (ins.op == .struct_pack) return 2 + @as(u32, @intCast(ins.operands.len));
 
         return switch (ins.data) {
             .branch_target => |t| if (next == t.id) 0 else 1,
@@ -248,5 +251,19 @@ pub const IglotCodegen = struct {
             try self.emit(allocator, .rr(.ig_mov, window + @as(u16, @intCast(i)), try self.reg(elem)));
         }
         try self.emit(allocator, .rrr(.ig_array_pack, try self.reg(inst.result.?), window, count));
+    }
+
+    fn genStructPack(self: *Self, allocator: std.mem.Allocator, inst: IrInstruction) !void {
+        const count: u16 = @intCast(inst.operands.len);
+        const window = self.window_base;
+        if (@as(u32, window) + count >= bc.no_reg) return error.RegisterLimitExceeded;
+        self.reg_count = @max(self.reg_count, window + count);
+
+        for (inst.operands, 0..) |field, i| {
+            try self.emit(allocator, .rr(.ig_mov, window + @as(u16, @intCast(i)), try self.reg(field)));
+        }
+
+        try self.emit(allocator, .rr(.ig_struct_pack, try self.reg(inst.result.?), window));
+        try self.emit(allocator, .i(.ig_extra, inst.data.struct_desc));
     }
 };

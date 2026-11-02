@@ -13,5 +13,5 @@ fn main() void {
     bar = { value = "hello!" },
   };
 
-  print({ foo });
+  println({ foo });
 }

@@ -1,6 +1,7 @@
 const std = @import("std");
 const bc = @import("bytecode.zig");
 const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
+const StructDesc = @import("../middle_end/ir/module.zig").StructDesc;
 
 pub const Function = struct {
     name: []const u8,
@@ -87,6 +88,7 @@ pub const ConstantPool = struct {
 
 pub const Module = struct {
     functions: std.ArrayList(Function),
+    struct_descs: std.ArrayList(StructDesc),
     constants: ConstantPool,
     global_count: u32,
     entry: ?u32,
@@ -100,12 +102,14 @@ pub const Module = struct {
             .global_count = 0,
             .entry = null,
             .init_fn = null,
+            .struct_descs = .empty,
         };
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.functions.deinit(allocator);
         self.constants.deinit(allocator);
+        self.struct_descs.deinit(allocator);
     }
 
     pub fn declareFunction(self: *Self, allocator: std.mem.Allocator, name: []const u8, param_count: u16, ret_type: SemaType) !u32 {

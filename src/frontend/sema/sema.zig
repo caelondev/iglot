@@ -136,9 +136,7 @@ pub const IglotSemanticAnalyzer = struct {
             },
             .struct_decl => |*s| {
                 const decl = try validateStructDeclaration(self, allocator, s) orelse return null;
-                return .{
-                    .struct_decl = decl
-                };
+                return .{ .struct_decl = decl };
             },
             .function_decl => |f| {
                 const decl = try validateFunctionDeclaration(self, allocator, &f) orelse return null;
