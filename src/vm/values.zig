@@ -8,4 +8,5 @@ pub const IglotValue = union(enum) {
 
     heap_ref: usize,
     builtin_ref: usize,
+    null,
 };

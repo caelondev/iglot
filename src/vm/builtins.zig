@@ -164,6 +164,7 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object, nest
 }
 
 fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue, nested: bool) std.Io.Writer.Error!void {
+    
     switch (v) {
         .int => |x| try out.print("{d}", .{x}),
         .wideint => |x| try out.print("{d}", .{x}),
@@ -172,6 +173,7 @@ fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue, nested:
         .bool => |x| try out.writeAll(if (x == 1) "true" else "false"),
         .func => |id| try out.print("<fn [{d}]>", .{id}),
         .builtin_ref => |ref| try out.print("<builtin fn [{d}]>", .{ref}),
+        .null => try out.writeAll("null"),
         .heap_ref => |ref| {
             const val = obj_heap.resolveRef(ref);
             try writeHeapValue(out, obj_heap, val, nested);

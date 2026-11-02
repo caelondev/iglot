@@ -1,6 +1,7 @@
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
 const builtins = @import("builtins.zig");
+const singleton = @import("singleton.zig");
 const Module = @import("../bytecode/module.zig").Module;
 const IglotValue = @import("values.zig").IglotValue;
 const ObjectHeap = @import("object_heap.zig").ObjectHeap;
@@ -104,7 +105,8 @@ pub const IglotVM = struct {
                     regs[ins.a] = .{ .heap_ref = ref };
                 },
 
-                .ig_const_bool => regs[ins.a] = .{ .bool = @intCast(ins.imm()) },
+                .ig_const_bool => regs[ins.a] = boolValue(ins.imm() == 1),
+                .ig_const_null => regs[ins.a] = singleton.IGLOT__NULL,
 
                 .ig_load_global => regs[ins.a] = self.globals.items[ins.imm()],
                 .ig_store_global => self.globals.items[ins.imm()] = regs[ins.a],
@@ -165,30 +167,20 @@ pub const IglotVM = struct {
                 .ig_neg_d => regs[ins.a] = .{ .double = -regs[ins.b].double },
 
                 .ig_eq_str => {
-                    const l_ref = regs[ins.b].heap_ref;
-                    const r_ref = regs[ins.c].heap_ref;
-
-                    const l_str = self.object_heap.resolveRef(l_ref).string;
-                    const r_str = self.object_heap.resolveRef(r_ref).string;
-                    regs[ins.a] = .{ .bool = @intFromBool(std.mem.eql(u8, l_str.bytes, r_str.bytes)) };
+                    const l_str = self.object_heap.resolveRef(regs[ins.b].heap_ref).string;
+                    const r_str = self.object_heap.resolveRef(regs[ins.c].heap_ref).string;
+                    regs[ins.a] = boolValue(std.mem.eql(u8, l_str.bytes, r_str.bytes));
                 },
 
                 .ig_ne_str => {
-                    const l_ref = regs[ins.b].heap_ref;
-                    const r_ref = regs[ins.c].heap_ref;
-
-                    const l_str = self.object_heap.resolveRef(l_ref).string;
-                    const r_str = self.object_heap.resolveRef(r_ref).string;
-                    regs[ins.a] = .{ .bool = @intFromBool(!std.mem.eql(u8, l_str.bytes, r_str.bytes)) };
+                    const l_str = self.object_heap.resolveRef(regs[ins.b].heap_ref).string;
+                    const r_str = self.object_heap.resolveRef(regs[ins.c].heap_ref).string;
+                    regs[ins.a] = boolValue(!std.mem.eql(u8, l_str.bytes, r_str.bytes));
                 },
 
-                .ig_and => regs[ins.a] = .{ .bool = @intFromBool((regs[ins.b].bool == 1) and (regs[ins.c].bool == 1)) },
-                .ig_or => regs[ins.a] = .{ .bool = @intFromBool((regs[ins.b].bool == 1) or (regs[ins.c].bool == 1)) },
-
-                .ig_not => {
-                    const val: u1 = if (regs[ins.b].bool == 1) 0 else 1;
-                    regs[ins.a] = .{ .bool = val };
-                },
+                .ig_and => regs[ins.a] = boolValue(regs[ins.b].bool == 1 and regs[ins.c].bool == 1),
+                .ig_or => regs[ins.a] = boolValue(regs[ins.b].bool == 1 or regs[ins.c].bool == 1),
+                .ig_not => regs[ins.a] = boolValue(regs[ins.b].bool == 0),
 
                 .ig_mov => regs[ins.a] = regs[ins.b],
                 .ig_jmp => frame.pc = ins.imm(),
@@ -291,9 +283,13 @@ pub const IglotVM = struct {
 
 const ValueKind = std.meta.Tag(IglotValue); // .int, .wideint, .float, .double, .func
 
-fn cmp(comptime kind: ValueKind, comptime op: std.math.CompareOperator, a: IglotValue, b: IglotValue) IglotValue {
+inline fn boolValue(b: bool) IglotValue {
+    return if (b) singleton.IGLOT__BOOLEAN__TRUE else singleton.IGLOT__BOOLEAN__FALSE;
+}
+
+inline fn cmp(comptime kind: ValueKind, comptime op: std.math.CompareOperator, a: IglotValue, b: IglotValue) IglotValue {
     const field = @tagName(kind);
-    return .{ .bool = @intFromBool(std.math.compare(@field(a, field), op, @field(b, field))) };
+    return boolValue(std.math.compare(@field(a, field), op, @field(b, field)));
 }
 
 inline fn negWideInt(regs: []IglotValue, ins: bc.Instruction) !i128 {
