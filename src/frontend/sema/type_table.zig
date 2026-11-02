@@ -169,13 +169,32 @@ pub const SemaType = union(enum) {
                     .expr => |e| try sema.resolveArraySize(allocator, e, type_expr.span),
                 };
 
+                const elem = try resolve(sema, allocator, a.element_type.*) orelse return null;
+                if (try elem.rejectVoid(sema, allocator, a.element_type.span, "an array element type")) return null;
+
                 const elem_ptr = try allocator.create(SemaType);
-                elem_ptr.* = try resolve(sema, allocator, a.element_type.*) orelse return null;
+                elem_ptr.* = elem;
 
                 break :blk .{ .array = .{ .size = size, .element_type = elem_ptr } };
             },
             .constant => |c| try resolve(sema, allocator, c.*),
         };
+    }
+
+    pub fn rejectVoid(
+        self: SemaType,
+        sema: *IglotSemanticAnalyzer,
+        allocator: std.mem.Allocator,
+        span: Span,
+        context: []const u8,
+    ) !bool {
+        if (self != .void) return false;
+
+        try sema.reportError(allocator, .{
+            .span = span,
+            .kind = .{ .InvalidVoidType = .{ .context = context } },
+        });
+        return true;
     }
 
     pub fn format(self: SemaType, writer: *std.Io.Writer) !void {

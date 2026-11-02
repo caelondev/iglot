@@ -1,17 +1,5 @@
-struct Bar: {
-  value :: string,
-}
-
-struct Foo: {
-  value :: int,
-  bar :: Bar,
-}
-
 fn main() void {
-  foo :: Foo = {
-    value = 100,
-    bar = { value = "hello!" },
-  };
-
+  foo :: [10]void = {};
   println({ foo });
 }
+

@@ -89,6 +89,7 @@ pub const IglotDiagnostic = struct {
         DuplicateFieldInit: struct { name: []const u8 },
         UnknownField: struct { name: []const u8, struct_name: []const u8 },
         MissingField: struct { name: []const u8, struct_name: []const u8 },
+        InvalidVoidType: struct { context: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -140,6 +141,7 @@ pub const IglotDiagnostic = struct {
                 .DuplicateFieldInit => |d| try writer.print("field \"{s}\" is initialized more than once", .{d.name}),
                 .UnknownField => |u| try writer.print("struct \"{s}\" has no field \"{s}\"", .{ u.struct_name, u.name }),
                 .MissingField => |m| try writer.print("missing field \"{s}\" in initializer of struct \"{s}\"", .{ m.name, m.struct_name }),
+                .InvalidVoidType => |v| try writer.print("\"void\" cannot be used as {s}", .{v.context}),
             }
         }
     };
