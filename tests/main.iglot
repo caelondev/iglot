@@ -1,5 +1,5 @@
-fn main() void {
-  foo ::= returns_void();
+struct Foo: {
+  value :: void, -- should error now
 }
 
-fn returns_void() void {}
+fn main() void {}

@@ -99,12 +99,18 @@ fn validateFields(
 
         gop.value_ptr.* = @intCast(t_fields.items.len);
 
-        const s_type_ptr = try allocator.create(tt.SemaType);
-        s_type_ptr.* = (try tt.SemaType.fromTypeExpression(sema, allocator, f.type_expr)) orelse blk: {
+        var s_type = try tt.SemaType.fromTypeExpression(sema, allocator, f.type_expr) orelse blk: {
             had_error.* = true;
             break :blk .err;
         };
 
+        if (try s_type.rejectVoid(sema, allocator, f.type_expr.span, "a struct field type")) {
+            had_error.* = true;
+            s_type = .err;
+        }
+
+        const s_type_ptr = try allocator.create(tt.SemaType);
+        s_type_ptr.* = s_type;
         try t_fields.append(allocator, .{
             .name = f.name.value,
             .sema_type = s_type_ptr,
