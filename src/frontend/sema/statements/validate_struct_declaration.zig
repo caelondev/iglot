@@ -35,25 +35,34 @@ pub fn validateStructDeclaration(
         return null;
     }
 
-    var name_index_map: std.StringHashMap(u32) = .init(allocator);
-    var had_error = false;
+    const decl = try allocator.create(tt.SemaType.Struct);
+    decl.* = .{
+        .name = s.name.value,
+        .fields = &.{},
+        .name_index_map = .init(allocator),
+    };
 
-    const typed_fields = try validateFields(sema, allocator, s.fields, &name_index_map, &had_error);
-
-    // declared even when a field failed, so later uses of the struct don't
-    // pile "undefined identifier" errors on top of the real one. bad fields
-    // carry the `.err` poison type, which stops follow-up reports.
     try sema.type_table.declareType(allocator, s.name.value, .{
         .span = s.span,
         .mutability = .@"struct",
-        .sem_type = .{
-            .@"struct" = .{
-                .name = s.name.value,
-                .fields = typed_fields,
-                .name_index_map = name_index_map,
-            },
-        },
+        .sem_type = .{ .@"struct" = decl },
     });
+
+    var had_error = false;
+
+    const typed_fields = try validateFields(sema, allocator, s.fields, &decl.name_index_map, &had_error);
+    decl.fields = typed_fields;
+    var seen: std.ArrayList(*const tt.SemaType.Struct) = .empty;
+    for (typed_fields) |f| {
+        if (try containsByValue(f.sema_type.*, decl, &seen, allocator)) {
+            try sema.reportError(allocator, .{
+                .span = f.span,
+                .kind = .{ .RecursiveStruct = .{ .name = s.name.value } },
+            });
+            had_error = true;
+            break;
+        }
+    }
 
     if (had_error) return null;
 
@@ -119,6 +128,40 @@ fn validateFields(
     }
 
     return try t_fields.toOwnedSlice(allocator);
+}
+
+/// true if `target` can be reached from `t` without passing through a
+/// nullable. a struct that contains itself that way has no valid value.
+fn containsByValue(t: tt.SemaType, target: *const tt.SemaType.Struct, seen: *std.ArrayList(*const tt.SemaType.Struct), allocator: std.mem.Allocator) !bool {
+    switch (t) {
+        .@"struct" => |s| {
+            if (s == target) return true;
+            for (seen.items) |v| if (v == s) return false;
+            try seen.append(allocator, s);
+            for (s.fields) |f| {
+                if (try containsByValue(f.sema_type.*, target, seen, allocator)) return true;
+            }
+            return false;
+        },
+        .constant => |c| return containsByValue(c.*, target, seen, allocator),
+        .array => |a| return containsByValue(a.element_type.*, target, seen, allocator),
+
+        .nullable,
+        .null,
+        .any,
+        .bool,
+        .char,
+        .double,
+        .err,
+        .float,
+        .function,
+        .int,
+        .number,
+        .string,
+        .void,
+        .wideint,
+        => return false,
+    }
 }
 
 /// index of the first ast field named `name`, searching before `limit`.

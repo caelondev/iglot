@@ -101,16 +101,22 @@ fn validateNamedRoute(
     span: Span,
     expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
-    const expected = expected_type orelse {
+    const expected_raw = expected_type orelse {
         try sema.reportError(allocator, .{ .span = span, .kind = .CannotInferLiteralType });
         return null;
     };
 
-    if (expected == .err) return null;
+    if (expected_raw == .err) return null;
+
+    const expected: tt.SemaType = switch (expected_raw) {
+        .nullable => |inner| inner.*,
+        else => expected_raw,
+    };
+
     if (expected != .@"struct") {
         try sema.reportError(allocator, .{
             .span = span,
-            .kind = .{ .NamedFieldsRequireStruct = .{ .found = expected } },
+            .kind = .{ .NamedFieldsRequireStruct = .{ .found = expected_raw } },
         });
         return null;
     }
@@ -133,7 +139,7 @@ fn validateFieldValues(
     sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
     fields: []ast.BareBraceExpression.FieldInit,
-    decl: tt.SemaType.Struct,
+    decl: *tt.SemaType.Struct,
     span: Span,
 ) anyerror!?[]*typed_ast.TypedExpr {
     const slots = try allocator.alloc(?*typed_ast.TypedExpr, decl.fields.len);

@@ -1,10 +1,17 @@
-<vdiv align="center">
+<div align="center">
 
   <h1><strong>iglot</strong></h1>
 
   <br>
 
 [Repository](https://codeberg.org/caelondev/iglot) · [Issues](https://codeberg.org/caelondev/iglot/issues)
+
+  <br>
+
+  <a href="https://notbyai.fyi/">
+    <img src="./assets/not-by-ai.svg" alt="written by a human, not by AI" height="42">
+  </a>
+
 </div>
 
 Iglot is a statically-typed programming language built around clarity and control.

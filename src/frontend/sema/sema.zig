@@ -9,9 +9,9 @@ const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
+const builtins_table = @import("../../vm/builtins.zig").table;
 const lookupBuiltin = @import("../../vm/builtins.zig").lookupBuiltin;
 const checkArrayLen = @import("expressions/validate_array_expr.zig").checkArrayLen;
-const builtins_table = @import("../../vm/builtins.zig").table;
 
 const validateBinaryExpr = @import("expressions/validate_binary_expr.zig").validateBinaryExpr;
 const validateUnaryExpr = @import("expressions/validate_unary_expr.zig").validateUnaryExpr;

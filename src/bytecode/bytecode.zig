@@ -202,6 +202,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         => .n,
 
         .ig_ret,
+        .ig_const_null,
         => .r,
 
         .ig_neg_i,

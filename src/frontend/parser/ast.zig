@@ -101,6 +101,7 @@ pub const Expression = struct {
         array: ArrayExpression,
         bare_brace: BareBraceExpression,
         index_expr: IndexExpression,
+        member: MemberExpression,
         call: CallExpression,
     };
 };
@@ -204,6 +205,11 @@ pub const StructLiteral = struct {
         name: IdentifierExpression,
         value: *Expression,
     };
+};
+
+pub const MemberExpression = struct {
+    object: *Expression,
+    property: IdentifierExpression,
 };
 
 // STATEMENTS

@@ -292,7 +292,7 @@ pub const IglotIR = struct {
     /// descriptor id for a struct type, created on first use. keyed by name,
     /// same as SemaType.eql. the descriptor holds the field names so debug
     /// output and runtime printing can show them.
-    pub fn internStruct(self: *Self, allocator: std.mem.Allocator, s: tt.SemaType.Struct) !u32 {
+    pub fn internStruct(self: *Self, allocator: std.mem.Allocator, s: *tt.SemaType.Struct) !u32 {
         if (self.struct_ids.get(s.name)) |id| return id;
 
         const id: u32 = @intCast(self.module.struct_descs.items.len);

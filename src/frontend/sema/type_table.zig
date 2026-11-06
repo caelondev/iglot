@@ -31,7 +31,7 @@ pub const SemaType = union(enum) {
     void,
 
     function: Function,
-    @"struct": Struct,
+    @"struct": *Struct,
     array: Array,
     constant: *SemaType,
     nullable: *SemaType,

@@ -91,6 +91,7 @@ pub const IglotDiagnostic = struct {
         MissingField: struct { name: []const u8, struct_name: []const u8 },
         InvalidVoidType: struct { context: []const u8 },
         InvalidNullableType: struct { inner: SemaType },
+        RecursiveStruct: struct { name: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -156,6 +157,7 @@ pub const IglotDiagnostic = struct {
                 .MissingField => |m| try writer.print("missing field \"{s}\" in initializer of struct \"{s}\"", .{ m.name, m.struct_name }),
                 .InvalidVoidType => |v| try writer.print("\"void\" cannot be used as {s}", .{v.context}),
                 .InvalidNullableType => |t| try writer.print("cannot make type \"{f}\" nullable", .{t.inner}),
+                .RecursiveStruct => |r| try writer.print("struct \"{s}\" contains itself and can never be constructed", .{r.name}),
             }
         }
     };

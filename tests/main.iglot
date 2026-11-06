@@ -1,7 +1,16 @@
-fn main() void {
-  message :: ?string = null;
-  println({ message });
+struct Node: {
+    value :: int,
+    next  :: ?Node,
+}
 
-  message = "hello, world!";
-  println({ message });
+fn main() void {
+    head :: Node = {
+      value = 10,
+      next = {
+          value = 20,
+          next = null,
+      },
+    };
+
+    println({ head.value.value.value });
 }
