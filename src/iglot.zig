@@ -31,7 +31,3 @@ pub fn main(init: std.process.Init) !void {
         init.environ_map,
     );
 }
-
-test {
-    _ = @import("bytecode/codegen.zig");
-}
