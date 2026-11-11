@@ -147,7 +147,7 @@ pub const led_exprs = [_]LeftDenotedExpr{
     },
     .{
         .token_kind = .dot,
-        .callback = @import("led/call_expression.zig").parseCallExpression,
+        .callback = @import("led/member_expression.zig").parseMemberExpression,
     },
 };
 

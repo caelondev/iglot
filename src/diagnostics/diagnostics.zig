@@ -92,6 +92,7 @@ pub const IglotDiagnostic = struct {
         InvalidVoidType: struct { context: []const u8 },
         InvalidNullableType: struct { inner: SemaType },
         RecursiveStruct: struct { name: []const u8 },
+        NonStructAccess: struct { sem_type: SemaType },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -158,6 +159,7 @@ pub const IglotDiagnostic = struct {
                 .InvalidVoidType => |v| try writer.print("\"void\" cannot be used as {s}", .{v.context}),
                 .InvalidNullableType => |t| try writer.print("cannot make type \"{f}\" nullable", .{t.inner}),
                 .RecursiveStruct => |r| try writer.print("struct \"{s}\" contains itself and can never be constructed", .{r.name}),
+                .NonStructAccess => |n| try writer.print("cannot access members: expected a struct, found \"{f}\"", .{n.sem_type}),
             }
         }
     };
