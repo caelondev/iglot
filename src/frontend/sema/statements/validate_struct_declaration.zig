@@ -123,6 +123,7 @@ fn validateFields(
         try t_fields.append(allocator, .{
             .name = f.name.value,
             .sema_type = s_type_ptr,
+            .mutability = f.type_expr.mutability,
             .span = f.name.span,
         });
     }

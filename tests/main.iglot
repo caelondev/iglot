@@ -1,16 +1,10 @@
-struct Node: {
-    value :: int,
-    next  :: ?Node,
+fn main() void {
+  x :: wideint = 10;
+  value ::= x + 7;
+  println({ value, fib(20) });
 }
 
-fn main() void {
-    head :: Node = {
-      value = 10,
-      next = {
-          value = 20,
-          next = null,
-      },
-    };
-
-    println({ head.value.value.value });
+fn fib(n :: wideint) wideint {
+  if n <= 1: return n;
+  return fib(n - 1) + fib(n - 2);
 }

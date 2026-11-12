@@ -328,7 +328,7 @@ pub const IglotSemanticAnalyzer = struct {
             .call => |*c| validateCallExpr(self, allocator, c, span),
 
             .index_expr => |*i| validateIndexExpr(self, allocator, i, span),
-            .member => |*m| validateMemberExpr(self, allocator, m, span, expected_type),
+            .member => |*m| validateMemberExpr(self, allocator, m, span),
         };
     }
 

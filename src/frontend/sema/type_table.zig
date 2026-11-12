@@ -65,6 +65,7 @@ pub const SemaType = union(enum) {
         pub const Field = struct {
             name: []const u8,
             sema_type: *SemaType,
+            mutability: ast.TypeExpression.Mutability,
             span: Span,
         };
     };

@@ -87,7 +87,13 @@ pub const TypedExpr = struct {
         array: TypedArrayExpr,
         index: TypedIndexExpr,
         struct_init: TypedStructInitializationExpression,
+        member: TypedMemberExpr,
     },
+};
+
+pub const TypedMemberExpr = struct {
+    object: *TypedExpr,
+    property: TypedIdentifier,
 };
 
 pub const TypedCallExpr = struct {

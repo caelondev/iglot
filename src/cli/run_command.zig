@@ -122,7 +122,7 @@ pub fn run(ctx: *Context) !void {
     var codegen: IglotCodegen = .init();
     const module = try codegen.generate(allocator, ir_module);
 
-    try dumpBytecode(writer, module);
+    // try dumpBytecode(writer, module);
 
     // stdin. buffer is just the read chunk size, prompt() streams
     // into a growing allocator so line length isn't capped by it

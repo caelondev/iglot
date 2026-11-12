@@ -11,11 +11,7 @@ pub fn validateMemberExpr(
     allocator: std.mem.Allocator,
     m: *const ast.MemberExpression,
     span: Span,
-    expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
-    _ = span; // autofix
-    _ = expected_type; // autofix
-
     const obj = try sema.validateExpression(allocator, m.object, m.object.span, null) orelse return null;
     const struct_type: *tt.SemaType.Struct = switch (obj.sem_type) {
         .@"struct" => |s| s,
@@ -27,7 +23,26 @@ pub fn validateMemberExpr(
             return null;
         },
     };
-    _ = struct_type; // autofix
 
-    return null;
+    const field_idx = struct_type.name_index_map.get(m.property.value) orelse {
+        try sema.reportError(allocator, .{
+            .kind = .{ .UnknownField = .{ .name = m.property.value, .struct_name = struct_type.name } },
+            .span = obj.span,
+        });
+        return null;
+    };
+
+    const field = struct_type.fields[field_idx];
+
+    const result = try allocator.create(typed_ast.TypedExpr);
+    result.* = .{
+        .kind = .{ .member = .{
+            .object = obj,
+            .property = .{ .value = field.name, .mutability = field.mutability },
+        } },
+        .span = span,
+        .sem_type = field.sema_type.*,
+    };
+
+    return result;
 }

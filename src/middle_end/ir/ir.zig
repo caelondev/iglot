@@ -222,6 +222,7 @@ pub const IglotIR = struct {
             .index => |*i| try buildIndexExpr(self, allocator, i),
 
             .struct_init => |*s| try buildStructInitExpr(self, allocator, s, sema_type),
+            .member => unreachable,
         };
     }
 
