@@ -14,7 +14,11 @@ pub fn validateBinaryExpr(
     expected_type: ?tt.SemaType,
 ) anyerror!?*typed_ast.TypedExpr {
     const left = try sema.validateExpression(allocator, b.left, b.left.span, expected_type) orelse return null;
-    const right = try sema.validateExpression(allocator, b.right, b.right.span, expected_type) orelse return null;
+
+    // expected_type is null if the type of this expression is inferred.
+    // so we just inherit left's type
+    const expected = if (expected_type == null) left.sem_type else expected_type.?;
+    const right = try sema.validateExpression(allocator, b.right, b.right.span, expected) orelse return null;
 
     if (!left.sem_type.eql(right.sem_type)) {
         try sema.reportError(allocator, .{
