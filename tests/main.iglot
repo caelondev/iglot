@@ -9,4 +9,5 @@ fn main() void {
   };
 
   println({ bin.left + bin.right });
+  return;
 }

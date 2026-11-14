@@ -1,0 +1,42 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "iglot",
+      "camelcase": "Iglot",
+      "title": "Iglot",
+      "scope": "source.iglot",
+      "file-types": [
+        "iglot"
+      ],
+      "injection-regex": "^iglot$",
+      "class-name": "TreeSitterIglot"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "GNU AGPLV3",
+    "description": "A statically typed programming language focused on clarity, explicit control, and readability",
+    "authors": [
+      {
+        "name": "caelondev",
+        "email": "me@caelondev.net",
+        "url": "https://caelondev.net"
+      }
+    ],
+    "links": {
+      "repository": "https://codeberg.org/caelondev/iglot",
+      "funding": ""
+    }
+  },
+  "bindings": {
+    "c": false,
+    "go": false,
+    "java": false,
+    "node": true,
+    "python": false,
+    "rust": false,
+    "swift": false,
+    "zig": false
+  }
+}
