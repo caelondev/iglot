@@ -74,6 +74,11 @@ pub fn printInstruction(writer: *std.Io.Writer, instr: ir.Instruction) !void {
 
         .builtin => |b| try writer.print(" '{d}", .{b}),
 
+        .field_index => |idx| {
+            try writer.print(" .{d}", .{idx});
+            try printOperandList(writer, instr.operands, " ", ", ");
+        },
+
         .index => |idx| {
             try writer.print(" #{d}", .{idx.id});
             try printOperandList(writer, instr.operands, " ", ", ");
@@ -135,5 +140,6 @@ fn printConstant(writer: *std.Io.Writer, c: ir.ConstantValue) !void {
         .string => |s| try writer.print("\"{s}\"", .{s}),
         .bool => |b| try writer.print("{}", .{b}),
         .func => |f| try writer.print("@fn {d}", .{f.id}),
+        .null => try writer.writeAll("null"),
     }
 }

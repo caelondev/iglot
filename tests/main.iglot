@@ -1,10 +1,29 @@
-fn main() void {
-  x :: wideint = 10;
-  value ::= x + 7;
-  println({ value, fib(20) });
+struct Address: {
+  country :: string,
+  province :: string,
+  street :: ?string,
 }
 
-fn fib(n :: wideint) wideint {
-  if n <= 1: return n;
-  return fib(n - 1) + fib(n - 2);
+struct Details: {
+    address :: Address,
+}
+
+struct User: {
+    name :: string,
+    details :: Details,
+}
+
+fn main() void {
+  head :: User = {
+    name = "bob",
+    details = {
+      address = {
+        country = "Philippines",
+        province = "Manila",
+        street = null,
+      },
+    },
+  };
+
+  println({ head.details.address });
 }

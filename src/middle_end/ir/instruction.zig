@@ -45,6 +45,8 @@ pub const Opcode = enum {
 
     // struct
     struct_pack,
+    struct_get,
+    struct_set,
 
     // control flow
     br,
@@ -82,6 +84,7 @@ pub const Instruction = struct {
         constant: ConstantValue,
         branch_target: BlockRef,
         size: usize,
+        field_index: u32,
         index: VReg,
         global: GlobalRef,
         builtin: u16,

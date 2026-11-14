@@ -27,6 +27,7 @@ const buildArrayExpr = @import("expressions/array.zig").buildArrayExpr;
 const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 const buildIndexExpr = @import("expressions/index.zig").buildIndexExpr;
 const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructInitExpr;
+const buildMemberExpr = @import("expressions/member.zig").buildMemberExpr;
 
 const LoopContext = struct {
     break_block: inst.BlockRef,
@@ -222,7 +223,7 @@ pub const IglotIR = struct {
             .index => |*i| try buildIndexExpr(self, allocator, i),
 
             .struct_init => |*s| try buildStructInitExpr(self, allocator, s, sema_type),
-            .member => unreachable,
+            .member => |*m| try buildMemberExpr(self, allocator, m),
         };
     }
 

@@ -15,6 +15,7 @@ pub fn validateMemberExpr(
     const obj = try sema.validateExpression(allocator, m.object, m.object.span, null) orelse return null;
     const struct_type: *tt.SemaType.Struct = switch (obj.sem_type) {
         .@"struct" => |s| s,
+        .err => return null,
         else => {
             try sema.reportError(allocator, .{
                 .kind = .{ .NonStructAccess = .{ .sem_type = obj.sem_type } },
