@@ -86,6 +86,6 @@ pub const Precedence = enum(u8) {
     }
 
     pub fn toInt(self: Precedence) u8 {
-        return @intFromEnum(self);
+        return @backingInt(self);
     }
 };

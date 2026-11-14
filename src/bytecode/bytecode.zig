@@ -124,7 +124,7 @@ pub const IglotOpcode = enum(u8) {
     const Self = @This();
 
     pub fn fromByte(byte: u8) Self {
-        return @fromBackingInt(@intCast(byte));
+        return @fromBackingInt(byte);
     }
 };
 
