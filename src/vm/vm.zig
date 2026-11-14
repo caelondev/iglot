@@ -237,6 +237,16 @@ pub const IglotVM = struct {
                     arr.elements[@intCast(idx)] = regs[ins.c];
                 },
 
+                .ig_struct_get => {
+                    const dest_reg = ins.a;
+                    const obj_ref = regs[ins.b].heap_ref;
+                    const extra = frame.code[frame.pc];
+                    frame.pc += 1;
+
+                    const obj = self.object_heap.objects.items[obj_ref];
+                    regs[dest_reg] = obj.struct_init.fields[extra.imm()];
+                },
+
                 .ig_call => {
                     const callee = regs[ins.a].func;
                     const new_base = frame.base + ins.a + 1; // skip callee

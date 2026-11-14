@@ -112,18 +112,19 @@ pub const IglotOpcode = enum(u8) {
     ig_array_get = 0xD5,
     ig_array_set = 0xD6,
     ig_struct_pack = 0xD7,
+    ig_struct_get = 0xD8,
+    ig_struct_set = 0xD9,
+
+    // 0xE0 to 0xFD reserved for future instructions
 
     // payload word for the previous instruction, never dispatched
-    ig_extra = 0xD8,
-
-    // 0xE0 to 0xFE reserved for future instructions
-
+    ig_extra = 0xFE,
     ig_trap = 0xFF, // ir @"unreachable"
 
     const Self = @This();
 
     pub fn fromByte(byte: u8) Self {
-        return @enumFromInt(byte);
+        return @fromBackingInt(@intCast(byte));
     }
 };
 
@@ -212,6 +213,8 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_not,
         .ig_mov,
         .ig_struct_pack,
+        .ig_struct_get,
+        .ig_struct_set,
         => .rr,
 
         .ig_add_i,

@@ -1,29 +1,12 @@
-struct Address: {
-  country :: string,
-  province :: string,
-  street :: ?string,
-}
-
-struct Details: {
-    address :: Address,
-}
-
-struct User: {
-    name :: string,
-    details :: Details,
+struct BinaryNode: {
+  left :: int,
+  right :: int,
 }
 
 fn main() void {
-  head :: User = {
-    name = "bob",
-    details = {
-      address = {
-        country = "Philippines",
-        province = "Manila",
-        street = null,
-      },
-    },
+  bin :: BinaryNode = {
+    left = 50, right = 100,
   };
 
-  println({ head.details.address });
+  println({ bin.left + bin.right });
 }

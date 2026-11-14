@@ -128,6 +128,10 @@ pub const IglotCodegen = struct {
             .call_builtin => try self.genBuiltinCall(allocator, ins),
             .array_get => try self.emit(allocator, .rrr(.ig_array_get, try self.reg(ins.result.?), try self.reg(ins.operands[0]), try self.reg(ins.data.index))),
             .array_set => try self.emit(allocator, .rrr(.ig_array_set, try self.reg(ins.operands[0]), try self.reg(ins.data.index), try self.reg(ins.operands[1]))),
+            .struct_get => {
+                try self.emit(allocator, .rr(.ig_struct_get, try self.reg(ins.result.?), try self.reg(ins.operands[0])));
+                try self.emit(allocator, .i(.ig_extra, ins.data.field_index));
+            },
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});
@@ -205,6 +209,7 @@ pub const IglotCodegen = struct {
             .cond_branch => |cb| if (next == cb.true_block.id or next == cb.false_block.id) 1 else 2,
             .call => 2 + @as(u32, @intCast(ins.operands.len)),
             .builtin => 1 + @as(u32, @intCast(ins.operands.len)),
+            .field_index => 2,
             else => 1,
         };
     }
