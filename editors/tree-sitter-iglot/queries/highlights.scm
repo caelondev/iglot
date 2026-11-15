@@ -9,6 +9,14 @@
 
 "fin" @keyword.special
 
+"break" @keyword.special
+
+"if" @keyword.special
+
+"else" @keyword.special
+
+"loop" @keyword.special
+
 ; comments
 (comment) @comment
 

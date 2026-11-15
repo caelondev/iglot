@@ -71,11 +71,12 @@ export default grammar({
     ),
     params: $ => commaSep1($.parameter),
 
-    block: $ => seq(
+    block: $ => prec(2, seq(
+      ":",
       "{",
-      optional(repeat($._statement)),
+      repeat($._statement),
       "}",
-    ),
+    )),
 
     struct_decl: $ => seq("struct", $.identifier, $.type_block),
     type_decl: $ => seq(
@@ -113,6 +114,9 @@ export default grammar({
       $.variable_decl,
       $.return_stmt,
       $.expression_stmt,
+      $.break_stmt,
+      $.if_stmt,
+      $.loop,
     ),
 
     expression_stmt: $ => seq(
@@ -134,6 +138,25 @@ export default grammar({
       field("value", $._expression),
       ";",
     ),
+
+    break_stmt: $ => seq("break", ";"),
+
+    if_stmt: $ => prec.right(seq(
+      "if",
+      $._expression,
+      choice($.block, seq(":", $._statement)),
+      optional($.else_branch),
+    )),
+
+    else_branch: $ => seq(
+      "else",
+      choice(
+        $._statement,
+        seq(":", $.block),
+      ),
+    ),
+
+    loop: $ => seq("loop", $.block),
 
     _expression: $ => choice(
       $.boolean,
