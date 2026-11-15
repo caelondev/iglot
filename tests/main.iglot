@@ -17,10 +17,9 @@ fn main() void {
   loop {
     if i >= ARRAY_LEN: break;
     node ::= bin.[i];
-    accumulator = accumulator + node.left + node.right;
+    accumulator = accumulator + node.left + node.right();
     i = i + 1;
   }
 
   println({ "accumulated:", accumulator });
-  return;
 }

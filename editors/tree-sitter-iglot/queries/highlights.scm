@@ -5,6 +5,10 @@
 
 "struct" @keyword.special
 
+"const" @keyword.special
+
+"fin" @keyword.special
+
 ; comments
 (comment) @comment
 
@@ -22,6 +26,8 @@
 "}" @punctuation.bracket
 
 "[" @punctuation.bracket
+
+".[" @punctuation.bracket
 
 "]" @punctuation.bracket
 
@@ -71,12 +77,23 @@
 
 (string) @string
 
+(member
+  property: (identifier) @property)
+
 (call
   callee: (identifier) @function)
+
+((call
+  callee: (member
+    property: (identifier) @function.method))
+  (#set! priority 110))
 
 (bare_brace
   (field_init
     name: (identifier) @property))
+
+(member
+  property: (identifier) @property)
 
 ; decls
 (function_decl

@@ -53,6 +53,7 @@ export default grammar({
     _declaration: $ => choice(
       $.function_decl,
       $.struct_decl,
+      $.variable_decl,
     ),
     function_decl: $ => seq(
       "fn",
@@ -85,16 +86,21 @@ export default grammar({
     type_block: $ => seq(":", "{", optional(commaSep1($.type_decl)), "}"),
 
     _type: $ => choice(
-      $.primitive_type,
       alias($.identifier, $.type_identifier),
+      $.primitive_type,
       $.nullable,
       $.array,
+      $.final,
+      $.constant,
     ),
 
     primitive_type: $ => choice(
       "int", "bigint", "float", "double",
       "bool", "string", "null", "void",
     ),
+
+    constant: $ => prec(1, seq("const", $._type)),
+    final: $ => prec(1, seq("fin", $._type)),
 
     nullable: $ => seq(
       "?",
@@ -140,6 +146,9 @@ export default grammar({
       $.call,
       $.binary_expression,
       $.bare_brace,
+      $.index,
+      $.member,
+      $.assign,
     ),
 
     boolean: $ => choice("true", "false"),
@@ -150,7 +159,7 @@ export default grammar({
     comment: _ => /--[^\n]*/,
     string: $ => /"([^"\\]|\\.)*"/,
     group: $ => seq("(", $._expression, ")"),
-    call: $ => seq(field("callee", $.identifier), "(", commaSep1($._expression), ")"),
+    call: $ => prec.left(PREC.postfix, seq(field("callee", $._expression), "(", optional(commaSep1($._expression)), ")")),
     binary_expression: $ => choice(
       ...BINARY_OPS.map(([op, p]) =>
         prec.left(p, seq(
@@ -175,6 +184,29 @@ export default grammar({
       field("name", $.identifier),
       "=",
       field("value", $._expression),
+    ),
+
+    index: $ => prec.left(PREC.postfix, seq(
+      field("left", $._expression),
+      ".[",
+      field("index", $._expression),
+      "]",
+    )),
+    member: $ => prec.left(
+      PREC.postfix,
+      seq(
+        field("object", $._expression),
+        ".",
+        field("property", $.identifier),
+      ),
+    ),
+    assign: $ => prec.right(
+      PREC.assign,
+      seq(
+        field("assignee", $._expression),
+        "=",
+        field("value", $._expression),
+      )
     ),
   }
 });
