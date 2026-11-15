@@ -218,7 +218,7 @@ pub const IglotVM = struct {
                         else => unreachable,
                     };
 
-                    const arr = self.object_heap.resolveRef(@intCast(ins.b)).array;
+                    const arr = self.object_heap.resolveRef(regs[ins.b].heap_ref).array;
                     if (idx < 0 or idx >= arr.len) return error.IndexOutOfBounds;
 
                     regs[ins.a] = arr.elements[@intCast(idx)];
@@ -231,7 +231,7 @@ pub const IglotVM = struct {
                         else => unreachable,
                     };
 
-                    const arr = self.object_heap.resolveRef(@intCast(ins.a)).array;
+                    const arr = self.object_heap.resolveRef(regs[ins.b].heap_ref).array;
                     if (idx < 0 or idx >= arr.len) return error.IndexOutOfBounds;
 
                     arr.elements[@intCast(idx)] = regs[ins.c];
