@@ -1,11 +1,14 @@
-fn number(a :: int) int {
-  true;
-  false;
-  null;
-  "test";
-  10;
-  10.5;
-  x ::= "hello";
-  y :: int = a;
-  return a;
+struct BinaryNode: {
+  left :: int,
+  right :: int,
+}
+
+fn main() void {
+  -- comment test
+  bin :: BinaryNode = {
+    .left = 50, .right = 100,
+  };
+
+  println({ bin.left + bin.right });
+  return;
 }

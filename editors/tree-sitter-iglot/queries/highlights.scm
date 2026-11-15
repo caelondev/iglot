@@ -1,7 +1,12 @@
 ; keywords
 "fn" @keyword
 
-"return" @keyword
+"return" @keyword.special
+
+"struct" @keyword.special
+
+; comments
+(comment) @comment
 
 ; symbols
 "::" @operator
@@ -10,12 +15,36 @@
 
 ";" @punctuation.delimiter
 
+":" @punctuation
+
+"{" @punctuation.bracket
+
+"}" @punctuation.bracket
+
+"[" @punctuation.bracket
+
+"]" @punctuation.bracket
+
+"(" @punctuation.bracket
+
+")" @punctuation.bracket
+
+"?" @punctuation
+; "!" @punctuation
+; "," @punctuation
+; "." @punctuation
+; "+" @punctuation
+; "-" @punctuation
+; "*" @punctuation
+; "/" @punctuation
+
 ; primitives
 (boolean) @boolean
 
 (null) @boolean
 
-(primitive_type) @type
+(primitive_type) @type.builtin
+
 (type_identifier) @type
 
 (integer) @number
@@ -30,3 +59,9 @@
 
 (variable_decl
   name: (identifier) @variable)
+
+(struct_decl
+  (identifier) @type
+  (type_block
+    (type_decl
+      name: (identifier) @property)))
