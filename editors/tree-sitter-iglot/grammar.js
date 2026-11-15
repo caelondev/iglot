@@ -8,13 +8,34 @@
 // @ts-check
 
 const PREC = {
-  lowest: 0,
-  equality: 1,
-  comparison: 2,
-  additive: 3,
-  multiplicative: 4,
+  assign: 1,
+  or: 2,
+  and: 3,
+  equality: 4,
+  comparison: 5,
+  additive: 6,
+  multiplicative: 7,
+  unary: 8,
+  postfix: 9, // call, index, member
 };
 
+/** @type {[string, number][]} */
+const BINARY_OPS = [
+  ["==", PREC.equality],
+  ["!=", PREC.equality],
+  ["<", PREC.comparison],
+  [">", PREC.comparison],
+  ["<=", PREC.comparison],
+  [">=", PREC.comparison],
+  ["+", PREC.additive],
+  ["-", PREC.additive],
+  ["*", PREC.multiplicative],
+  ["/", PREC.multiplicative],
+];
+
+/**
+ * @param {RuleOrLiteral} rule
+ */
 function commaSep1(rule) {
   return seq(rule, repeat(seq(",", rule)), optional(","));
 }
@@ -130,21 +151,10 @@ export default grammar({
     group: $ => seq("(", $._expression, ")"),
     call: $ => seq(field("callee", $.identifier), "(", commaSep1($._expression), ")"),
     binary_expression: $ => choice(
-      ...[
-        ["==", PREC.equality],
-        ["!=", PREC.equality],
-        ["<", PREC.comparison],
-        [">", PREC.comparison],
-        ["<=", PREC.comparison],
-        [">=", PREC.comparison],
-        ["+", PREC.additive],
-        ["-", PREC.additive],
-        ["*", PREC.multiplicative],
-        ["/", PREC.multiplicative],
-      ].map(([op, p]) =>
+      ...BINARY_OPS.map(([op, p]) =>
         prec.left(p, seq(
           field("left", $._expression),
-          field("operator", op ?? PREC.lowest),
+          field("operator", op),
           field("right", $._expression),
         ))
       ),
