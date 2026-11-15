@@ -44,6 +44,7 @@ export default grammar({
 
     _type: $ => choice(
       $.primitive_type,
+      alias($.identifier, $.type_identifier),
       $.nullable,
     ),
 

@@ -162,6 +162,15 @@
           "name": "primitive_type"
         },
         {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          },
+          "named": true,
+          "value": "type_identifier"
+        },
+        {
           "type": "SYMBOL",
           "name": "nullable"
         }

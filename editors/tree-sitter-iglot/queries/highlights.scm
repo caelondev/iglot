@@ -16,6 +16,7 @@
 (null) @boolean
 
 (primitive_type) @type
+(type_identifier) @type
 
 (integer) @number
 
