@@ -7,6 +7,14 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+const PREC = {
+  lowest: 0,
+  equality: 1,
+  comparison: 2,
+  additive: 3,
+  multiplicative: 4,
+};
+
 function commaSep1(rule) {
   return seq(rule, repeat(seq(",", rule)), optional(","));
 }
@@ -108,6 +116,8 @@ export default grammar({
       $.float,
       $.string,
       $.group,
+      $.call,
+      $.binary_expression,
     ),
 
     boolean: $ => choice("true", "false"),
@@ -118,5 +128,26 @@ export default grammar({
     comment: _ => /--[^\n]*/,
     string: $ => /"([^"\\]|\\.)*"/,
     group: $ => seq("(", $._expression, ")"),
+    call: $ => seq(field("callee", $.identifier), "(", commaSep1($._expression), ")"),
+    binary_expression: $ => choice(
+      ...[
+        ["==", PREC.equality],
+        ["!=", PREC.equality],
+        ["<", PREC.comparison],
+        [">", PREC.comparison],
+        ["<=", PREC.comparison],
+        [">=", PREC.comparison],
+        ["+", PREC.additive],
+        ["-", PREC.additive],
+        ["*", PREC.multiplicative],
+        ["/", PREC.multiplicative],
+      ].map(([op, p]) =>
+        prec.left(p, seq(
+          field("left", $._expression),
+          field("operator", op ?? PREC.lowest),
+          field("right", $._expression),
+        ))
+      ),
+    ),
   }
 });

@@ -30,28 +30,49 @@
 ")" @punctuation.bracket
 
 "?" @punctuation
+
 ; "!" @punctuation
 ; "," @punctuation
 ; "." @punctuation
-; "+" @punctuation
-; "-" @punctuation
-; "*" @punctuation
-; "/" @punctuation
+"+" @punctuation
+
+"-" @punctuation
+
+"*" @punctuation
+
+"/" @punctuation
+
+">" @punctuation
+
+"<" @punctuation
+
+">=" @punctuation
+
+"<=" @punctuation
+
+"==" @punctuation
+
+"!=" @punctuation
 
 ; primitives
 (boolean) @boolean
 
 (null) @boolean
 
+; types
 (primitive_type) @type.builtin
 
 (type_identifier) @type
 
+; expression
 (integer) @number
 
 (float) @number
 
 (string) @string
+
+(call
+  callee: (identifier) @function)
 
 ; decls
 (function_decl

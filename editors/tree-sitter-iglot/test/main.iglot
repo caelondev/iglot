@@ -1,14 +1,3 @@
-struct BinaryNode: {
-  left :: int,
-  right :: int,
-}
-
 fn main() void {
-  -- comment test
-  bin :: BinaryNode = {
-    .left = 50, .right = 100,
-  };
-
-  println({ bin.left + bin.right });
-  return;
+  add(19, 50+1);
 }

@@ -6,6 +6,7 @@
       "camelcase": "Iglot",
       "title": "Iglot",
       "scope": "source.iglot",
+      "highlights": "queries/highlights.scm",
       "file-types": [
         "iglot"
       ],
