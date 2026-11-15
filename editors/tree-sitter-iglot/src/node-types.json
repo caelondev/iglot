@@ -23,6 +23,11 @@
     }
   },
   {
+    "type": "boolean",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "expression_stmt",
     "named": true,
     "fields": {
@@ -31,8 +36,8 @@
         "required": true,
         "types": [
           {
-            "type": "false",
-            "named": false
+            "type": "boolean",
+            "named": true
           },
           {
             "type": "float",
@@ -48,15 +53,11 @@
           },
           {
             "type": "null",
-            "named": false
+            "named": true
           },
           {
             "type": "string",
             "named": true
-          },
-          {
-            "type": "true",
-            "named": false
           }
         ]
       }
@@ -101,44 +102,21 @@
         "required": true,
         "types": [
           {
-            "type": "bigint",
-            "named": false
-          },
-          {
-            "type": "bool",
-            "named": false
-          },
-          {
-            "type": "double",
-            "named": false
-          },
-          {
-            "type": "float",
-            "named": false
-          },
-          {
-            "type": "int",
-            "named": false
-          },
-          {
-            "type": "null",
-            "named": false
-          },
-          {
             "type": "nullable",
             "named": true
           },
           {
-            "type": "string",
-            "named": false
-          },
-          {
-            "type": "void",
-            "named": false
+            "type": "primitive_type",
+            "named": true
           }
         ]
       }
     }
+  },
+  {
+    "type": "null",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "nullable",
@@ -149,40 +127,12 @@
         "required": true,
         "types": [
           {
-            "type": "bigint",
-            "named": false
-          },
-          {
-            "type": "bool",
-            "named": false
-          },
-          {
-            "type": "double",
-            "named": false
-          },
-          {
-            "type": "float",
-            "named": false
-          },
-          {
-            "type": "int",
-            "named": false
-          },
-          {
-            "type": "null",
-            "named": false
-          },
-          {
             "type": "nullable",
             "named": true
           },
           {
-            "type": "string",
-            "named": false
-          },
-          {
-            "type": "void",
-            "named": false
+            "type": "primitive_type",
+            "named": true
           }
         ]
       }
@@ -207,40 +157,12 @@
         "required": true,
         "types": [
           {
-            "type": "bigint",
-            "named": false
-          },
-          {
-            "type": "bool",
-            "named": false
-          },
-          {
-            "type": "double",
-            "named": false
-          },
-          {
-            "type": "float",
-            "named": false
-          },
-          {
-            "type": "int",
-            "named": false
-          },
-          {
-            "type": "null",
-            "named": false
-          },
-          {
             "type": "nullable",
             "named": true
           },
           {
-            "type": "string",
-            "named": false
-          },
-          {
-            "type": "void",
-            "named": false
+            "type": "primitive_type",
+            "named": true
           }
         ]
       }
@@ -262,6 +184,11 @@
     }
   },
   {
+    "type": "primitive_type",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "return_stmt",
     "named": true,
     "fields": {
@@ -270,8 +197,8 @@
         "required": true,
         "types": [
           {
-            "type": "false",
-            "named": false
+            "type": "boolean",
+            "named": true
           },
           {
             "type": "float",
@@ -287,15 +214,11 @@
           },
           {
             "type": "null",
-            "named": false
+            "named": true
           },
           {
             "type": "string",
             "named": true
-          },
-          {
-            "type": "true",
-            "named": false
           }
         ]
       }
@@ -336,40 +259,12 @@
         "required": false,
         "types": [
           {
-            "type": "bigint",
-            "named": false
-          },
-          {
-            "type": "bool",
-            "named": false
-          },
-          {
-            "type": "double",
-            "named": false
-          },
-          {
-            "type": "float",
-            "named": false
-          },
-          {
-            "type": "int",
-            "named": false
-          },
-          {
-            "type": "null",
-            "named": false
-          },
-          {
             "type": "nullable",
             "named": true
           },
           {
-            "type": "string",
-            "named": false
-          },
-          {
-            "type": "void",
-            "named": false
+            "type": "primitive_type",
+            "named": true
           }
         ]
       },
@@ -378,8 +273,8 @@
         "required": true,
         "types": [
           {
-            "type": "false",
-            "named": false
+            "type": "boolean",
+            "named": true
           },
           {
             "type": "float",
@@ -395,15 +290,11 @@
           },
           {
             "type": "null",
-            "named": false
+            "named": true
           },
           {
             "type": "string",
             "named": true
-          },
-          {
-            "type": "true",
-            "named": false
           }
         ]
       }

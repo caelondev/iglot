@@ -13,7 +13,7 @@ function commaSep1(rule) {
 
 export default grammar({
   name: "iglot",
-
+  word: $ => $.identifier,
   rules: {
     source_file: $ => repeat($._declaration),
 
@@ -43,15 +43,13 @@ export default grammar({
     ),
 
     _type: $ => choice(
-      "int",
-      "bigint",
-      "float",
-      "double",
-      "bool",
-      "string",
-      "null",
-      "void",
+      $.primitive_type,
       $.nullable,
+    ),
+
+    primitive_type: $ => choice(
+      "int", "bigint", "float", "double",
+      "bool", "string", "null", "void",
     ),
 
     nullable: $ => seq(
@@ -86,15 +84,16 @@ export default grammar({
     ),
 
     _expression: $ => choice(
-      "true",
-      "false",
-      "null",
+      $.boolean,
+      $.null,
       $.identifier,
       $.integer,
       $.float,
       $.string,
     ),
 
+    boolean: $ => choice("true", "false"),
+    null: $ => "null",
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
     integer: $ => /[0-9]+/,
     float: $ => /[0-9]+\.[0-9]+/,

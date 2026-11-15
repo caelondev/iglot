@@ -1,0 +1,5 @@
+{
+  "parser_install_directories": [
+    "${HOME}/.local/share/nvim/site/parser"
+  ]
+}
