@@ -22,13 +22,26 @@
 //!
 //!     {}                              // empty, array or struct
 //!     { 1, 2, 3, }                    // positional elements
-//!     { name = "bob", age = 30, }     // named fields
+//!     { .name = "bob", .age = 30, }   // named field
 //!
-//! The shape is chosen by checking whether the first token is an identifier
-//! followed by `=`. Positional elements are parsed above assignment
-//! precedence, so a stray `=` after an element is a syntax error instead
-//! of being swallowed as an assignment expression. This is also what makes
-//! mixing the two shapes (`{ 1, name = "x" }`) a parse error.
+//! The shape is chosen by the first token: a leading `.` means named
+//! fields, anything else is positional. No lookahead needed.
+//!
+//! Every named field starts with its own `.`, and positional elements
+//! can't start with one, so mixing the two shapes is a parse error in
+//! either order:
+//!
+//!     { 1, .name = "x" }              // error, `.` can't start an expression
+//!     { .name = "x", 1 }              // error, expected `.` before the field
+//!
+//! The first case relies on `.` having no prefix parse fn. If that ever
+//! changes (enum shorthand like `.variant`, say), positional parsing will
+//! start accepting it and mixing needs an explicit check.
+//!
+//! Both shapes parse their values above assignment precedence. A stray `=`
+//! after a positional element (`{ x = 1 }`) is a syntax error instead of
+//! being swallowed as an assignment expression, and a second `=` in a named
+//! field (`{ .a = b = 1 }`) isn't read as chained assignment.
 //!
 //! A trailing comma is allowed in both shapes.
 //!
@@ -57,7 +70,8 @@ pub fn parseBareBraceExpression(parser: *IglotParser, allocator: std.mem.Allocat
 
     parser.nextToken();
 
-    const body: BareBrace.Body = if (parser.curTokenIs(.identifier) and parser.peekIs(.assign))
+    // a leading '.' picks named fields, anything else is positional
+    const body: BareBrace.Body = if (parser.curTokenIs(.dot))
         .{ .named = try parseNamedFields(parser, allocator) orelse return null }
     else
         .{ .positional = try parsePositionalElements(parser, allocator) orelse return null };
@@ -96,19 +110,14 @@ fn parsePositionalElements(parser: *IglotParser, allocator: std.mem.Allocator) a
     return try elements.toOwnedSlice(allocator);
 }
 
-/// assumes cur_tok is on the first field name. leaves cur_tok on the last
-/// value or the trailing ',', so the caller can expectPeek('}').
+/// assumes cur_tok is on the '.' of the first field. leaves cur_tok on the
+/// last value or the trailing ',', so the caller can expectPeek('}').
 fn parseNamedFields(parser: *IglotParser, allocator: std.mem.Allocator) anyerror!?[]BareBrace.FieldInit {
     var fields: std.ArrayList(BareBrace.FieldInit) = .empty;
 
     while (true) {
-        if (!parser.curTokenIs(.identifier)) {
-            try parser.reportError(allocator, .{
-                .span = parser.cur_tok.span,
-                .kind = .{ .UnexpectedToken = .{ .found = parser.cur_tok.kind } },
-            });
-            return null;
-        }
+        // cur = '.', expectPeek reports the error if the name is missing
+        if (!try parser.expectPeek(allocator, .identifier)) return null;
         const name = parser.cur_tok;
 
         if (!try parser.expectPeek(allocator, .assign)) return null;
@@ -122,9 +131,9 @@ fn parseNamedFields(parser: *IglotParser, allocator: std.mem.Allocator) anyerror
         try fields.append(allocator, .{ .name = name, .value = value_ptr });
 
         if (!parser.peekIs(.comma)) break;
-        parser.nextToken();
+        parser.nextToken(); // cur = ','
         if (parser.peekIs(.right_brace)) break; // trailing comma
-        parser.nextToken(); // cur = next field name
+        if (!try parser.expectPeek(allocator, .dot)) return null; // cur = '.'
     }
 
     return try fields.toOwnedSlice(allocator);

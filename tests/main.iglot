@@ -5,7 +5,7 @@ struct BinaryNode: {
 
 fn main() void {
   bin :: BinaryNode = {
-    left = 50, right = 100,
+    .left = 50, .right = 100,
   };
 
   println({ bin.left + bin.right });
