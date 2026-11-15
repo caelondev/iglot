@@ -74,6 +74,10 @@
 (call
   callee: (identifier) @function)
 
+(bare_brace
+  (field_init
+    name: (identifier) @property))
+
 ; decls
 (function_decl
   name: (identifier) @function)

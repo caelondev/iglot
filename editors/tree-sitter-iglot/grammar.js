@@ -139,6 +139,7 @@ export default grammar({
       $.group,
       $.call,
       $.binary_expression,
+      $.bare_brace,
     ),
 
     boolean: $ => choice("true", "false"),
@@ -158,6 +159,22 @@ export default grammar({
           field("right", $._expression),
         ))
       ),
+    ),
+
+    bare_brace: $ => seq(
+      "{",
+      optional(choice(
+        commaSep1($._expression),
+        commaSep1($.field_init),
+      )),
+      "}",
+    ),
+
+    field_init: $ => seq(
+      ".",
+      field("name", $.identifier),
+      "=",
+      field("value", $._expression),
     ),
   }
 });

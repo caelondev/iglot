@@ -3,11 +3,24 @@ struct BinaryNode: {
   right :: int,
 }
 
+ARRAY_LEN :: const int = 2;
+
 fn main() void {
-  bin :: BinaryNode = {
-    .left = 50, .right = 100,
+  bin :: [ARRAY_LEN]BinaryNode = {
+    { .left = 50, .right = 100 },
+    { .left = 50, .right = 100 },
   };
-  
-  println({ bin.left + bin.right });
+
+  accumulator ::= 0;
+
+  i ::= 0;
+  loop {
+    if i >= ARRAY_LEN: break;
+    node ::= bin.[i];
+    accumulator = accumulator + node.left + node.right;
+    i = i + 1;
+  }
+
+  println({ "accumulated:", accumulator });
   return;
 }

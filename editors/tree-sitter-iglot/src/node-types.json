@@ -12,6 +12,10 @@
           "named": true
         },
         {
+          "type": "bare_brace",
+          "named": true
+        },
+        {
           "type": "binary_expression",
           "named": true
         },
@@ -63,6 +67,61 @@
     }
   },
   {
+    "type": "bare_brace",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "bare_brace",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "boolean",
+          "named": true
+        },
+        {
+          "type": "call",
+          "named": true
+        },
+        {
+          "type": "field_init",
+          "named": true
+        },
+        {
+          "type": "float",
+          "named": true
+        },
+        {
+          "type": "group",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "integer",
+          "named": true
+        },
+        {
+          "type": "null",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "binary_expression",
     "named": true,
     "fields": {
@@ -70,6 +129,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "bare_brace",
+            "named": true
+          },
           {
             "type": "binary_expression",
             "named": true
@@ -159,6 +222,10 @@
         "required": true,
         "types": [
           {
+            "type": "bare_brace",
+            "named": true
+          },
+          {
             "type": "binary_expression",
             "named": true
           },
@@ -246,6 +313,10 @@
       "required": true,
       "types": [
         {
+          "type": "bare_brace",
+          "named": true
+        },
+        {
           "type": "binary_expression",
           "named": true
         },
@@ -292,6 +363,72 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "bare_brace",
+            "named": true
+          },
+          {
+            "type": "binary_expression",
+            "named": true
+          },
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "call",
+            "named": true
+          },
+          {
+            "type": "float",
+            "named": true
+          },
+          {
+            "type": "group",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "null",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "field_init",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "bare_brace",
+            "named": true
+          },
           {
             "type": "binary_expression",
             "named": true
@@ -398,6 +535,10 @@
       "multiple": false,
       "required": true,
       "types": [
+        {
+          "type": "bare_brace",
+          "named": true
+        },
         {
           "type": "binary_expression",
           "named": true
@@ -536,6 +677,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "bare_brace",
+            "named": true
+          },
           {
             "type": "binary_expression",
             "named": true
@@ -709,6 +854,10 @@
         "required": true,
         "types": [
           {
+            "type": "bare_brace",
+            "named": true
+          },
+          {
             "type": "binary_expression",
             "named": true
           },
@@ -774,6 +923,10 @@
   },
   {
     "type": "-",
+    "named": false
+  },
+  {
+    "type": ".",
     "named": false
   },
   {
