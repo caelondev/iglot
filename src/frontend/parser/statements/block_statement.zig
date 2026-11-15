@@ -11,6 +11,8 @@ pub fn parseBlockStatement(
     var stmts: std.ArrayList(ast.Statement) = .empty;
 
     const start = parser.cur_tok.span;
+    if (!parser.peekTokenIs(.left_brace)) return null;
+    parser.nextToken();
     parser.nextToken();
 
     while (!parser.curTokenIs(.right_brace) and !parser.curTokenIs(.eof)) {

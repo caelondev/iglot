@@ -32,8 +32,6 @@ pub fn parseIfStatement(
     var if_body: ast.Statement = undefined;
 
     if (parser.peekIs(.left_brace)) {
-        parser.nextToken();
-
         const stmt = try parseScopedStatement(parser, allocator) orelse return null;
 
         if_body = .{
@@ -73,20 +71,19 @@ pub fn parseIfStatement(
     if (parser.peekIs(.@"if")) {
         parser.nextToken();
         else_body = try parseIfStatement(parser, allocator) orelse return null;
-    } else if (parser.peekIs(.left_brace)) {
-        parser.nextToken();
-
-        const stmt = try parseScopedStatement(parser, allocator) orelse return null;
-
-        else_body = .{
-            .span = stmt.span,
-            .kind = .{
-                .scoped = stmt,
-            },
-        };
     } else {
-        parser.nextToken();
-        else_body = try parseStatement(parser, allocator) orelse return null;
+        if (!try parser.expectPeek(allocator, .colon)) return null;
+
+        if (parser.peekIs(.left_brace)) {
+            const stmt = try parseScopedStatement(parser, allocator) orelse return null;
+            else_body = .{
+                .span = stmt.span,
+                .kind = .{ .scoped = stmt },
+            };
+        } else {
+            parser.nextToken();
+            else_body = try parseStatement(parser, allocator) orelse return null;
+        }
     }
 
     const alternative_ptr = try allocator.create(ast.Statement);
@@ -103,4 +100,3 @@ pub fn parseIfStatement(
         },
     };
 }
-

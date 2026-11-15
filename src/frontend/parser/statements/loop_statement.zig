@@ -11,7 +11,7 @@ pub fn parseLoopStatement(
 ) !?ast.Statement {
     const keyword = parser.cur_tok;
 
-    if (!try parser.expectPeek(allocator, .left_brace)) return null;
+    if (!try parser.expectPeek(allocator, .colon)) return null;
 
     const body = try parseScopedStatement(parser, allocator) orelse return null;
     return .{

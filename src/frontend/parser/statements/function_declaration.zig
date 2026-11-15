@@ -25,7 +25,7 @@ pub fn parseFunctionDeclarationStatement(
 
     var return_type: ast.TypeExpression = undefined;
 
-    if (parser.peek_tok.kind == .left_brace) {
+    if (parser.peek_tok.kind == .colon) {
         try parser.reportError(allocator, .{
             .span = parser.cur_tok.span,
             .severity = .err,
@@ -36,7 +36,7 @@ pub fn parseFunctionDeclarationStatement(
         return_type = try pt.parseReturnTypeExpression(parser, allocator) orelse return null;
     }
 
-    if (!try parser.expectPeek(allocator, .left_brace)) return null;
+    if (!try parser.expectPeek(allocator, .colon)) return null;
     const body = try parseBlockStatement(parser, allocator) orelse return null;
 
     return .{
