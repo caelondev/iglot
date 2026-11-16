@@ -174,8 +174,10 @@ pub const ArrayExpression = struct {
 
 pub const CallExpression = struct {
     callee: *Expression,
-    callee_kind: enum { builtin, defined },
+    callee_kind: CalleeKind,
     arguments: []*Expression,
+
+    pub const CalleeKind = enum { builtin, defined };
 };
 
 pub const BareBraceExpression = struct {

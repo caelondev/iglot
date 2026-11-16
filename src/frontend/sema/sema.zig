@@ -176,15 +176,6 @@ pub const IglotSemanticAnalyzer = struct {
             .sem_type = .null,
             .mutability = .constant,
         });
-
-        for (builtins_table) |b| {
-            try self.type_table.declareIdentifier(allocator, b.name, .{
-                .sem_type = try b.semaType(allocator),
-                .span = .empty(),
-                .mutability = .function,
-                .is_builtin = true,
-            });
-        }
     }
 
     pub fn validateStatement(self: *Self, allocator: std.mem.Allocator, stmt: *const ast.Statement) !?typed_ast.TypedStmt {

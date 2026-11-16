@@ -98,6 +98,7 @@ pub const TypedMemberExpr = struct {
 
 pub const TypedCallExpr = struct {
     callee: *TypedExpr,
+    callee_kind: ast.CallExpression.CalleeKind,
     arguments: []*TypedExpr,
     sema_type: tt.SemaType,
 };

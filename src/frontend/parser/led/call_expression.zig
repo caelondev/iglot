@@ -31,6 +31,10 @@ pub fn parseCallBuiltinExpression(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
+    if (left.expr != .identifier) {
+        try parser.reportError(allocator, .{ .span = left.span, .kind = .InvalidBuiltinCallee });
+        return null;
+    }
     if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
 
     const left_ptr = try allocator.create(ast.Expression);

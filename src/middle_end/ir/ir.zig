@@ -29,19 +29,10 @@ const buildIndexExpr = @import("expressions/index.zig").buildIndexExpr;
 const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructInitExpr;
 const buildMemberExpr = @import("expressions/member.zig").buildMemberExpr;
 
+const IdentKind = @import("expressions/call.zig").IdentKind;
+const ResolvedIdent = @import("expressions/call.zig").ResolvedIdent;
 const LoopContext = struct {
     break_block: inst.BlockRef,
-};
-
-pub const IdentKind = enum {
-    local,
-    global,
-    func,
-    builtin,
-};
-pub const ResolvedIdent = struct {
-    reg: inst.VReg,
-    kind: IdentKind,
 };
 
 pub const IglotIR = struct {
@@ -255,28 +246,16 @@ pub const IglotIR = struct {
             return .{ .reg = dest, .kind = .global };
         }
 
-        if (self.module.getFunctionByName(i.value)) |func| {
-            const dest = self.current_fn.newVReg();
-            try self.emit(allocator, .{
-                .data = .{ .constant = .{ .func = func.function_ref } },
-                .op = .load_fn,
-                .operands = &.{},
-                .sema_type = sema_type,
-                .result = dest,
-            });
-            return .{ .reg = dest, .kind = .func };
-        }
-
-        const id = builtins.lookupBuiltin(i.value) orelse unreachable;
+        const func = self.module.getFunctionByName(i.value) orelse unreachable;
         const dest = self.current_fn.newVReg();
         try self.emit(allocator, .{
-            .data = .{ .builtin = id },
-            .op = .load_builtin_fn,
+            .data = .{ .constant = .{ .func = func.function_ref } },
+            .op = .load_fn,
             .operands = &.{},
             .sema_type = sema_type,
             .result = dest,
         });
-        return .{ .reg = dest, .kind = .builtin };
+        return .{ .reg = dest, .kind = .func };
     }
 
     pub fn emit(self: *Self, allocator: std.mem.Allocator, instruction: inst.Instruction) !void {

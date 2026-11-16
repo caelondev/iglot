@@ -1,4 +1,4 @@
 fn main() void: {
-  msg ::= prompt#("say something: ");
-  println#({"you said:", msg});
+  println ::= "should not collide";
+  println#({ println });
 }

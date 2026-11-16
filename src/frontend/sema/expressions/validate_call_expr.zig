@@ -5,6 +5,12 @@ const ast = @import("../../parser/ast.zig");
 const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
 const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
+const builtins = @import("../../../vm/builtins.zig");
+
+const ResolvedCallee = struct {
+    callee: *typed_ast.TypedExpr,
+    callee_kind: ast.CallExpression.CalleeKind,
+};
 
 pub fn validateCallExpr(
     sema: *IglotSemanticAnalyzer,
@@ -12,14 +18,14 @@ pub fn validateCallExpr(
     c: *const ast.CallExpression,
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
-    const callee = try sema.validateExpression(allocator, c.callee, c.callee.span, null) orelse return null;
+    const resolved = try resolveCallee(sema, allocator, c) orelse return null;
 
-    if (callee.sem_type != .function) {
+    if (resolved.callee.sem_type != .function) {
         try sema.reportError(allocator, .{
             .span = span,
             .kind = .{
                 .NonCallableCallee = .{
-                    .callee_type = callee.sem_type,
+                    .callee_type = resolved.callee.sem_type,
                 },
             },
         });
@@ -27,7 +33,7 @@ pub fn validateCallExpr(
         return null;
     }
 
-    const callee_fn = callee.sem_type.function;
+    const callee_fn = resolved.callee.sem_type.function;
 
     if (callee_fn.parameters.len > c.arguments.len) {
         try sema.reportError(allocator, .{
@@ -85,7 +91,8 @@ pub fn validateCallExpr(
         .sem_type = callee_fn.return_type.*,
         .kind = .{
             .call = .{
-                .callee = callee,
+                .callee = resolved.callee,
+                .callee_kind = resolved.callee_kind,
                 .arguments = try arg_sem_types.toOwnedSlice(allocator),
                 .sema_type = callee_fn.return_type.*,
             },
@@ -93,4 +100,40 @@ pub fn validateCallExpr(
     };
 
     return node;
+}
+
+fn resolveCallee(
+    sema: *IglotSemanticAnalyzer,
+    allocator: std.mem.Allocator,
+    c: *const ast.CallExpression,
+) anyerror!?ResolvedCallee {
+    switch (c.callee_kind) {
+        .defined => {
+            const callee = try sema.validateExpression(allocator, c.callee, c.callee.span, null) orelse return null;
+            return .{ .callee = callee, .callee_kind = .defined };
+        },
+        .builtin => {
+            const name = switch (c.callee.expr) {
+                .identifier => |i| i.value,
+                else => unreachable,
+            };
+
+            const idx = builtins.lookupBuiltin(name) orelse {
+                try sema.reportError(allocator, .{
+                    .span = c.callee.span,
+                    .kind = .{ .UndefinedBuiltin = .{ .identifier = name } },
+                });
+                return null;
+            };
+            const builtin_fn_st = try builtins.table[idx].semaType(allocator);
+
+            const node = try allocator.create(typed_ast.TypedExpr);
+            node.* = .{
+                .span = c.callee.span,
+                .sem_type = .{ .function = builtin_fn_st.function },
+                .kind = .{ .identifier = .{ .value = name, .mutability = .function } },
+            };
+            return .{ .callee = node, .callee_kind = .builtin };
+        },
+    }
 }

@@ -35,6 +35,7 @@ pub const IglotDiagnostic = struct {
         },
         ArraySizeTypeInfer,
         IllegalArraySizeExpression,
+        InvalidBuiltinCallee,
 
         // Sema
         InvalidLeftHandSideAssignment,
@@ -60,6 +61,7 @@ pub const IglotDiagnostic = struct {
             found: SemaType,
         },
         UndefinedIdentifier: struct { identifier: []const u8 },
+        UndefinedBuiltin: struct { identifier: []const u8 },
         UndefinedType: struct { identifier: []const u8 },
         FinalIdentifierAssignment: struct { identifier: []const u8 },
         ConstIdentifierAssignment: struct { identifier: []const u8 },
@@ -107,6 +109,7 @@ pub const IglotDiagnostic = struct {
                 .RedundantFinal => try writer.print("redundant final modifier", .{}),
                 .ArraySizeTypeInfer => try writer.print("cannot infer array size at type level", .{}),
                 .IllegalArraySizeExpression => try writer.print("cannot use expression for array indexing", .{}),
+                .InvalidBuiltinCallee => try writer.writeAll("expected an identifier before \"#\" in a builtin call"),
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
@@ -124,6 +127,7 @@ pub const IglotDiagnostic = struct {
                         try writer.print("expected return type \"{f}\", \"{f}\" or null, found return type \"{f}\" instead", .{ inner.*, e.expected, e.found }),
                     else => try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found }),
                 },
+                .UndefinedBuiltin => |n| try writer.print("cannot resolve builtin \"{s}\"", .{n.identifier}),
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .InvalidLeftHandSideAssignment => try writer.print("cannot assign to this expression", .{}),
                 .UndefinedIdentifier => |i| try writer.print("cannot resolve identifier \"{s}\"", .{i.identifier}),
