@@ -48,6 +48,7 @@ pub const TokenKind = enum {
 
     bang,
     question,
+    hashtag,
 
     less,
     greater,

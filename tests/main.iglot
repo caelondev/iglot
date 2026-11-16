@@ -1,26 +1,4 @@
-struct BinaryNode: {
-  left :: int,
-  right :: int,
-}
-
-ARRAY_LEN :: const int = 2;
-
 fn main() void: {
-  bin :: [ARRAY_LEN]BinaryNode = {
-    { .left = 50, .right = 100 },
-    { .left = 50, .right = 100 },
-  };
-
-  accumulator ::= 0;
-
-  i ::= 0;
-  loop: {
-    if i >= ARRAY_LEN: break;
-    else if i == 1: println({ "i is 1" });
-    node ::= bin.[i];
-    accumulator = accumulator + node.left + node.right;
-    i = i + 1;
-  }
-
-  println({ "accumulated:", accumulator });
+  msg ::= prompt#("say something: ");
+  println#({"you said:", msg});
 }

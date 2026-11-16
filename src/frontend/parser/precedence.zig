@@ -77,7 +77,9 @@ pub const Precedence = enum(u8) {
             .slash,
             => .multiplicative,
 
-            .left_parenthesis => .call,
+            .left_parenthesis,
+            .hashtag,
+            => .call,
             .dot_bracket => .index,
             .dot => .member,
 

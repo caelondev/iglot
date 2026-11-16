@@ -174,6 +174,7 @@ pub const ArrayExpression = struct {
 
 pub const CallExpression = struct {
     callee: *Expression,
+    callee_kind: enum { builtin, defined },
     arguments: []*Expression,
 };
 

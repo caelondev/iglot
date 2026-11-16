@@ -146,6 +146,10 @@ pub const led_exprs = [_]LeftDenotedExpr{
         .callback = @import("led/call_expression.zig").parseCallExpression,
     },
     .{
+        .token_kind = .hashtag,
+        .callback = @import("led/call_expression.zig").parseCallBuiltinExpression,
+    },
+    .{
         .token_kind = .dot,
         .callback = @import("led/member_expression.zig").parseMemberExpression,
     },

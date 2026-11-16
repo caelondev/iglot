@@ -10,21 +10,54 @@ pub fn parseCallExpression(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
-    var args: std.ArrayList(*ast.Expression) = .empty;
+    const left_ptr = try allocator.create(ast.Expression);
+    left_ptr.* = left;
+    const args = try parseArgs(parser, allocator) orelse return null;
+
+    return .{
+        .span = .mergeFromSpans(left.span, parser.cur_tok.span),
+        .expr = .{
+            .call = .{
+                .callee = left_ptr,
+                .callee_kind = .defined,
+                .arguments = args,
+            },
+        },
+    };
+}
+
+pub fn parseCallBuiltinExpression(
+    parser: *IglotParser,
+    allocator: std.mem.Allocator,
+    left: ast.Expression,
+) !?ast.Expression {
+    if (!try parser.expectPeek(allocator, .left_parenthesis)) return null;
 
     const left_ptr = try allocator.create(ast.Expression);
     left_ptr.* = left;
+    const args = try parseArgs(parser, allocator) orelse return null;
+
+    return .{
+        .span = .mergeFromSpans(left.span, parser.cur_tok.span),
+        .expr = .{
+            .call = .{
+                .callee = left_ptr,
+                .callee_kind = .builtin,
+                .arguments = args,
+            },
+        },
+    };
+}
+
+pub fn parseArgs(
+    parser: *IglotParser,
+    allocator: std.mem.Allocator,
+) !?[]*ast.Expression {
+    var args: std.ArrayList(*ast.Expression) = .empty;
+
     if (parser.peekIs(.right_parenthesis)) {
         parser.nextToken();
-        return .{
-            .span = Span.mergeFromSpans(left.span, parser.cur_tok.span),
-            .expr = .{
-                .call = .{
-                    .callee = left_ptr,
-                    .arguments = try args.toOwnedSlice(allocator),
-                },
-            },
-        };
+        return try args.toOwnedSlice(allocator);
     }
 
     parser.nextToken();
@@ -45,14 +78,5 @@ pub fn parseCallExpression(
     }
 
     if (!try parser.expectPeek(allocator, .right_parenthesis)) return null;
-
-    return .{
-        .span = Span.mergeFromSpans(left.span, parser.cur_tok.span),
-        .expr = .{
-            .call = .{
-                .callee = left_ptr,
-                .arguments = try args.toOwnedSlice(allocator),
-            },
-        },
-    };
+    return try args.toOwnedSlice(allocator);
 }
