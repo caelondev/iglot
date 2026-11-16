@@ -167,6 +167,7 @@ export default grammar({
       $.string,
       $.group,
       $.call,
+      $.builtin_call,
       $.binary_expression,
       $.bare_brace,
       $.index,
@@ -183,6 +184,10 @@ export default grammar({
     string: $ => /"([^"\\]|\\.)*"/,
     group: $ => seq("(", $._expression, ")"),
     call: $ => prec.left(PREC.postfix, seq(field("callee", $._expression), "(", optional(commaSep1($._expression)), ")")),
+
+    tag: $ => "#",
+    builtin_call: $ => prec.left(PREC.postfix, seq(field("callee", $.identifier), $.tag, "(", optional(commaSep1($._expression)), ")")),
+
     binary_expression: $ => choice(
       ...BINARY_OPS.map(([op, p]) =>
         prec.left(p, seq(

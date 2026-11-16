@@ -1,88 +1,55 @@
 ; keywords
 "fn" @keyword
-
 "return" @keyword.special
-
 "struct" @keyword.special
-
 "const" @keyword.special
-
 "fin" @keyword.special
-
 "break" @keyword.special
-
 "if" @keyword.special
-
 "else" @keyword.special
-
 "loop" @keyword.special
 
 ; comments
 (comment) @comment
 
 ; symbols
-"::" @operator
-
 "=" @operator
-
 ";" @punctuation.delimiter
-
 ":" @punctuation
-
 "{" @punctuation.bracket
-
 "}" @punctuation.bracket
-
 "[" @punctuation.bracket
-
 ".[" @punctuation.bracket
-
 "]" @punctuation.bracket
-
 "(" @punctuation.bracket
-
 ")" @punctuation.bracket
-
 "?" @punctuation
-
 ; "!" @punctuation
 ; "," @punctuation
-; "." @punctuation
+"." @punctuation
 "+" @punctuation
-
 "-" @punctuation
-
 "*" @punctuation
-
 "/" @punctuation
-
 ">" @punctuation
-
 "<" @punctuation
-
 ">=" @punctuation
-
 "<=" @punctuation
-
 "==" @punctuation
-
 "!=" @punctuation
+(tag) @punctuation
 
 ; primitives
 (boolean) @boolean
-
 (null) @boolean
 
 ; types
 (primitive_type) @type.builtin
-
 (type_identifier) @type
 
 ; expression
 (integer) @number
-
 (float) @number
-
 (string) @string
 
 (member
@@ -90,6 +57,11 @@
 
 (call
   callee: (identifier) @function)
+
+((builtin_call
+  callee: (identifier) @function
+  (tag) @function)
+  (#set! priority 110))
 
 ((call
   callee: (member
