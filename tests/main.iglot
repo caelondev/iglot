@@ -1,7 +1,3 @@
 fn main() void: {
-  println#({ "Addition Calculator" });
-  left ::= prompt#("Enter the first number: ");
-  right ::= prompt#("Enter the second number: ");
-  result ::= parse_to_int#(left) + parse_to_int#(right);
-  println#({ "The sum of", left, "+", right, "is", result });
+  println#({ parse_to_int#("100") + 0, parse_to_wideint#("1000") + 0, parse_to_float#("1087.2092") + 0.0, parse_to_double#("02828382.223") + 0.0 });
 }

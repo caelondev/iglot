@@ -1,4 +1,4 @@
-/// TODO: parse_to_int: change return type from `?int` to `error int`
+/// TODO: parse_to_*: change return type from `?T` to `error T`
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
 const singleton = @import("singleton.zig");
@@ -51,6 +51,9 @@ pub const table = [_]Builtin{
     .{ .name = "println", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &println },
     .{ .name = "prompt", .params = &.{.string}, .ret_type = .string, .func = &prompt },
     .{ .name = "parse_to_int", .params = &.{.string}, .ret_type = .int, .func = &parse_to_int },
+    .{ .name = "parse_to_wideint", .params = &.{.string}, .ret_type = .wideint, .func = &parse_to_wideint },
+    .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .float, .func = &parse_to_float },
+    .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .double, .func = &parse_to_double },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {
@@ -80,6 +83,27 @@ fn parse_to_int(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIg
     const str_obj = vm.object_heap.objects.items[args[0].heap_ref].string;
     const v = std.fmt.parseInt(i64, str_obj.bytes, 10) catch return singleton.IGLOT__NULL;
     return .{ .int = v };
+}
+
+fn parse_to_wideint(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    _ = ctx;
+    const str_obj = vm.object_heap.objects.items[args[0].heap_ref].string;
+    const v = std.fmt.parseInt(i128, str_obj.bytes, 10) catch return singleton.IGLOT__NULL;
+    return .{ .wideint = v };
+}
+
+fn parse_to_float(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    _ = ctx;
+    const str_obj = vm.object_heap.objects.items[args[0].heap_ref].string;
+    const v = std.fmt.parseFloat(f32, str_obj.bytes) catch return singleton.IGLOT__NULL;
+    return .{ .float = v };
+}
+
+fn parse_to_double(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    _ = ctx;
+    const str_obj = vm.object_heap.objects.items[args[0].heap_ref].string;
+    const v = std.fmt.parseFloat(f64, str_obj.bytes) catch return singleton.IGLOT__NULL;
+    return .{ .double = v };
 }
 
 fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
