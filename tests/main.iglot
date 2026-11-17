@@ -1,4 +1,7 @@
 fn main() void: {
-  println ::= "should not collide";
-  println#({ println });
+  println#({ "Addition Calculator" });
+  left ::= prompt#("Enter the first number: ");
+  right ::= prompt#("Enter the second number: ");
+  result ::= parse_to_int#(left) + parse_to_int#(right);
+  println#({ "The sum of", left, "+", right, "is", result });
 }

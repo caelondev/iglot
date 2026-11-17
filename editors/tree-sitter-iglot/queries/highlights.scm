@@ -16,6 +16,7 @@
 "=" @operator
 ";" @punctuation.delimiter
 ":" @punctuation
+"::" @punctuation
 "{" @punctuation.bracket
 "}" @punctuation.bracket
 "[" @punctuation.bracket

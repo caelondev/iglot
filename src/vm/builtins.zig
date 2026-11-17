@@ -1,5 +1,7 @@
+/// TODO: parse_to_int: change return type from `?int` to `error int`
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
+const singleton = @import("singleton.zig");
 const SemaType = @import("../frontend/sema/type_table.zig").SemaType;
 const IglotValue = @import("values.zig").IglotValue;
 const IglotVM = @import("vm.zig").IglotVM;
@@ -48,6 +50,7 @@ pub const table = [_]Builtin{
     .{ .name = "print", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &print },
     .{ .name = "println", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &println },
     .{ .name = "prompt", .params = &.{.string}, .ret_type = .string, .func = &prompt },
+    .{ .name = "parse_to_int", .params = &.{.string}, .ret_type = .int, .func = &parse_to_int },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {
@@ -70,6 +73,13 @@ fn println(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFu
     try writeArgs(ctx.out, &vm.object_heap, args[0]);
     try ctx.out.writeByte('\n');
     return unit;
+}
+
+fn parse_to_int(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    _ = ctx;
+    const str_obj = vm.object_heap.objects.items[args[0].heap_ref].string;
+    const v = std.fmt.parseInt(i64, str_obj.bytes, 10) catch return singleton.IGLOT__NULL;
+    return .{ .int = v };
 }
 
 fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
@@ -164,7 +174,6 @@ fn writeHeapValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, obj: *Object, nest
 }
 
 fn writeValue(out: *std.Io.Writer, obj_heap: *ObjectHeap, v: IglotValue, nested: bool) std.Io.Writer.Error!void {
-    
     switch (v) {
         .int => |x| try out.print("{d}", .{x}),
         .wideint => |x| try out.print("{d}", .{x}),
