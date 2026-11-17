@@ -81,6 +81,7 @@ pub const TokenKind = enum {
     @"break",
     @"const",
     @"struct",
+    @"switch",
     loop,
     final,
 };
@@ -164,6 +165,7 @@ pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "break", .@"break" },
     .{ "const", .@"const" },
     .{ "struct", .@"struct" },
+    .{ "switch", .@"switch" },
     .{ "fin", .final },
     .{ "loop", .loop },
 });

@@ -117,6 +117,7 @@ export default grammar({
       $.break_stmt,
       $.if_stmt,
       $.loop,
+      $.switch_stmt,
     ),
 
     expression_stmt: $ => seq(
@@ -157,6 +158,17 @@ export default grammar({
     ),
 
     loop: $ => seq("loop", $.block),
+
+    switch_stmt: $ => seq("switch", $._expression, $.switch_body),
+    switch_body: $ => seq(":", "{", repeat($.switch_prong), "}"),
+    switch_prong: $ => seq(
+      field("pattern", choice($._expression, "else")),
+      "=>",
+      field("body", choice(
+        seq($._expression, optional(",")),
+        $.block,
+      )),
+    ),
 
     _expression: $ => choice(
       $.boolean,

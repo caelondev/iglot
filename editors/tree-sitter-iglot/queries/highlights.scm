@@ -8,6 +8,7 @@
 "if" @keyword.special
 "else" @keyword.special
 "loop" @keyword.special
+"switch" @keyword.special
 
 ; comments
 (comment) @comment
@@ -26,7 +27,7 @@
 ")" @punctuation.bracket
 "?" @punctuation
 ; "!" @punctuation
-; "," @punctuation
+"," @punctuation
 "." @punctuation
 "+" @punctuation
 "-" @punctuation
@@ -38,6 +39,7 @@
 "<=" @punctuation
 "==" @punctuation
 "!=" @punctuation
+"=>" @punctuation
 (tag) @punctuation
 
 ; primitives

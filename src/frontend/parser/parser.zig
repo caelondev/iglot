@@ -180,6 +180,10 @@ pub const statements = [_]Statement{
         .token_kind = .@"struct",
         .callback = @import("statements/struct_declaration.zig").parseStructDeclarationStatement,
     },
+    .{
+        .token_kind = .@"switch",
+        .callback = @import("statements/switch_statement.zig").parseSwitchStatement,
+    },
 };
 
 pub const IglotParser = struct {

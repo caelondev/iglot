@@ -54,6 +54,7 @@ pub const table = [_]Builtin{
     .{ .name = "parse_to_wideint", .params = &.{.string}, .ret_type = .wideint, .func = &parse_to_wideint },
     .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .float, .func = &parse_to_float },
     .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .double, .func = &parse_to_double },
+    .{ .name = "fetch", .params = &.{.string}, .ret_type = .string, .func = &fetch },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {
@@ -126,6 +127,28 @@ fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFun
 
     const ref = try vm.object_heap.createString(trimmed);
     return .{ .heap_ref = ref };
+}
+
+fn fetch(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    const std = @import("std");
+
+    const gpa = init.gpa;
+    const io = init.io;
+
+    var client: std.http.Client = .{ .allocator = gpa, .io = io };
+    defer client.deinit();
+
+    var body: std.Io.Writer.Allocating = .init(gpa);
+    defer body.deinit();
+
+    const res = try client.fetch(.{
+        .location = .{ .url = "https://api.github.com/zen" },
+        .method = .GET,
+        .headers = .{ .user_agent = .{ .override = "zig-client" } },
+        .response_writer = &body.writer,
+    });
+
+    std.debug.print("{d}\n{s}\n", .{ @backingInt(res.status), body.written() });
 }
 
 fn writeArgs(out: *std.Io.Writer, obj_heap: *ObjectHeap, args_value: IglotValue) std.Io.Writer.Error!void {

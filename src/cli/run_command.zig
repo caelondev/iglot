@@ -130,6 +130,7 @@ pub fn run(ctx: *Context) !void {
 
     var iglot_vm: IglotVM = .init(module, .{
         .out = writer,
+        .io = ctx.io,
         .in = &stdin.interface,
         .gpa = ctx.allocator,
     });

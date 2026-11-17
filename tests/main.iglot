@@ -1,3 +1,17 @@
 fn main() void: {
-  println#({ parse_to_int#("100") + 0, parse_to_wideint#("1000") + 0, parse_to_float#("1087.2092") + 0.0, parse_to_double#("02828382.223") + 0.0 });
+  loop: {
+    value ::= prompt#("say 100: ");
+
+    switch parse_to_int#(value): {
+      100 => {
+        println#({ "good :)" });
+        break;
+      }
+      else => println#({ "again." }),
+    }
+
+    println#({ "looping..." })
+  }
+
+  println#({ "exiting..." })
 }
