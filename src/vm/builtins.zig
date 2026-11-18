@@ -1,4 +1,8 @@
 /// TODO: parse_to_*: change return type from `?T` to `error T`
+/// TODO: fetch: this builtin function is hardcoded to only do a GET request.
+///       after implementing enums, we should add another parameter that allows us to
+///       change request kind
+///
 const std = @import("std");
 const bc = @import("../bytecode/bytecode.zig");
 const singleton = @import("singleton.zig");
@@ -7,6 +11,7 @@ const IglotValue = @import("values.zig").IglotValue;
 const IglotVM = @import("vm.zig").IglotVM;
 const Object = @import("object.zig").Object;
 const ObjectHeap = @import("object_heap.zig").ObjectHeap;
+const StructDesc = @import("../middle_end/ir/module.zig").StructDesc;
 
 pub const BuiltinIglotFunctionError =
     std.Io.Writer.Error || std.Io.Reader.Error || std.mem.Allocator.Error;
@@ -14,6 +19,7 @@ pub const BuiltinIglotFunctionError =
 pub const Context = struct {
     gpa: std.mem.Allocator,
     out: *std.Io.Writer,
+    io: std.Io,
     in: *std.Io.Reader,
 };
 
@@ -46,6 +52,9 @@ const UNBOUNDED_ARRAY_ANY: SemaType = .{
     },
 };
 
+var FETCH_RESULT_STRUCT: SemaType.Struct = undefined;
+var FETCH_RESULT_SEMA: SemaType = .{ .@"struct" = &FETCH_RESULT_STRUCT };
+
 pub const table = [_]Builtin{
     .{ .name = "print", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &print },
     .{ .name = "println", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &println },
@@ -54,7 +63,34 @@ pub const table = [_]Builtin{
     .{ .name = "parse_to_wideint", .params = &.{.string}, .ret_type = .wideint, .func = &parse_to_wideint },
     .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .float, .func = &parse_to_float },
     .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .double, .func = &parse_to_double },
-    .{ .name = "fetch", .params = &.{.string}, .ret_type = .string, .func = &fetch },
+    .{ .name = "fetch", .params = &.{.string}, .ret_type = .{ .nullable = &FETCH_RESULT_SEMA }, .func = &fetch },
+};
+
+pub fn initBuiltinTypes(allocator: std.mem.Allocator) !void {
+    const names = [_][]const u8{ "url", "status", "body" };
+    const types = [_]SemaType{ .string, .int, .string };
+
+    const fields = try allocator.alloc(SemaType.Struct.Field, names.len);
+    var map: std.StringHashMap(u32) = .init(allocator);
+
+    for (names, types, 0..) |n, t, i| {
+        const tp = try allocator.create(SemaType);
+        tp.* = t;
+        fields[i] = .{
+            .name = n,
+            .sema_type = tp,
+            .mutability = .final, // TODO: use your real enum value
+            .span = .empty(),
+        };
+        try map.put(n, @intCast(i));
+    }
+
+    FETCH_RESULT_STRUCT = .{ .name = "FetchResult", .fields = fields, .name_index_map = map };
+}
+
+var FETCH_RESULT_DESC: StructDesc = .{
+    .name = "FetchResult",
+    .field_names = &.{ "url", "status", "body" },
 };
 
 pub fn lookupBuiltin(name: []const u8) ?u16 {
@@ -130,25 +166,31 @@ fn prompt(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFun
 }
 
 fn fetch(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
-    const std = @import("std");
+    const gpa = ctx.gpa;
+    const url = vm.object_heap.resolveRef(args[0].heap_ref).string.bytes;
 
-    const gpa = init.gpa;
-    const io = init.io;
-
-    var client: std.http.Client = .{ .allocator = gpa, .io = io };
+    var client: std.http.Client = .{ .allocator = gpa, .io = ctx.io };
     defer client.deinit();
 
     var body: std.Io.Writer.Allocating = .init(gpa);
     defer body.deinit();
 
-    const res = try client.fetch(.{
-        .location = .{ .url = "https://api.github.com/zen" },
+    const res = client.fetch(.{
+        .location = .{ .url = url },
         .method = .GET,
-        .headers = .{ .user_agent = .{ .override = "zig-client" } },
         .response_writer = &body.writer,
-    });
+    }) catch |err| switch (err) {
+        error.OutOfMemory => return error.OutOfMemory,
+        else => return singleton.IGLOT__NULL, // network/TLS/URI errors
+    };
 
-    std.debug.print("{d}\n{s}\n", .{ @backingInt(res.status), body.written() });
+    const heap = &vm.object_heap;
+    var fields = [_]IglotValue{
+        .{ .heap_ref = try heap.createString(url) },
+        .{ .int = @backingInt(res.status) },
+        .{ .heap_ref = try heap.createString(body.written()) },
+    };
+    return .{ .heap_ref = try heap.createStructInit(&FETCH_RESULT_DESC, &fields) };
 }
 
 fn writeArgs(out: *std.Io.Writer, obj_heap: *ObjectHeap, args_value: IglotValue) std.Io.Writer.Error!void {

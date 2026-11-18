@@ -9,7 +9,7 @@ const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
 
-const builtins_table = @import("../../vm/builtins.zig").table;
+const builtins = @import("../../vm/builtins.zig");
 const lookupBuiltin = @import("../../vm/builtins.zig").lookupBuiltin;
 const checkArrayLen = @import("expressions/validate_array_expr.zig").checkArrayLen;
 
@@ -59,6 +59,7 @@ pub const IglotSemanticAnalyzer = struct {
     pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
         self.type_table = try .init(allocator);
         try self.initBuiltinIdentifiers(allocator);
+        try builtins.initBuiltinTypes(allocator);
 
         for (program.body) |*s| {
             try self.hoistDeclaration(allocator, s) orelse continue;
@@ -227,6 +228,7 @@ pub const IglotSemanticAnalyzer = struct {
                 return .{ .break_stmt = st };
             },
             .struct_decl => unreachable,
+            .switch_stmt => unreachable,
         }
     }
 

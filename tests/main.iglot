@@ -1,17 +1,4 @@
 fn main() void: {
-  loop: {
-    value ::= prompt#("say 100: ");
-
-    switch parse_to_int#(value): {
-      100 => {
-        println#({ "good :)" });
-        break;
-      }
-      else => println#({ "again." }),
-    }
-
-    println#({ "looping..." })
-  }
-
-  println#({ "exiting..." })
+  response ::= fetch#("https://v2.jokeapi.dev/joke/Any");
+  println#({ "response obj", response });
 }

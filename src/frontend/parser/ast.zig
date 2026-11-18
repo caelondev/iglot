@@ -118,6 +118,7 @@ pub const Statement = struct {
         loop: LoopStatement,
         break_stmt: BreakStatement,
         struct_decl: StructDeclarationStatement,
+        switch_stmt: SwitchStatement,
     },
 };
 
@@ -273,6 +274,29 @@ pub const StructDeclarationStatement = struct {
     pub const StructField = struct {
         name: IdentifierExpression,
         type_expr: TypeExpression,
+        span: tokens.Span,
+    };
+};
+
+pub const SwitchStatement = struct {
+    scrutinee: Expression,
+    prongs: []Prong,
+    span: tokens.Span,
+
+    pub const Prong = struct {
+        pattern: Pattern,
+        body: Body,
+        span: tokens.Span,
+    };
+
+    pub const Pattern = union(enum) {
+        expr: Expression,
+        default,
+    };
+
+    pub const Body = union(enum) {
+        expr: Expression,
+        body: ScopedStatement,
         span: tokens.Span,
     };
 };
