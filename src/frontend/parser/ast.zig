@@ -213,7 +213,10 @@ pub const StructLiteral = struct {
 
 pub const MemberExpression = struct {
     object: *Expression,
-    property: IdentifierExpression,
+    property: union(enum) {
+        null_unwrap,
+        ident: IdentifierExpression,
+    },
 };
 
 // STATEMENTS

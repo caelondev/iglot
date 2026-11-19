@@ -38,9 +38,36 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
 const IglotParser = @import("../parser.zig").IglotParser;
+const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
+const parseExpression = @import("parseExpression.zig").parseExpression;
+const parseBlockStatement = @import("block_statement.zig").parseBlockStatement;
 
 pub fn parseSwitchStatement(
     parser: *IglotParser,
     allocator: std.mem.Allocator,
-) !?ast.Statement {}
+) !?ast.Statement {
+    const switch_tok = parser.cur_tok;
+    parser.nextToken();
+    const cond = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+    const body = try parseBody(parser, allocator) orelse return null;
+    return .{
+        .span = .mergeFromSpans(switch_tok.span, parser.cur_tok.span),
+        .kind = .{
+            .switch_stmt = .{
+                .scrutinee = cond,
+                .prongs = body,
+                .span = .mergeFromSpans(switch_tok.span, parser.cur_tok.span),
+            },
+        },
+    };
+}
+
+pub fn parseBody(parser: *IglotParser, allocator: std.mem.Allocator) !?[]ast.SwitchStatement.Prong {
+    if (!try parser.expectPeek(allocator, .colon)) return null;
+    if (!try parser.expectPeek(allocator, .left_brace)) return null;
+
+    var prongs: std.ArrayList(ast.SwitchStatement.Prong) = .empty;
+
+    return try prongs.toOwnedSlice(allocator);
+}

@@ -10,10 +10,23 @@ pub fn parseMemberExpression(
     allocator: std.mem.Allocator,
     left: ast.Expression,
 ) !?ast.Expression {
-    if (!try parser.expectPeek(allocator, .identifier)) return null;
-
     const left_ptr = try allocator.create(ast.Expression);
     left_ptr.* = left;
+    errdefer allocator.destroy(left_ptr);
+
+    if (parser.peekIs(.question)) {
+        parser.nextToken();
+        return .{
+            .span = .mergeFromSpans(left.span, parser.cur_tok.span),
+            .expr = .{
+                .member = .{
+                    .object = left_ptr,
+                    .property = .null_unwrap,
+                },
+            },
+        };
+    }
+    if (!try parser.expectPeek(allocator, .identifier)) return null;
 
     const prop_tok = parser.cur_tok;
 
@@ -22,7 +35,12 @@ pub fn parseMemberExpression(
         .expr = .{
             .member = .{
                 .object = left_ptr,
-                .property = .{ .value = prop_tok.lexeme, .span = prop_tok.span },
+                .property = .{
+                    .ident = .{
+                        .value = prop_tok.lexeme,
+                        .span = prop_tok.span,
+                    },
+                },
             },
         },
     };

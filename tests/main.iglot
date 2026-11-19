@@ -1,4 +1,21 @@
+struct Node: {
+  value :: int,
+  next :: ?Node,
+}
+
 fn main() void: {
-  response ::= fetch#("https://v2.jokeapi.dev/joke/Any");
-  println#({ "response obj", response });
+  head :: Node = {
+    .value = 10,
+    .next = {
+      .value = 20,
+      .next = null,
+    },
+  };
+
+  println#({ head.next.?.value });
+
+  -- type test. this should error and .? should
+  -- unwrap head.next's type.
+  -- value ::= head.next.?;
+  -- println#({ value +1 });
 }

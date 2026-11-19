@@ -93,7 +93,10 @@ pub const TypedExpr = struct {
 
 pub const TypedMemberExpr = struct {
     object: *TypedExpr,
-    property: TypedIdentifier,
+    property: union(enum) {
+        null_unwrap,
+        ident: TypedIdentifier,
+    },
 };
 
 pub const TypedCallExpr = struct {
