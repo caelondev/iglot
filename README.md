@@ -55,7 +55,7 @@ Hello, World!
 A simple program that prints a message to the console.
 
 ```
-fn main() void {
+fn main() void: {
   println({ "Hello, World!" });
 }
 ```
@@ -65,12 +65,12 @@ Fibonacci Sequence
 Calculate the 20th Fibonacci number using recursion, with type inference for the result.
 
 ```
-fn fib(n :: int) int {
+fn fib(n :: int) int: {
   if n <= 1: return n;
   return fib(n - 1) + fib(n - 2);
 }
 
-fn main() void {
+fn main() void: {
   value ::= fib(20);
   println({ value });
 }
