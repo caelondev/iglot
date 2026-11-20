@@ -132,6 +132,7 @@ pub const IglotCodegen = struct {
                 try self.emit(allocator, .rr(.ig_struct_get, try self.reg(ins.result.?), try self.reg(ins.operands[0])));
                 try self.emit(allocator, .i(.ig_extra, ins.data.field_index));
             },
+            .unwrap_null => try self.emit(allocator, .rr(.ig_null_unwrap, try self.reg(ins.result.?), try self.reg(ins.operands[0]))),
 
             else => {
                 std.debug.print("unimplemented ir op: {s}\n", .{@tagName(ins.op)});

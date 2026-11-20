@@ -31,6 +31,7 @@ pub const Opcode = enum {
 
     // data movement
     mov,
+    unwrap_null,
 
     // load
     load_global,

@@ -15,7 +15,7 @@ pub fn validateMemberExpr(
     const obj = try sema.validateExpression(allocator, m.object, m.object.span, null) orelse return null;
     if (m.property == .null_unwrap) {
         if (obj.sem_type == .err) return null;
-        if (obj.sem_type != .nullable) {
+        if (obj.sem_type != .nullable and obj.sem_type != .null) {
             const st = try allocator.create(tt.SemaType);
             st.* = obj.sem_type;
             try sema.reportError(allocator, .{
@@ -33,10 +33,10 @@ pub fn validateMemberExpr(
 
         const node = try allocator.create(typed_ast.TypedExpr);
         node.* = .{
-            .kind = obj.kind,
-            .span = obj.span,
+            .kind = .{ .null_unwrap = .{ .left = obj } },
+            .span = span,
             .place = obj.place,
-            .sem_type = obj.sem_type.nullable.*,
+            .sem_type = if (obj.sem_type == .null) obj.sem_type else obj.sem_type.nullable.*,
         };
         return node;
     }
@@ -72,10 +72,8 @@ pub fn validateMemberExpr(
         .kind = .{ .member = .{
             .object = obj,
             .property = .{
-                .ident = .{
-                    .value = field.name,
-                    .mutability = field.mutability,
-                },
+                .value = field.name,
+                .mutability = field.mutability,
             },
         } },
         .span = span,

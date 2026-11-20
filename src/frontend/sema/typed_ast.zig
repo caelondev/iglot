@@ -88,15 +88,17 @@ pub const TypedExpr = struct {
         index: TypedIndexExpr,
         struct_init: TypedStructInitializationExpression,
         member: TypedMemberExpr,
+        null_unwrap: TypedNullUnwrap,
     },
+};
+
+pub const TypedNullUnwrap = struct {
+    left: *TypedExpr,
 };
 
 pub const TypedMemberExpr = struct {
     object: *TypedExpr,
-    property: union(enum) {
-        null_unwrap,
-        ident: TypedIdentifier,
-    },
+    property: TypedIdentifier,
 };
 
 pub const TypedCallExpr = struct {

@@ -10,7 +10,7 @@ pub fn buildMemberExpr(ir: *IglotIR, allocator: std.mem.Allocator, m: *const typ
 
     // sema already validated this, so we can assery active type
     const struct_type = m.object.sem_type.@"struct";
-    const field_idx = struct_type.name_index_map.get(m.property.ident.value) orelse unreachable;
+    const field_idx = struct_type.name_index_map.get(m.property.value) orelse unreachable;
     const field_type = struct_type.fields[field_idx].sema_type.*;
 
     const result = ir.current_fn.newVReg();

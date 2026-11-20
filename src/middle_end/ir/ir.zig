@@ -28,6 +28,7 @@ const buildCallExpr = @import("expressions/call.zig").buildCallExpr;
 const buildIndexExpr = @import("expressions/index.zig").buildIndexExpr;
 const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructInitExpr;
 const buildMemberExpr = @import("expressions/member.zig").buildMemberExpr;
+const buildNullUnwrapExpr = @import("expressions/null_unwrap.zig").buildNullUnwrapExpr;
 
 const IdentKind = @import("expressions/call.zig").IdentKind;
 const ResolvedIdent = @import("expressions/call.zig").ResolvedIdent;
@@ -215,6 +216,7 @@ pub const IglotIR = struct {
 
             .struct_init => |*s| try buildStructInitExpr(self, allocator, s, sema_type),
             .member => |*m| try buildMemberExpr(self, allocator, m),
+            .null_unwrap => |*n| try buildNullUnwrapExpr(self, allocator, n),
         };
     }
 

@@ -115,6 +115,8 @@ pub const IglotOpcode = enum(u8) {
     ig_struct_get = 0xD8,
     ig_struct_set = 0xD9,
 
+    ig_null_unwrap = 0xDA,
+
     // 0xE0 to 0xFD reserved for future instructions
 
     // payload word for the previous instruction, never dispatched
@@ -215,6 +217,7 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_struct_pack,
         .ig_struct_get,
         .ig_struct_set,
+        .ig_null_unwrap,
         => .rr,
 
         .ig_add_i,

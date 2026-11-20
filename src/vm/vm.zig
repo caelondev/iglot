@@ -14,6 +14,7 @@ pub const IglotRuntimeError = error{
     NoEntryPoint,
     InvalidEntryReturnType,
     IndexOutOfBounds,
+    NullUnwrap,
 } || builtins.BuiltinIglotFunctionError;
 
 pub const CallFrame = struct {
@@ -183,6 +184,12 @@ pub const IglotVM = struct {
                 .ig_not => regs[ins.a] = boolValue(regs[ins.b].bool == 0),
 
                 .ig_mov => regs[ins.a] = regs[ins.b],
+                .ig_null_unwrap => {
+                    const src = regs[ins.b];
+                    if (isNull(src)) return error.NullUnwrap;
+                    regs[ins.a] = src;
+                },
+
                 .ig_jmp => frame.pc = ins.imm(),
                 .ig_jmp_if => {
                     const cond = regs[ins.a].bool;
@@ -324,8 +331,12 @@ inline fn negInt(regs: []IglotValue, ins: bc.Instruction) !i64 {
     return result[0];
 }
 
-fn divInt(comptime T: type, a: T, b: T) !T {
+inline fn divInt(comptime T: type, a: T, b: T) !T {
     if (b == 0) return error.DivisionByZero;
     if (b == -1) return 0 -% a; // minInt / -1 would overflow
     return @divTrunc(a, b);
+}
+
+inline fn isNull(value: IglotValue) bool {
+    return std.meta.activeTag(value) == .null;
 }
