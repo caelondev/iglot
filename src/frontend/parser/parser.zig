@@ -193,6 +193,7 @@ pub const IglotParser = struct {
 
     diagnostics: std.ArrayList(IglotDiagnostic),
     panic_mode: bool,
+    errors: u32,
     advance_count: u32,
 
     const Self = @This();
@@ -207,6 +208,7 @@ pub const IglotParser = struct {
             .peek_tok = undefined,
             .diagnostics = try .initCapacity(allocator, 15),
             .panic_mode = false,
+            .errors = 0,
             .advance_count = 0,
         };
 
@@ -279,6 +281,7 @@ pub const IglotParser = struct {
         if (self.panic_mode) return;
 
         self.panic_mode = true;
+        if (diagnostic.severity == .err) self.errors += 1;
         try self.diagnostics.append(allocator, diagnostic);
     }
 

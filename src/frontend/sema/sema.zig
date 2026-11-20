@@ -40,6 +40,7 @@ pub const IglotSemanticAnalyzer = struct {
 
     current_function_ctx: ?FunctionContext,
     loop_depth: usize,
+    errors: u32,
 
     const Self = @This();
     pub fn init() Self {
@@ -48,6 +49,7 @@ pub const IglotSemanticAnalyzer = struct {
             .diagnostics = .empty,
             .current_function_ctx = null,
             .loop_depth = 0,
+            .errors = 0,
         };
     }
 
@@ -463,6 +465,7 @@ pub const IglotSemanticAnalyzer = struct {
     }
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: IglotDiagnostic) !void {
+        if (diagnostic.severity == .err) self.errors += 1;
         try self.diagnostics.append(allocator, diagnostic);
     }
 };

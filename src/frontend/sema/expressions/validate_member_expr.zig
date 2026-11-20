@@ -15,6 +15,13 @@ pub fn validateMemberExpr(
     const obj = try sema.validateExpression(allocator, m.object, m.object.span, null) orelse return null;
     if (m.property == .null_unwrap) {
         if (obj.sem_type == .err) return null;
+        if (obj.sem_type == .null) {
+            try sema.reportError(allocator, .{
+                .span = span,
+                .severity = .warning,
+                .kind = .NullUnwrapOfNull,
+            });
+        }
         if (obj.sem_type != .nullable and obj.sem_type != .null) {
             const st = try allocator.create(tt.SemaType);
             st.* = obj.sem_type;

@@ -84,7 +84,7 @@ pub fn run(ctx: *Context) !void {
         &parser,
     );
 
-    if (parser.diagnostics.items.len != 0)
+    if (parser.errors > 0)
         return;
 
     // std.debug.print("parsed ast:\n", .{});
@@ -102,8 +102,9 @@ pub fn run(ctx: *Context) !void {
             source,
             &sema,
         );
-        return;
     }
+    if (sema.errors > 0)
+        return;
     sema.deinit(allocator);
 
     // std.debug.print("typed ast:\n", .{});
@@ -146,7 +147,7 @@ fn renderParserDiagnostics(
     source: []const u8,
     parser: *const IglotParser,
 ) !void {
-    for (parser.diagnostics.items, 0..) |diagnostic, i| {
+    for (parser.diagnostics.items) |diagnostic| {
         try renderDiagnostics(
             writer,
             allocator,
@@ -155,9 +156,15 @@ fn renderParserDiagnostics(
             diagnostic,
         );
 
-        if (i + 1 < parser.diagnostics.items.len)
-            try writer.writeByte('\n');
+        try writer.writeByte('\n');
     }
+    if (parser.errors == 0) return;
+    try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
+    try writer.print("found {s}\n", .{
+        try dye.red().fmt("{d} error(s)", .{
+            parser.errors,
+        }),
+    });
 }
 
 fn renderSemaDiagnostics(
@@ -178,10 +185,11 @@ fn renderSemaDiagnostics(
         try writer.writeByte('\n');
     }
 
+    if (sema.errors == 0) return;
     try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
     try writer.print("found {s}\n", .{
         try dye.red().fmt("{d} error(s)", .{
-            sema.diagnostics.items.len,
+            sema.errors,
         }),
     });
 }
