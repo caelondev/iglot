@@ -14,6 +14,7 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const std = @import("std");
+const builtin = @import("builtin");
 const IglotCLI = @import("cli/cli.zig").IglotCLI;
 
 pub fn main(init: std.process.Init) !void {
@@ -21,7 +22,12 @@ pub fn main(init: std.process.Init) !void {
         try init.minimal.args.toSlice(init.gpa);
     defer init.gpa.free(args);
 
-    const argsIter = init.minimal.args.iterate();
+    var argsIter = if (builtin.os.tag == .windows)
+        try std.process.Args.Iterator.initAllocator(init.minimal.args, init.gpa)
+    else
+        init.minimal.args.iterate();
+    defer if (builtin.os.tag == .windows) argsIter.deinit();
+
     var cli = IglotCLI.init(args, argsIter);
 
     try cli.run(
