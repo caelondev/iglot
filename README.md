@@ -4,7 +4,7 @@
 
   <br>
 
-[Repository](https://codeberg.org/caelondev/iglot) · [Issues](https://codeberg.org/caelondev/iglot/issues)
+[Repository](https://codeberg.org/caelondev/iglot) · [Docs](./DOCS.md) · [Issues](https://codeberg.org/caelondev/iglot/issues)
 
   <br>
 
@@ -54,7 +54,7 @@ Hello, World!
 
 A simple program that prints a message to the console.
 
-```
+```iglot
 fn main() void: {
   println({ "Hello, World!" });
 }
@@ -64,7 +64,7 @@ Fibonacci Sequence
 
 Calculate the 20th Fibonacci number using recursion, with type inference for the result.
 
-```
+```iglot
 fn fib(n :: int) int: {
   if n <= 1: return n;
   return fib(n - 1) + fib(n - 2);
@@ -75,6 +75,10 @@ fn main() void: {
   println({ value });
 }
 ```
+
+## Documentation
+
+A quick syntax reference covering types, variables, control flow, structs, nullables, and built-ins is in [DOCS.md](./DOCS.md).
 
 ## Development
 
