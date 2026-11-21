@@ -1,3 +1,4 @@
 fn main() void: {
-  println#({ null.? });
+  msg ::= prompt#("say something: ");
+  println#({ "your output type is:", type_of#(msg) });
 }

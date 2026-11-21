@@ -64,6 +64,7 @@ pub const table = [_]Builtin{
     .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .float, .func = &parse_to_float },
     .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .double, .func = &parse_to_double },
     .{ .name = "fetch", .params = &.{.string}, .ret_type = .{ .nullable = &FETCH_RESULT_SEMA }, .func = &fetch },
+    .{ .name = "type_of", .params = &.{.any}, .ret_type = .string, .func = &type_of },
 };
 
 pub fn initBuiltinTypes(allocator: std.mem.Allocator) !void {
@@ -191,6 +192,33 @@ fn fetch(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunc
         .{ .heap_ref = try heap.createString(body.written()) },
     };
     return .{ .heap_ref = try heap.createStructInit(&FETCH_RESULT_DESC, &fields) };
+}
+
+fn type_of(vm: *IglotVM, ctx: *Context, args: []const IglotValue) BuiltinIglotFunctionError!IglotValue {
+    var aw: std.Io.Writer.Allocating = .init(ctx.gpa);
+    defer aw.deinit();
+
+    try writeTypeName(&aw.writer, vm, args[0]);
+    const ref = try vm.object_heap.createString(aw.written());
+    return .{ .heap_ref = ref };
+}
+
+fn writeTypeName(out: *std.Io.Writer, vm: *IglotVM, v: IglotValue) std.Io.Writer.Error!void {
+    switch (v) {
+        .int => try out.writeAll("int"),
+        .wideint => try out.writeAll("wideint"),
+        .float => try out.writeAll("float"),
+        .double => try out.writeAll("double"),
+        .bool => try out.writeAll("bool"),
+        .null => try out.writeAll("null"),
+        .builtin_ref => try out.writeAll("builtin_function"),
+        .func => try out.writeAll("function"),
+        .heap_ref => |ref| switch (vm.object_heap.resolveRef(ref).*) {
+            .string => try out.writeAll("string"),
+            .array => try out.writeAll("array"),
+            .struct_init => |s| try out.writeAll(s.desc.name),
+        },
+    }
 }
 
 fn writeArgs(out: *std.Io.Writer, obj_heap: *ObjectHeap, args_value: IglotValue) std.Io.Writer.Error!void {
