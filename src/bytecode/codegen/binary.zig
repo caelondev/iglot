@@ -6,6 +6,16 @@ const SemaType = @import("../../frontend/sema/type_table.zig").SemaType;
 
 pub fn binary(self: *IglotCodegen, allocator: std.mem.Allocator, inst: i.Instruction) !void {
     const cg_op = irToCgOpcode(inst);
+
+    if (cg_op == .ig_eq_null or cg_op == .ig_ne_null) {
+        try self.emit(allocator, .rr(
+            cg_op,
+            try self.reg(inst.result.?),
+            try self.reg(inst.operands[0]),
+        ));
+        return;
+    }
+
     try self.emit(allocator, .rrr(
         cg_op,
         try self.reg(inst.result.?),
@@ -15,7 +25,6 @@ pub fn binary(self: *IglotCodegen, allocator: std.mem.Allocator, inst: i.Instruc
 }
 
 pub fn irToCgOpcode(inst: i.Instruction) bc.IglotOpcode {
-    // `x == null` / `x != null` on a nullable: compare against null, not by payload type
     if (inst.sema_type.? == .nullable) {
         switch (inst.op) {
             .cmp_eq => return .ig_eq_null,

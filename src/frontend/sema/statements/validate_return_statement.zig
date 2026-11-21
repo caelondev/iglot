@@ -6,6 +6,14 @@ const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
 const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
 
+fn isAssignable(expected: tt.SemaType, found: tt.SemaType) bool {
+    if (expected.eql(found)) return true;
+    return switch (expected) {
+        .nullable => |inner| found == .null or isAssignable(inner.*, found),
+        else => false,
+    };
+}
+
 pub fn validateReturnStatement(
     sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
@@ -29,9 +37,9 @@ pub fn validateReturnStatement(
     else
         tt.SemaType.void;
 
-    if (!ctx.return_type.eql(found_type)) {
+    if (!isAssignable(ctx.return_type, found_type)) {
         try sema.reportError(allocator, .{
-            .span = return_value.?.span,
+            .span = if (return_value) |rv| rv.span else r.span,
             .kind = .{
                 .ReturnTypeMismatch = .{
                     .expected = ctx.return_type,

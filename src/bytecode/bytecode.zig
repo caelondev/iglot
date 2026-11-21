@@ -220,6 +220,8 @@ pub fn format(op: IglotOpcode) OperandFormat {
         .ig_struct_get,
         .ig_struct_set,
         .ig_null_unwrap,
+        .ig_eq_null,
+        .ig_ne_null,
         => .rr,
 
         .ig_add_i,
