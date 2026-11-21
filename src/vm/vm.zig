@@ -166,6 +166,14 @@ pub const IglotVM = struct {
 
                 .ig_neg_f => regs[ins.a] = .{ .float = -regs[ins.b].float },
                 .ig_neg_d => regs[ins.a] = .{ .double = -regs[ins.b].double },
+                .ig_eq_null => {
+                    const a = regs[ins.b];
+                    regs[ins.a] = .{ .bool = @intFromBool(isNull(a)) };
+                },
+                .ig_ne_null => {
+                    const a = regs[ins.b];
+                    regs[ins.a] = .{ .bool = @intFromBool(!isNull(a)) };
+                },
 
                 .ig_eq_str => {
                     const l_str = self.object_heap.resolveRef(regs[ins.b].heap_ref).string;

@@ -115,18 +115,28 @@ pub const IglotDiagnostic = struct {
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
                 .TypeMismatch => |e| switch (e.expected) {
-                    .nullable => |inner| if (e.found == .nullable)
-                        try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found })
-                    else
-                        try writer.print("expected \"{f}\", \"{f}\" or null, found type \"{f}\" instead", .{ inner.*, e.expected, e.found }),
+                    .nullable => |inner| {
+                        if (e.found == .nullable) {
+                            try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found });
+                        } else {
+                            try writer.print("expected \"{f}\", \"{f}\" or null, found type \"{f}\" instead", .{ inner.*, e.expected, e.found });
+                        }
+                    },
+                    // this any prong only emits if found is void
+                    .any => try writer.print("expected a non-void type", .{}),
                     else => try writer.print("expected type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found }),
                 },
                 .ReturnTypeMismatch => |e| switch (e.expected) {
-                    .nullable => |inner| if (e.found == .nullable)
-                        try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found })
-                    else
-                        try writer.print("expected return type \"{f}\", \"{f}\" or null, found return type \"{f}\" instead", .{ inner.*, e.expected, e.found }),
-                    else => try writer.print("expected return type \"{f}\", found return type \"{f}\" instead", .{ e.expected, e.found }),
+                    .nullable => |inner| {
+                        if (e.found == .nullable) {
+                            try writer.print("expected return type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found });
+                        } else {
+                            try writer.print("expected \"{f}\", \"{f}\" or null, found return type \"{f}\" instead", .{ inner.*, e.expected, e.found });
+                        }
+                    },
+                    // this any prong only emits if found is void
+                    .any => try writer.print("expected a non-void return type", .{}),
+                    else => try writer.print("expected return type \"{f}\", found type \"{f}\" instead", .{ e.expected, e.found }),
                 },
                 .UndefinedBuiltin => |n| try writer.print("cannot resolve builtin \"{s}\"", .{n.identifier}),
                 .ImpossibleComparison => |e| try writer.print("cannot perform comparison \"{s}\" to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),

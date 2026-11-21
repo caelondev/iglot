@@ -15,6 +15,15 @@ pub fn binary(self: *IglotCodegen, allocator: std.mem.Allocator, inst: i.Instruc
 }
 
 pub fn irToCgOpcode(inst: i.Instruction) bc.IglotOpcode {
+    // `x == null` / `x != null` on a nullable: compare against null, not by payload type
+    if (inst.sema_type.? == .nullable) {
+        switch (inst.op) {
+            .cmp_eq => return .ig_eq_null,
+            .cmp_ne => return .ig_ne_null,
+            else => {},
+        }
+    }
+
     return switch (inst.op) {
         .add => dispatchOpcode(inst.sema_type.?, .ig_add_i, .ig_add_w, .ig_add_f, .ig_add_d, null),
         .sub => dispatchOpcode(inst.sema_type.?, .ig_sub_i, .ig_sub_w, .ig_sub_f, .ig_sub_d, null),
@@ -39,6 +48,7 @@ pub fn dispatchOpcode(val_type: SemaType, int: bc.IglotOpcode, w: bc.IglotOpcode
         .float => f,
         .double => d,
         .string => str.?,
+        .nullable => |t| dispatchOpcode(t.*, int, w, f, d, str),
         else => unreachable,
     };
 }

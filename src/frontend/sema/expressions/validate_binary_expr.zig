@@ -16,7 +16,7 @@ pub fn validateBinaryExpr(
     const left = try sema.validateExpression(allocator, b.left, b.left.span, expected_type) orelse return null;
     const right = try sema.validateExpression(allocator, b.right, b.right.span, left.sem_type) orelse return null;
 
-    if (!left.sem_type.eql(right.sem_type)) {
+    if (!left.sem_type.eql(right.sem_type) and b.operator != .equal_to and b.operator != .not_equal_to) {
         try sema.reportError(allocator, .{
             .span = Span.mergeFromSpans(b.left.span, b.right.span),
             .kind = .{
@@ -82,6 +82,23 @@ pub fn validateBinaryExpr(
         },
 
         .equal_to, .not_equal_to => blk: {
+            const l_null = left.sem_type == .null;
+            const r_null = right.sem_type == .null;
+
+            // comparing against null is only valid if the other side is nullable
+            if (l_null or r_null) {
+                const other = if (l_null) right else left;
+                if (other.sem_type != .nullable) {
+                    try sema.reportError(allocator, .{
+                        .span = Span.mergeFromSpans(b.left.span, b.right.span),
+                        .kind = .{
+                            .InvalidBinaryExpressionType = .{ .left = left.sem_type, .right = right.sem_type, .operator = b.operator },
+                        },
+                    });
+                    return null;
+                }
+            }
+
             const node = try allocator.create(typed_ast.TypedExpr);
             node.* = .{
                 .span = span,

@@ -116,6 +116,8 @@ pub const IglotOpcode = enum(u8) {
     ig_struct_set = 0xD9,
 
     ig_null_unwrap = 0xDA,
+    ig_ne_null = 0xDB,
+    ig_eq_null = 0xDC,
 
     // 0xE0 to 0xFD reserved for future instructions
 
