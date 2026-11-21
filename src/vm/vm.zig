@@ -253,6 +253,15 @@ pub const IglotVM = struct {
                     const obj = self.object_heap.objects.items[obj_ref];
                     regs[dest_reg] = obj.struct_init.fields[extra.imm()];
                 },
+                .ig_struct_set => {
+                    const obj_ref = regs[ins.a].heap_ref;
+                    const rhs_reg = regs[ins.b];
+                    const extra = frame.code[frame.pc];
+                    frame.pc += 1;
+
+                    const obj = self.object_heap.resolveRef(obj_ref).struct_init;
+                    obj.fields[extra.imm()] = rhs_reg;
+                },
 
                 .ig_call => {
                     const callee = regs[ins.a].func;

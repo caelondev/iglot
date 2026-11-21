@@ -13,6 +13,17 @@ pub fn validateMemberExpr(
     span: Span,
 ) anyerror!?*typed_ast.TypedExpr {
     const obj = try sema.validateExpression(allocator, m.object, m.object.span, null) orelse return null;
+    const place: typed_ast.Place = switch (obj.place) {
+        .value => .value,
+        .place => |p| .{
+            .place = .{
+                .mutability = p.mutability,
+                .root = p.root,
+                .projected = true,
+            },
+        },
+    };
+
     if (m.property == .null_unwrap) {
         if (obj.sem_type == .err) return null;
         if (obj.sem_type == .null) {
@@ -42,7 +53,7 @@ pub fn validateMemberExpr(
         node.* = .{
             .kind = .{ .null_unwrap = .{ .left = obj } },
             .span = span,
-            .place = obj.place,
+            .place = place,
             .sem_type = if (obj.sem_type == .null) obj.sem_type else obj.sem_type.nullable.*,
         };
         return node;
@@ -84,6 +95,7 @@ pub fn validateMemberExpr(
             },
         } },
         .span = span,
+        .place = place,
         .sem_type = field.sema_type.*,
     };
 

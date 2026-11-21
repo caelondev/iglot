@@ -37,6 +37,15 @@ pub fn validateAssignmentExpr(
         ) orelse return null,
     }
 
+    if (typed_assignee.kind == .null_unwrap) {
+        try sema.reportError(allocator, .{
+            .span = a.assignee.span,
+            .kind = .InvalidLeftHandSideAssignment,
+            .severity = .err,
+        });
+        return null;
+    }
+
     const typed_value = try sema.validateExpression(
         allocator,
         a.value,

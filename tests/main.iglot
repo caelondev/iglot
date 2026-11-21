@@ -1,4 +1,20 @@
+struct Node: {
+    value :: int,
+    next :: ?Node,
+}
+
 fn main() void: {
-  msg ::= prompt#("say something: ");
-  println#({ "your output type is:", type_of#(msg) });
+  head :: Node = {
+    .value = 10,
+    .next = {
+      .value = 0,
+      .next = null,
+    },
+  };
+
+  println#({ head.next.?.next });
+  head.next.? = { .value = 100, .next = null }; -- should error
+  head.next.?.next = { .value = 100, .next = null };
+  println#({ head.next.?.next });
+  
 }

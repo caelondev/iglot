@@ -36,6 +36,24 @@ pub fn buildAssignmentExpr(ir: *IglotIR, allocator: std.mem.Allocator, a: *const
 
             return rhs;
         },
+        .member => |*m| {
+            const obj = try ir.buildExpression(allocator, m.object) orelse return null;
+            const rhs = try ir.buildExpression(allocator, a.value) orelse return null;
+
+            // object's sem_type is guaranteed to be a struct by sema
+            const struct_type = m.object.sem_type.@"struct";
+            const field_idx: u32 = @intCast(struct_type.name_index_map.get(m.property.value).?);
+
+            try ir.emit(allocator, .{
+                .op = .struct_set,
+                .sema_type = a.assignee.sem_type,
+                .operands = try allocator.dupe(inst.VReg, &.{ obj, rhs }),
+                .data = .{ .field_index = field_idx },
+                .result = null,
+            });
+
+            return rhs;
+        },
 
         else => unreachable,
     }
