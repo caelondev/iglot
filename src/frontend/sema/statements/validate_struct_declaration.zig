@@ -11,47 +11,24 @@ pub fn validateStructDeclaration(
     allocator: std.mem.Allocator,
     s: *const ast.StructDeclarationStatement,
 ) anyerror!?typed_ast.TypedStructDeclarationStatement {
-    if (sema.type_table.lookupCurrentScope(s.name.value)) |i| {
-        const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
-            .{
-                .note = .{
-                    .message = "identifier declared here",
-                    .span = i.span,
-                },
-            },
-        });
+    // NOTE: the hoist pass already declared this struct (and reported
+    // duplicates), so we only look it up and fill in the fields here.
+    const existing = sema.type_table.lookupTypeCurrentScope(s.name.value) orelse return null;
 
-        try sema.reportError(allocator, .{
-            .span = s.span,
-            .severity = .err,
-            .kind = .{
-                .IdentifierAlreadyExist = .{
-                    .identifier = s.name.value,
-                },
-            },
-            .annotations = if (i.is_builtin) &.{} else annotations,
-        });
+    // on a duplicate, the entry belongs to the first declaration. don't fill
+    // its fields from this one's body.
+    if (!std.meta.eql(existing.span, s.span)) return null;
 
-        return null;
-    }
-
-    const decl = try allocator.create(tt.SemaType.Struct);
-    decl.* = .{
-        .name = s.name.value,
-        .fields = &.{},
-        .name_index_map = .init(allocator),
+    const decl = switch (existing.sem_type) {
+        .@"struct" => |d| d,
+        else => return null,
     };
-
-    try sema.type_table.declareType(allocator, s.name.value, .{
-        .span = s.span,
-        .mutability = .@"struct",
-        .sem_type = .{ .@"struct" = decl },
-    });
 
     var had_error = false;
 
     const typed_fields = try validateFields(sema, allocator, s.fields, &decl.name_index_map, &had_error);
     decl.fields = typed_fields;
+
     var seen: std.ArrayList(*const tt.SemaType.Struct) = .empty;
     for (typed_fields) |f| {
         if (try containsByValue(f.sema_type.*, decl, &seen, allocator)) {

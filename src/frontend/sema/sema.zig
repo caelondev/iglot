@@ -64,7 +64,10 @@ pub const IglotSemanticAnalyzer = struct {
         try builtins.initBuiltinTypes(allocator);
 
         for (program.body) |*s| {
-            try self.hoistDeclaration(allocator, s) orelse continue;
+            if (s.kind == .struct_decl) try self.hoistDeclaration(allocator, s) orelse continue;
+        }
+        for (program.body) |*s| {
+            if (s.kind != .struct_decl) try self.hoistDeclaration(allocator, s) orelse continue;
         }
 
         var body: std.ArrayList(typed_ast.TypedStmt) = .empty;
@@ -124,6 +127,44 @@ pub const IglotSemanticAnalyzer = struct {
                     .span = f.span,
                     .sem_type = function_sem_type,
                     .mutability = .function,
+                });
+            },
+            .struct_decl => |s| {
+                if (self.type_table.lookupTypeCurrentScope(s.name.value)) |existing| {
+                    const annotations = try allocator.dupe(IglotDiagnostic.Annotation, &.{
+                        .{
+                            .note = .{
+                                .message = "identifier declared here",
+                                .span = existing.span,
+                            },
+                        },
+                    });
+
+                    try self.reportError(allocator, .{
+                        .span = s.span,
+                        .severity = .err,
+                        .kind = .{
+                            .IdentifierAlreadyExist = .{
+                                .identifier = s.name.value,
+                            },
+                        },
+                        .annotations = if (existing.is_builtin) &.{} else annotations,
+                    });
+
+                    return null;
+                }
+
+                const decl = try allocator.create(tt.SemaType.Struct);
+                decl.* = .{
+                    .name = s.name.value,
+                    .fields = &.{},
+                    .name_index_map = .init(allocator),
+                };
+
+                try self.type_table.declareType(allocator, s.name.value, .{
+                    .span = s.span,
+                    .mutability = .@"struct",
+                    .sem_type = .{ .@"struct" = decl },
                 });
             },
             else => return,
