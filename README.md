@@ -78,7 +78,7 @@ fn main() void: {
 
 ## Documentation
 
-A quick syntax reference covering types, variables, control flow, structs, nullables, and built-ins is in [DOCS.md](./DOCS.md).
+A quick syntax reference covering types, variables, control flow, structs, nullables, and built-ins is in [docs/tour.md](./docs/tour.md)
 
 ## Development
 

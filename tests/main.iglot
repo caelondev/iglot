@@ -1,8 +1,57 @@
-fn main() void: {
-  if false and something(): {}
+struct Node: {
+  value :: int,
+  next :: ?Node,
 }
 
-fn something() bool: {
-    println#({ "i should not print" });
-    return true;
+fn main() void: {
+  head :: Node = {
+    .value = 1,
+    .next = {
+      .value = 2,
+      .next = {
+        .value = 3,
+        .next = {
+          .value = 4,
+          .next = {
+            .value = 5,
+            .next = null,
+          },
+        },
+      },
+    },
+  };
+
+  println#({ "Original list:" });
+  print_list(head);
+  println#({ "Reversed list:" });
+  list ::= reverse_list(head);
+  print_list(list);
+}
+
+fn reverse_list(node :: ?Node) ?Node: {
+  prev :: ?Node = null;
+  cur :: ?Node = node;
+  
+  loop: {
+    if cur == null: break;
+    next ::= cur.?.next;
+    cur.?.next = prev;
+    prev = cur;
+    cur = next;
+  }
+
+  return prev;
+}
+
+fn print_list(node :: ?Node) void: {
+  current ::= node;
+
+  loop: {
+      if current == null: break;
+      print#({ current.?.value });
+      current = node.?.next;
+      if current != null: print#({ " -> " });
+  }
+
+  println#({});
 }
