@@ -98,7 +98,7 @@ export default grammar({
     ),
 
     primitive_type: $ => choice(
-      "int", "bigint", "float", "double",
+      "int", "wideint", "float", "double",
       "bool", "string", "null", "void",
     ),
 
