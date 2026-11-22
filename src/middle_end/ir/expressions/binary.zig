@@ -2,10 +2,17 @@ const std = @import("std");
 const typed_ast = @import("../../../frontend/sema/typed_ast.zig");
 const TokenKind = @import("../../../frontend/lexer/tokens.zig").TokenKind;
 const inst = @import("../instruction.zig");
-const Function = @import("../function.zig").Function;
 const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildBinaryExpr(ir: *IglotIR, allocator: std.mem.Allocator, b: *const typed_ast.TypedBinaryExpr) !?inst.VReg {
+pub fn buildBinaryExpr(
+    ir: *IglotIR,
+    allocator: std.mem.Allocator,
+    b: *const typed_ast.TypedBinaryExpr,
+) !?inst.VReg {
+    if (b.operator == .@"and" or b.operator == .@"or") {
+        return buildLogicalExpr(ir, allocator, b);
+    }
+
     const op = tokenToOpcode(b.operator);
     const left_ref = try ir.buildExpression(allocator, b.left) orelse return null;
     const right_ref = try ir.buildExpression(allocator, b.right) orelse return null;
@@ -18,6 +25,92 @@ pub fn buildBinaryExpr(ir: *IglotIR, allocator: std.mem.Allocator, b: *const typ
         .result = dest,
         .data = .none,
     });
+
+    return dest;
+}
+
+fn buildLogicalExpr(
+    ir: *IglotIR,
+    allocator: std.mem.Allocator,
+    b: *const typed_ast.TypedBinaryExpr,
+) !?inst.VReg {
+    const is_and = b.operator == .@"and";
+
+    const left_ref = try ir.buildExpression(allocator, b.left) orelse return null;
+
+    const rhs_block = try ir.current_fn.newBlock(allocator, "logical_rhs");
+    const short_block = try ir.current_fn.newBlock(allocator, "logical_short");
+    const merge_block = try ir.current_fn.newBlock(allocator, "logical_merge");
+
+    const rhs_ref = rhs_block.id;
+    const short_ref = short_block.id;
+    const merge_ref = merge_block.id;
+
+    const dest = ir.current_fn.newVReg();
+
+    try ir.emit(allocator, .{
+        .op = .cond_br,
+        .sema_type = b.left.sem_type,
+        .operands = try allocator.dupe(inst.VReg, &.{left_ref}),
+        .result = null,
+        .data = .{
+            .cond_branch = .{
+                .true_block = if (is_and) rhs_ref else short_ref,
+                .false_block = if (is_and) short_ref else rhs_ref,
+            },
+        },
+    });
+
+    // Short-circuit path.
+    ir.goToBlock(short_block);
+
+    try ir.emit(allocator, .{
+        .op = .const_bool,
+        .sema_type = b.left.sem_type,
+        .operands = &.{},
+        .result = dest,
+        .data = .{
+            .constant = .{
+                .bool = !is_and,
+            },
+        },
+    });
+
+    try ir.emit(allocator, .{
+        .op = .br,
+        .sema_type = .void,
+        .operands = &.{},
+        .result = null,
+        .data = .{
+            .branch_target = merge_ref,
+        },
+    });
+
+    // RHS path. This is only executed when required.
+    ir.goToBlock(rhs_block);
+
+    const right_ref = try ir.buildExpression(allocator, b.right) orelse return null;
+
+    try ir.emit(allocator, .{
+        .op = .mov,
+        .sema_type = b.left.sem_type,
+        .operands = try allocator.dupe(inst.VReg, &.{right_ref}),
+        .result = dest,
+        .data = .none,
+    });
+
+    try ir.emit(allocator, .{
+        .op = .br,
+        .sema_type = .void,
+        .operands = &.{},
+        .result = null,
+        .data = .{
+            .branch_target = merge_ref,
+        },
+    });
+
+    // Continue after the logical expression.
+    ir.goToBlock(merge_block);
 
     return dest;
 }

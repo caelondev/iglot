@@ -7,7 +7,9 @@ const Module = @import("module.zig").Module;
 pub fn simplifyCfg(allocator: std.mem.Allocator, module: *Module) !void {
     for (module.functions.items) |f| {
         if (f.blocks.items.len == 0) continue;
+
         threadJumps(f);
+        foldRedundantCondBranches(f);
         try dropUnreachable(allocator, f);
         try mergeChains(allocator, f);
     }
@@ -80,6 +82,27 @@ fn dropUnreachable(allocator: std.mem.Allocator, f: *Function) !void {
     }
 
     try compact(allocator, f, seen);
+}
+
+fn foldRedundantCondBranches(f: *Function) void {
+    for (f.blocks.items) |block| {
+        for (block.instructions.items) |*ins| {
+            const cb = switch (ins.data) {
+                .cond_branch => |cb| cb,
+                else => continue,
+            };
+
+            if (cb.true_block.id != cb.false_block.id) continue;
+
+            ins.op = .br;
+            ins.operands = &.{};
+            ins.result = null;
+            ins.sema_type = .void;
+            ins.data = .{
+                .branch_target = cb.true_block,
+            };
+        }
+    }
 }
 
 fn mergeChains(allocator: std.mem.Allocator, f: *Function) !void {
