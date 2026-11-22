@@ -31,6 +31,8 @@ const BINARY_OPS = [
   ["-", PREC.additive],
   ["*", PREC.multiplicative],
   ["/", PREC.multiplicative],
+  ["and", PREC.or],
+  ["or", PREC.and],
 ];
 
 /**
@@ -237,7 +239,7 @@ export default grammar({
       seq(
         field("object", $._expression),
         ".",
-        field("property", $.identifier),
+        choice(field("property", $.identifier), "?"),
       ),
     ),
     assign: $ => prec.right(

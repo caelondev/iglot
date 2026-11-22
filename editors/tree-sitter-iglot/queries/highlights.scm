@@ -1,5 +1,7 @@
 ; keywords
 "fn" @keyword
+"and" @keyword
+"or" @keyword
 "return" @keyword.special
 "struct" @keyword.special
 "const" @keyword.special
