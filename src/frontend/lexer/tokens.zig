@@ -85,6 +85,7 @@ pub const TokenKind = enum {
     module,
     loop,
     final,
+    import,
 };
 
 /// A source location covering a token.
@@ -168,6 +169,7 @@ pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "struct", .@"struct" },
     .{ "switch", .@"switch" },
     .{ "fin", .final },
+    .{ "import", .import },
     .{ "module", .module },
     .{ "loop", .loop },
 });

@@ -66,7 +66,7 @@ pub fn run(ctx: *Context) !void {
     const writer = &stdout.interface;
 
     var driver: IglotModuleDriver = .init();
-    const mod = try driver.loadModule(
+    const modules = try driver.loadProgram(
         allocator,
         ctx.io,
         writer,
@@ -74,10 +74,13 @@ pub fn run(ctx: *Context) !void {
         &dye,
         path,
     ) orelse return;
-    const ast = mod.program;
+
+    // bogus values for now
+    const source = "";
+    const ast: a.Program = undefined;
 
     // std.debug.print("parsed ast:\n", .{});
-    // try dumpAny(writer, ast, 0);
+    try dumpAny(writer, modules, 0);
 
     // Semantic analysis
     var sema: IglotSemanticAnalyzer = .init();
@@ -88,7 +91,7 @@ pub fn run(ctx: *Context) !void {
             writer,
             allocator,
             &dye,
-            mod.source,
+            source,
             &sema,
         );
     }

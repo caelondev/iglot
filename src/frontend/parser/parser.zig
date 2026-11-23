@@ -225,6 +225,17 @@ pub const IglotParser = struct {
 
     pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !?ast.Program {
         const header = try self.parseModuleHeader(allocator) orelse return null;
+
+        var imports: std.ArrayList(ast.Import) = .empty;
+
+        while (self.curTokenIs(.import)) {
+            if (try self.parseImport(allocator)) |imp| {
+                try imports.append(allocator, imp);
+            } else {
+                self.synchronize();
+            }
+        }
+
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.curTokenIs(.eof)) {
@@ -236,6 +247,7 @@ pub const IglotParser = struct {
         const body = try stmts.toOwnedSlice(allocator);
         return .{
             .module_header = header,
+            .imports = try imports.toOwnedSlice(allocator),
             .body = body,
         };
     }
@@ -269,6 +281,33 @@ pub const IglotParser = struct {
         return .{
             .span = .mergeFromSpans(module_tok.span, sc.span),
             .name = name,
+        };
+    }
+
+    fn parseImport(self: *Self, allocator: std.mem.Allocator) !?ast.Import {
+        const import_tok = self.cur_tok;
+
+        if (!try self.expectPeek(allocator, .identifier)) return null;
+        const first = self.cur_tok;
+
+        var name = first.lexeme;
+        var alias: ?[]const u8 = null;
+
+        if (self.peekTokenIs(.box_colon)) {
+            self.nextToken();
+            if (!try self.expectPeek(allocator, .identifier)) return null;
+            alias = first.lexeme;
+            name = self.cur_tok.lexeme;
+        }
+
+        if (!try self.expectPeek(allocator, .semicolon)) return null;
+        const sc = self.cur_tok;
+        self.nextToken();
+
+        return .{
+            .name = name,
+            .alias = alias,
+            .span = .mergeFromSpans(import_tok.span, sc.span),
         };
     }
 

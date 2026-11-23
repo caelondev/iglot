@@ -39,6 +39,8 @@ pub const IglotDiagnostic = struct {
 
         // Module Driver
         ModuleNameMismatch: struct { found: []const u8, file_name: []const u8 },
+        ModuleNotFound: struct { name: []const u8 },
+        ImportCycle: struct { name: []const u8 },
 
         // Sema
         InvalidLeftHandSideAssignment,
@@ -116,6 +118,8 @@ pub const IglotDiagnostic = struct {
                 .InvalidBuiltinCallee => try writer.writeAll("expected an identifier before \"#\" in a builtin call"),
 
                 .ModuleNameMismatch => |m| try writer.print("module name \"{s}\" and filename \"{s}\" do not match", .{ m.found, m.file_name }),
+                .ModuleNotFound => |m| try writer.print("cannot find module \"{s}\"", .{m.name}),
+                .ImportCycle => |m| try writer.print("importing \"{s}\" creates a cycle", .{m.name}),
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),
