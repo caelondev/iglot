@@ -8,6 +8,8 @@ const tt = @import("type_table.zig");
 const ast = @import("../parser/ast.zig");
 const typed_ast = @import("typed_ast.zig");
 const Span = @import("../lexer/tokens.zig").Span;
+const TypeEntry = @import("type_table.zig").TypeEntry;
+const IglotModule = @import("../../driver/module.zig").IglotModule;
 
 const builtins = @import("../../vm/builtins.zig");
 const lookupBuiltin = @import("../../vm/builtins.zig").lookupBuiltin;
@@ -34,13 +36,29 @@ const FunctionContext = struct {
     return_type: tt.SemaType,
 };
 
+pub const ModuleScope = struct {
+    id: u32,
+    name: []const u8,
+    values: std.StringHashMapUnmanaged(TypeEntry) = .empty, // fns, top-level vars
+    types: std.StringHashMapUnmanaged(TypeEntry) = .empty, // structs
+};
+
+const ModuleAccess = union(enum) {
+    not_module,
+    failed,
+    ok: *typed_ast.TypedExpr,
+};
+
 pub const IglotSemanticAnalyzer = struct {
     type_table: tt.TypeTable,
     diagnostics: std.ArrayList(IglotDiagnostic),
 
+    current_module: ?*ModuleScope,
     current_function_ctx: ?FunctionContext,
     loop_depth: usize,
     errors: u32,
+    modules: std.AutoHashMapUnmanaged(u32, *ModuleScope),
+    imports: std.StringHashMapUnmanaged(*ModuleScope),
 
     const Self = @This();
     pub fn init() Self {
@@ -48,8 +66,11 @@ pub const IglotSemanticAnalyzer = struct {
             .type_table = undefined,
             .diagnostics = .empty,
             .current_function_ctx = null,
+            .current_module = null,
             .loop_depth = 0,
             .errors = 0,
+            .modules = .empty,
+            .imports = .empty,
         };
     }
 
@@ -58,10 +79,31 @@ pub const IglotSemanticAnalyzer = struct {
         self.diagnostics.deinit(allocator);
     }
 
-    pub fn analyze(self: *Self, allocator: std.mem.Allocator, program: ast.Program) !typed_ast.TypedProgram {
+    pub fn analyzeModule(self: *Self, allocator: std.mem.Allocator, mod: IglotModule) !typed_ast.TypedProgram {
+        const program = mod.program;
+
+        const scope = try allocator.create(ModuleScope);
+        scope.* = .{ .id = mod.id, .name = program.module_header.name };
+        try self.modules.put(allocator, mod.id, scope);
+        self.current_module = scope;
+
         self.type_table = try .init(allocator);
+        self.imports = .empty;
         try self.initBuiltinIdentifiers(allocator);
         try builtins.initBuiltinTypes(allocator);
+
+        for (program.imports, mod.deps) |imp, dep| {
+            const local = imp.alias orelse imp.name;
+            if (self.imports.contains(local)) {
+                try self.reportError(allocator, .{
+                    .span = imp.span,
+                    .kind = .{ .IdentifierAlreadyExist = .{ .identifier = local } },
+                });
+                continue;
+            }
+
+            try self.imports.put(allocator, local, self.modules.get(dep.id).?);
+        }
 
         for (program.body) |*s| {
             if (s.kind == .struct_decl) try self.hoistDeclaration(allocator, s) orelse continue;
@@ -75,6 +117,15 @@ pub const IglotSemanticAnalyzer = struct {
             const typed = try self.scanTopLevelStatement(allocator, stmt) orelse continue;
             try body.append(allocator, typed);
         }
+        for (program.body) |*s| switch (s.kind) {
+            .function_decl => |f| if (self.type_table.lookupCurrentScope(f.identifier.value)) |e|
+                try scope.values.put(allocator, f.identifier.value, e),
+            .variable_declaration => |v| if (self.type_table.lookupCurrentScope(v.identifier.value)) |e|
+                try scope.values.put(allocator, v.identifier.value, e),
+            .struct_decl => |st| if (self.type_table.lookupTypeCurrentScope(st.name.value)) |e|
+                try scope.types.put(allocator, st.name.value, e),
+            else => {},
+        };
         return .{ .body = try body.toOwnedSlice(allocator) };
     }
 
@@ -158,6 +209,7 @@ pub const IglotSemanticAnalyzer = struct {
                 decl.* = .{
                     .name = s.name.value,
                     .fields = &.{},
+                    .module_id = self.current_module.?.id,
                     .name_index_map = .init(allocator),
                 };
 
@@ -337,7 +389,10 @@ pub const IglotSemanticAnalyzer = struct {
                 const ident_type = self.type_table.lookupIdentifier(i.value) orelse {
                     try self.reportError(allocator, .{
                         .span = span,
-                        .kind = .{ .UndefinedIdentifier = .{ .identifier = i.value } },
+                        .kind = if (self.imports.contains(i.value))
+                            .{ .NamespaceAsValue = .{ .name = i.value } }
+                        else
+                            .{ .UndefinedIdentifier = .{ .identifier = i.value } },
                     });
                     return null;
                 };
@@ -364,7 +419,11 @@ pub const IglotSemanticAnalyzer = struct {
             .call => |*c| validateCallExpr(self, allocator, c, span),
 
             .index_expr => |*i| validateIndexExpr(self, allocator, i, span),
-            .member => |*m| validateMemberExpr(self, allocator, m, span),
+            .member => |*m| switch (try self.resolveModuleMember(allocator, m, span)) {
+                .not_module => validateMemberExpr(self, allocator, m, span),
+                .failed => null,
+                .ok => |node| node,
+            },
         };
     }
 
@@ -407,6 +466,52 @@ pub const IglotSemanticAnalyzer = struct {
         }
 
         return .int;
+    }
+
+    fn resolveModuleMember(self: *Self, allocator: std.mem.Allocator, m: *const ast.MemberExpression, span: Span) !ModuleAccess {
+        if (m.object.expr != .identifier) return .not_module;
+        const namespace = m.object.expr.identifier.value;
+
+        // shadowed by a variable
+        if (self.type_table.lookupIdentifier(namespace) != null) return .not_module;
+        const target = self.imports.get(namespace) orelse return .not_module;
+
+        const member = switch (m.property) {
+            .ident => |p| p.value,
+            else => return .not_module,
+        };
+
+        const entry = target.values.get(member) orelse {
+            try self.reportError(allocator, .{
+                .span = span,
+                .kind = .{
+                    .UnknownModuleMember = .{
+                        .module = target.name,
+                        .name = member,
+                    },
+                },
+            });
+            return .failed;
+        };
+
+        const node = try allocator.create(typed_ast.TypedExpr);
+        node.* = .{
+            .span = span,
+            .sem_type = entry.sem_type,
+            .place = .{
+                .place = .{
+                    .mutability = entry.mutability,
+                    .root = .{ .name = member, .span = span },
+                },
+            },
+            .kind = .{
+                .module_ref = .{
+                    .module_id = target.id,
+                    .name = member,
+                },
+            },
+        };
+        return .{ .ok = node };
     }
 
     fn resolveFloatType(self: *Self, value: f64, expected_type: ?tt.SemaType) tt.SemaType {

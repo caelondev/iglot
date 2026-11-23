@@ -89,7 +89,13 @@ pub const TypedExpr = struct {
         struct_init: TypedStructInitializationExpression,
         member: TypedMemberExpr,
         null_unwrap: TypedNullUnwrap,
+        module_ref: TypedModuleRef,
     },
+};
+
+pub const TypedModuleRef = struct {
+    module_id: u32,
+    name: []const u8,
 };
 
 pub const TypedNullUnwrap = struct {

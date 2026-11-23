@@ -63,6 +63,8 @@ pub const IglotModuleDriver = struct {
         try self.in_progress.put(allocator, path, {});
         try self.stack.append(allocator, mod);
 
+        var mod_deps: std.ArrayList(*IglotModule) = .empty;
+
         for (mod.program.imports) |imp| {
             const dir = std.fs.path.dirname(path) orelse ".";
             const file = try std.fmt.allocPrint(allocator, "{s}.iglot", .{imp.name});
@@ -88,8 +90,12 @@ pub const IglotModuleDriver = struct {
                 });
                 return null;
             }
-            _ = try self.visit(allocator, io, writer, ewriter, dye, dep_path) orelse return null;
+
+            const dep = try self.visit(allocator, io, writer, ewriter, dye, dep_path) orelse return null;
+            try mod_deps.append(allocator, dep);
         }
+
+        mod.deps = try mod_deps.toOwnedSlice(allocator);
 
         _ = self.stack.pop();
         _ = self.in_progress.remove(path);

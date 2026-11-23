@@ -101,6 +101,8 @@ pub const IglotDiagnostic = struct {
         RecursiveStruct: struct { name: []const u8 },
         NonStructAccess: struct { sem_type: SemaType },
         NullUnwrapOfNull,
+        UnknownModuleMember: struct { module: []const u8, name: []const u8 },
+        NamespaceAsValue: struct { name: []const u8 },
 
         pub fn toMessage(self: Kind, writer: *std.Io.Writer) !void {
             switch (self) {
@@ -185,6 +187,8 @@ pub const IglotDiagnostic = struct {
                 .RecursiveStruct => |r| try writer.print("struct \"{s}\" contains itself and can never be constructed", .{r.name}),
                 .NonStructAccess => |n| try writer.print("cannot access members: expected a struct, found \"{f}\"", .{n.sem_type}),
                 .NullUnwrapOfNull => try writer.writeAll("unwrapping a \"null\" expression with \".?\" will always fail"),
+                .UnknownModuleMember => |u| try writer.print("module \"{s}\" has no member \"{s}\"", .{ u.module, u.name }),
+                .NamespaceAsValue => |n| try writer.print("module \"{s}\" cannot be used as a value", .{n.name}),
             }
         }
     };

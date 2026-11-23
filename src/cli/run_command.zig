@@ -15,6 +15,7 @@
 
 const std = @import("std");
 const a = @import("../frontend/parser/ast.zig");
+const typed_ast_mod = @import("../frontend/sema/typed_ast.zig");
 
 const Context = @import("cli.zig").Context;
 const InkDye = @import("inkdye");
@@ -75,30 +76,28 @@ pub fn run(ctx: *Context) !void {
         path,
     ) orelse return;
 
-    // bogus values for now
-    const source = "";
-    const ast: a.Program = undefined;
-
-    // std.debug.print("parsed ast:\n", .{});
-    try dumpAny(writer, modules, 0);
-
-    // Semantic analysis
     var sema: IglotSemanticAnalyzer = .init();
-    const typed_ast = try sema.analyze(allocator, ast);
+    var typed_programs: std.ArrayList(typed_ast_mod.TypedProgram) = .empty;
 
-    if (sema.diagnostics.items.len != 0) {
-        try renderSemaDiagnostics(
-            writer,
-            allocator,
-            &dye,
-            source,
-            &sema,
-        );
+    for (modules) |mod| {
+        const typed = try sema.analyzeModule(allocator, mod.*);
+        try typed_programs.append(allocator, typed);
+
+        // diagnostics belong to the module just analyzed, so render them
+        // against that module's own source, then clear for the next one
+        if (sema.diagnostics.items.len != 0) {
+            try renderSemaDiagnostics(writer, allocator, &dye, mod.source, &sema);
+            sema.diagnostics.clearRetainingCapacity();
+        }
+
+        // stop at the first broken module. its dependents would only
+        // produce cascading errors
+        if (sema.errors > 0) return;
     }
-
-    if (sema.errors > 0)
-        return;
     sema.deinit(allocator);
+
+    // until IR is module-aware, feed it the entry module only (always last)
+    const typed_ast = typed_programs.items[typed_programs.items.len - 1];
 
     // std.debug.print("typed ast:\n", .{});
     // try dumpAny(writer, typed_ast, 0);

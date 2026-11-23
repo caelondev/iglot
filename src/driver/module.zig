@@ -5,4 +5,5 @@ pub const IglotModule = struct {
     path: []const u8,
     source: []const u8, // kept alive for the whole compilation
     program: ast.Program,
+    deps: []*IglotModule = &.{},
 };

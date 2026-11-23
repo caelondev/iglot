@@ -59,6 +59,7 @@ pub const SemaType = union(enum) {
 
     pub const Struct = struct {
         name: []const u8,
+        module_id: u32 = std.math.maxInt(u32), // builtins keep the default
         fields: []Field,
         name_index_map: std.StringHashMap(u32),
 
@@ -289,7 +290,7 @@ pub const SemaType = union(enum) {
                 break :blk sa.size.compatible(oa.size);
             },
 
-            .@"struct" => |s| std.mem.eql(u8, s.name, other.@"struct".name),
+            .@"struct" => |s| s.module_id == other.@"struct".module_id and std.mem.eql(u8, s.name, other.@"struct".name),
             .nullable => |n| n.eql(other.nullable.*),
             else => true,
         };
