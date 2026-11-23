@@ -37,6 +37,9 @@ pub const IglotDiagnostic = struct {
         IllegalArraySizeExpression,
         InvalidBuiltinCallee,
 
+        // Module Driver
+        ModuleNameMismatch: struct { found: []const u8, file_name: []const u8 },
+
         // Sema
         InvalidLeftHandSideAssignment,
         InvalidBinaryExpressionType: struct {
@@ -111,6 +114,8 @@ pub const IglotDiagnostic = struct {
                 .ArraySizeTypeInfer => try writer.print("cannot infer array size at type level", .{}),
                 .IllegalArraySizeExpression => try writer.print("cannot use expression for array indexing", .{}),
                 .InvalidBuiltinCallee => try writer.writeAll("expected an identifier before \"#\" in a builtin call"),
+
+                .ModuleNameMismatch => |m| try writer.print("module name \"{s}\" and filename \"{s}\" do not match", .{ m.found, m.file_name }),
 
                 .InvalidBinaryExpressionType => |e| try writer.print("operator '{s}' cannot be applied to type \"{f}\" and \"{f}\"", .{ @tagName(e.operator), e.left, e.right }),
                 .IdentifierAlreadyExist => |e| try writer.print("cannot redeclare identifier \"{s}\"", .{e.identifier}),

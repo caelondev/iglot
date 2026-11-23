@@ -35,7 +35,15 @@
 
 const tokens = @import("../lexer/tokens.zig");
 
-pub const Program = struct { body: []Statement };
+pub const Program = struct {
+    module_header: ModuleHeader,
+    body: []Statement,
+};
+
+pub const ModuleHeader = struct {
+    name: []const u8,
+    span: tokens.Span,
+};
 
 pub const Node = struct {
     span: tokens.Span,

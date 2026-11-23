@@ -1,3 +1,5 @@
+module main;
+
 fn main() void: {
   sum :: fn (int, int) int = add;
 }

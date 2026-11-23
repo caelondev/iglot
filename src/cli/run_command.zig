@@ -14,12 +14,14 @@
 //! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const std = @import("std");
+const a = @import("../frontend/parser/ast.zig");
 
 const Context = @import("cli.zig").Context;
 const InkDye = @import("inkdye");
 
 const IglotLexer = @import("../frontend/lexer/lexer.zig").IglotLexer;
 const IglotParser = @import("../frontend/parser/parser.zig").IglotParser;
+const IglotModuleDriver = @import("../driver/driver.zig").IglotModuleDriver;
 const IglotSemanticAnalyzer = @import("../frontend/sema/sema.zig").IglotSemanticAnalyzer;
 const IglotIR = @import("../middle_end/ir/ir.zig").IglotIR;
 const IglotCodegen = @import("../bytecode/codegen.zig").IglotCodegen;
@@ -60,32 +62,19 @@ pub fn run(ctx: *Context) !void {
         return;
     }
 
-    const cwd = std.Io.Dir.cwd();
-    const source = try cwd.readFileAlloc(
-        ctx.io,
-        path,
-        allocator,
-        .unlimited,
-    );
-
     var stdout = std.Io.File.stdout().writer(ctx.io, &.{});
     const writer = &stdout.interface;
 
-    // Parse
-    var lexer = IglotLexer.init(source);
-    var parser = try IglotParser.init(allocator, &lexer);
-    const ast = try parser.parseProgram(allocator);
-
-    try renderParserDiagnostics(
-        writer,
+    var driver: IglotModuleDriver = .init();
+    const mod = try driver.loadModule(
         allocator,
+        ctx.io,
+        writer,
+        ewriter,
         &dye,
-        source,
-        &parser,
-    );
-
-    if (parser.errors > 0)
-        return;
+        path,
+    ) orelse return;
+    const ast = mod.program;
 
     // std.debug.print("parsed ast:\n", .{});
     // try dumpAny(writer, ast, 0);
@@ -99,10 +88,11 @@ pub fn run(ctx: *Context) !void {
             writer,
             allocator,
             &dye,
-            source,
+            mod.source,
             &sema,
         );
     }
+
     if (sema.errors > 0)
         return;
     sema.deinit(allocator);
@@ -140,33 +130,6 @@ pub fn run(ctx: *Context) !void {
     _ = try iglot_vm.run(allocator, module.entry);
 }
 
-fn renderParserDiagnostics(
-    writer: *std.Io.Writer,
-    allocator: std.mem.Allocator,
-    dye: *InkDye.RuntimeChameleon,
-    source: []const u8,
-    parser: *const IglotParser,
-) !void {
-    for (parser.diagnostics.items) |diagnostic| {
-        try renderDiagnostics(
-            writer,
-            allocator,
-            dye,
-            source,
-            diagnostic,
-        );
-
-        try writer.writeByte('\n');
-    }
-    if (parser.errors == 0) return;
-    try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
-    try writer.print("found {s}\n", .{
-        try dye.red().fmt("{d} error(s)", .{
-            parser.errors,
-        }),
-    });
-}
-
 fn renderSemaDiagnostics(
     writer: *std.Io.Writer,
     allocator: std.mem.Allocator,
@@ -190,6 +153,33 @@ fn renderSemaDiagnostics(
     try writer.print("found {s}\n", .{
         try dye.red().fmt("{d} error(s)", .{
             sema.errors,
+        }),
+    });
+}
+
+fn renderDriverDiagnostics(
+    writer: *std.Io.Writer,
+    allocator: std.mem.Allocator,
+    dye: *InkDye.RuntimeChameleon,
+    source: []const u8,
+    driver: *const IglotModuleDriver,
+) !void {
+    for (driver.diagnostics.items) |diagnostic| {
+        try renderDiagnostics(
+            writer,
+            allocator,
+            dye,
+            source,
+            diagnostic,
+        );
+        try writer.writeByte('\n');
+    }
+
+    if (driver.errors == 0) return;
+    try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
+    try writer.print("found {s}\n", .{
+        try dye.red().fmt("{d} error(s)", .{
+            driver.errors,
         }),
     });
 }

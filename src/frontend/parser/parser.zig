@@ -223,7 +223,8 @@ pub const IglotParser = struct {
         self.diagnostics.deinit(allocator);
     }
 
-    pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !ast.Program {
+    pub fn parseProgram(self: *Self, allocator: std.mem.Allocator) !?ast.Program {
+        const header = try self.parseModuleHeader(allocator) orelse return null;
         var stmts: std.ArrayList(ast.Statement) = .empty;
 
         while (!self.curTokenIs(.eof)) {
@@ -233,7 +234,42 @@ pub const IglotParser = struct {
         }
 
         const body = try stmts.toOwnedSlice(allocator);
-        return .{ .body = body };
+        return .{
+            .module_header = header,
+            .body = body,
+        };
+    }
+
+    fn parseModuleHeader(self: *Self, allocator: std.mem.Allocator) !?ast.ModuleHeader {
+        if (!self.curTokenIs(.module)) {
+            try self.reportError(allocator, .{
+                .span = self.cur_tok.span,
+                .kind = .{ .ExpectedToken = .{
+                    .expected = .module,
+                    .found = self.cur_tok.kind,
+                } },
+            });
+            self.synchronize();
+            return null;
+        }
+        const module_tok = self.cur_tok;
+
+        if (!try self.expectPeek(allocator, .identifier)) {
+            self.synchronize();
+            return null;
+        }
+        const name = self.cur_tok.lexeme;
+
+        if (!try self.expectPeek(allocator, .semicolon)) {
+            self.synchronize();
+            return null;
+        }
+        const sc = self.cur_tok;
+        self.nextToken();
+        return .{
+            .span = .mergeFromSpans(module_tok.span, sc.span),
+            .name = name,
+        };
     }
 
     pub fn nextToken(self: *Self) void {
