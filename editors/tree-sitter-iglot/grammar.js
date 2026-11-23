@@ -91,11 +91,15 @@ export default grammar({
     _type: $ => choice(
       alias($.identifier, $.type_identifier),
       $.primitive_type,
+      $.function_type,
       $.nullable,
       $.array,
       $.final,
       $.constant,
     ),
+
+    function_type: $ => seq("fn", $.param_types, $._type),
+    param_types: $ => seq("(", commaSep1($._type), ")"),
 
     primitive_type: $ => choice(
       "int", "wideint", "float", "double",
