@@ -50,7 +50,24 @@ export default grammar({
   ],
   word: $ => $.identifier,
   rules: {
-    source_file: $ => repeat($._declaration),
+    source_file: $ => seq(
+      $.module_decl,
+      repeat($.import_decl),
+      repeat($._declaration),
+    ),
+
+    module_decl: $ => seq(
+      "module",
+      field("name", $.identifier),
+      ";",
+    ),
+
+    import_decl: $ => seq(
+      "import",
+      optional(seq(field("alias", $.identifier), "::")),
+      field("name", $.identifier),
+      ";",
+    ),
 
     _declaration: $ => choice(
       $.function_decl,
