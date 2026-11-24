@@ -179,6 +179,8 @@ fn (type, type, ...) ret_type
 
 ```iglot
 x :: int = 10;   -- explicit type
+x :: const int = 10;   -- constant variable
+x :: fin int = 10;   -- final variable
 x ::= 10;        -- inferred type
 x = 20;          -- reassign
 ```
