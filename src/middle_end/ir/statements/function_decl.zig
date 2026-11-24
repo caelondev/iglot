@@ -14,7 +14,8 @@ pub fn buildFunctionDecl(ir: *IglotIR, allocator: std.mem.Allocator, f: *const t
 
     // NOTE: functions are already hoised, so we just retrieve
     // the function here
-    const func = ir.module.getFunctionByName(f.identifier.value) orelse return null;
+    const name = try ir.symbolName(allocator, ir.current_module, f.identifier.value);
+    const func = ir.module.getFunctionByName(name) orelse return null;
     const entry_bb = try func.newBlock(allocator, "entry");
 
     ir.current_fn = func;

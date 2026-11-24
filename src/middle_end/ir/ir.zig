@@ -4,6 +4,7 @@ const typed_ast = @import("../../frontend/sema/typed_ast.zig");
 const ast = @import("../../frontend/parser/ast.zig");
 const tt = @import("../../frontend/sema/type_table.zig");
 const builtins = @import("../../vm/builtins.zig");
+const IglotModule = @import("../../driver/module.zig").IglotModule;
 const Module = @import("module.zig").Module;
 const Function = @import("function.zig").Function;
 const Params = @import("function.zig").Params;
@@ -46,6 +47,8 @@ pub const IglotIR = struct {
 
     global_symtab: std.StringHashMapUnmanaged(inst.GlobalRef),
     struct_ids: std.StringHashMapUnmanaged(u32),
+    current_module: u32,
+    entry_module: u32,
 
     const Self = @This();
     pub fn init() Self {
@@ -59,6 +62,8 @@ pub const IglotIR = struct {
 
             .global_symtab = .empty,
             .struct_ids = .empty,
+            .current_module = 0,
+            .entry_module = 0,
         };
     }
 
@@ -68,29 +73,42 @@ pub const IglotIR = struct {
         self.current_scope.deinit(allocator);
     }
 
-    pub fn buildProgram(self: *Self, allocator: std.mem.Allocator, t_ast: typed_ast.TypedProgram) !?*Module {
-        const scope_stack = try allocator.create(ScopeStack);
-        scope_stack.* = .init();
-        self.current_scope = scope_stack;
+    pub fn buildModules(self: *Self, allocator: std.mem.Allocator, programs: []typed_ast.TypedProgram) !?*Module {
+        // the entry module is always last
+        const entry = programs[programs.len - 1].module_id;
+        self.entry_module = entry;
 
         const init_fn = try self.module.createFunction(allocator, "@$__global_init", &.{}, .void);
         const entry_bb = try init_fn.newBlock(allocator, "entry");
-        self.current_fn = init_fn;
 
+        self.current_fn = init_fn;
         self.goToBlock(entry_bb);
         try self.initIglotBuiltins(allocator);
 
-        for (t_ast.body) |stmt| {
-            try self.hoistDeclaration(allocator, stmt) orelse continue;
+        for (programs) |prog| {
+            self.current_module = prog.module_id;
+
+            const scope_stack = try allocator.create(ScopeStack);
+            scope_stack.* = .init();
+
+            self.current_scope = scope_stack;
+
+            for (prog.body) |stmt| {
+                try self.hoistDeclaration(allocator, stmt) orelse continue;
+            }
+
+            for (prog.body) |stmt| {
+                self.current_fn = init_fn;
+                self.goToBlock(entry_bb);
+                try self.buildTopLevelStmt(allocator, stmt) orelse return null;
+            }
         }
 
-        for (t_ast.body) |stmt| {
-            try self.buildTopLevelStmt(allocator, stmt) orelse return null;
-        }
+        self.current_fn = init_fn;
+        self.goToBlock(entry_bb);
 
         // terminate @$__global_init only after all top-level stmts
         // (including global var initializers) have been emitted
-        self.goToBlock(entry_bb);
         try self.emit(allocator, .{
             .op = .ret_void,
             .operands = &.{},
@@ -122,7 +140,7 @@ pub const IglotIR = struct {
 
                 _ = try self.module.createFunction(
                     allocator,
-                    f.identifier.value,
+                    try self.symbolName(allocator, self.current_module, f.identifier.value),
                     try params.toOwnedSlice(allocator),
                     f.return_type,
                 );
@@ -161,7 +179,9 @@ pub const IglotIR = struct {
             .function_decl => |*f| try buildFunctionDecl(self, allocator, f) orelse return null,
             .struct_decl => {},
             .variable_declaration => |*v| {
-                const ref = try self.addGlobal(allocator, v.identifier.value, v.sema_type);
+                const name = try self.symbolName(allocator, self.current_module, v.identifier.value);
+                const ref = try self.addGlobal(allocator, name, v.sema_type);
+
                 const value_reg = try self.buildExpression(allocator, &v.value.*) orelse unreachable;
                 try self.emit(allocator, .{
                     .op = .store_global,
@@ -217,7 +237,7 @@ pub const IglotIR = struct {
             .struct_init => |*s| try buildStructInitExpr(self, allocator, s, sema_type),
             .member => |*m| try buildMemberExpr(self, allocator, m),
             .null_unwrap => |*n| try buildNullUnwrapExpr(self, allocator, n),
-            .module_ref => @panic("TODO: module_ref in IR"),
+            .module_ref => |*mr| (try self.resolveModuleRef(allocator, mr, sema_type)).reg,
         };
     }
 
@@ -237,7 +257,21 @@ pub const IglotIR = struct {
             return .{ .reg = reg, .kind = .local };
         }
 
-        if (self.global_symtab.get(i.value)) |ref| {
+        if (self.global_symtab.contains(i.value)) {
+            return self.loadSymbol(allocator, i.value, sema_type);
+        }
+
+        const symbol = try self.symbolName(allocator, self.current_module, i.value);
+        return self.loadSymbol(allocator, symbol, sema_type);
+    }
+
+    fn resolveModuleRef(self: *Self, allocator: std.mem.Allocator, ref: *const typed_ast.TypedModuleRef, sema_type: tt.SemaType) !ResolvedIdent {
+        const symbol = try self.symbolName(allocator, ref.module_id, ref.name);
+        return try self.loadSymbol(allocator, symbol, sema_type);
+    }
+
+    fn loadSymbol(self: *Self, allocator: std.mem.Allocator, symbol: []const u8, sema_type: tt.SemaType) !ResolvedIdent {
+        if (self.global_symtab.get(symbol)) |ref| {
             const dest = self.current_fn.newVReg();
             try self.emit(allocator, .{
                 .data = .{ .global = ref },
@@ -249,7 +283,7 @@ pub const IglotIR = struct {
             return .{ .reg = dest, .kind = .global };
         }
 
-        const func = self.module.getFunctionByName(i.value) orelse unreachable;
+        const func = self.module.getFunctionByName(symbol) orelse unreachable;
         const dest = self.current_fn.newVReg();
         try self.emit(allocator, .{
             .data = .{ .constant = .{ .func = func.function_ref } },
@@ -277,14 +311,14 @@ pub const IglotIR = struct {
     /// same as SemaType.eql. the descriptor holds the field names so debug
     /// output and runtime printing can show them.
     pub fn internStruct(self: *Self, allocator: std.mem.Allocator, s: *tt.SemaType.Struct) !u32 {
-        if (self.struct_ids.get(s.name)) |id| return id;
+        if (self.struct_ids.get(s.name)) |id| return id; // seen before: reuse its id
 
         const id: u32 = @intCast(self.module.struct_descs.items.len);
         const names = try allocator.alloc([]const u8, s.fields.len);
         for (s.fields, names) |f, *n| n.* = f.name;
 
         try self.module.struct_descs.append(allocator, .{ .name = s.name, .field_names = names });
-        try self.struct_ids.put(allocator, s.name, id);
+        try self.struct_ids.put(allocator, s.name, id); // remember name -> id
         return id;
     }
 
@@ -298,5 +332,11 @@ pub const IglotIR = struct {
 
     pub fn popLoopContext(self: *Self) void {
         _ = self.loop_stack.pop();
+    }
+
+    pub fn symbolName(self: *Self, allocator: std.mem.Allocator, id: u32, name: []const u8) ![]const u8 {
+        if (self.entry_module == id and std.mem.eql(u8, name, "main")) return name;
+        const mangled = try allocator.print("iglot_m{d}__{s}", .{ id, name });
+        return mangled;
     }
 };

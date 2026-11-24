@@ -77,6 +77,7 @@ pub const IglotSemanticAnalyzer = struct {
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.type_table.deinit(allocator);
         self.diagnostics.deinit(allocator);
+        self.imports.deinit(allocator);
     }
 
     pub fn analyzeModule(self: *Self, allocator: std.mem.Allocator, mod: IglotModule) !typed_ast.TypedProgram {
@@ -97,7 +98,11 @@ pub const IglotSemanticAnalyzer = struct {
             if (self.imports.contains(local)) {
                 try self.reportError(allocator, .{
                     .span = imp.span,
-                    .kind = .{ .IdentifierAlreadyExist = .{ .identifier = local } },
+                    .kind = .{
+                        .IdentifierAlreadyExist = .{
+                            .identifier = local,
+                        },
+                    },
                 });
                 continue;
             }
@@ -117,7 +122,9 @@ pub const IglotSemanticAnalyzer = struct {
             const typed = try self.scanTopLevelStatement(allocator, stmt) orelse continue;
             try body.append(allocator, typed);
         }
+
         for (program.body) |*s| switch (s.kind) {
+            // TODO: skip private statements
             .function_decl => |f| if (self.type_table.lookupCurrentScope(f.identifier.value)) |e|
                 try scope.values.put(allocator, f.identifier.value, e),
             .variable_declaration => |v| if (self.type_table.lookupCurrentScope(v.identifier.value)) |e|
@@ -126,7 +133,10 @@ pub const IglotSemanticAnalyzer = struct {
                 try scope.types.put(allocator, st.name.value, e),
             else => {},
         };
-        return .{ .body = try body.toOwnedSlice(allocator) };
+        return .{
+            .module_id = scope.id,
+            .body = try body.toOwnedSlice(allocator),
+        };
     }
 
     pub fn functionSemType(sema: *Self, allocator: std.mem.Allocator, f: *const ast.FunctionDeclarationStatement) !?tt.SemaType {

@@ -4,4 +4,5 @@ import m :: math;
 
 fn main() void: {
   sum :: fn (int, int) int = m.add;
+  println#({ sum(50, 100) });
 }

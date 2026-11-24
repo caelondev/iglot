@@ -3,6 +3,7 @@ const tt = @import("type_table.zig");
 const tokens = @import("../lexer/tokens.zig");
 
 pub const TypedProgram = struct {
+    module_id: u32,
     body: []TypedStmt,
 };
 

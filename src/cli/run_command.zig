@@ -96,16 +96,16 @@ pub fn run(ctx: *Context) !void {
     }
     sema.deinit(allocator);
 
-    // until IR is module-aware, feed it the entry module only (always last)
-    const typed_ast = typed_programs.items[typed_programs.items.len - 1];
-
     // std.debug.print("typed ast:\n", .{});
     // try dumpAny(writer, typed_ast, 0);
 
     // IR
     var ir: IglotIR = .init();
 
-    const ir_module = try ir.buildProgram(allocator, typed_ast) orelse return;
+    const ir_module = try ir.buildModules(allocator, typed_programs.items) orelse {
+        ir.deinit(allocator);
+        return;
+    };
     ir.deinit(allocator);
 
     // try printModule(writer, ir_module.*);
