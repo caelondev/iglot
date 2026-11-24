@@ -1,3 +1,5 @@
+module invert_binary_tree;
+
 struct Node: {
   value :: int,
   left :: ?Node,
