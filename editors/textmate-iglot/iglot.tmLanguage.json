@@ -5,6 +5,8 @@
   "patterns": [
     { "include": "#comment" },
     { "include": "#string" },
+    { "include": "#module-decl" },
+    { "include": "#import-decl" },
     { "include": "#function-decl" },
     { "include": "#struct-decl" },
     { "include": "#keyword-other" },
@@ -37,7 +39,7 @@
 
     "keyword-other": {
       "name": "keyword.other.iglot",
-      "match": "\\b(fn|and|or)\\b"
+      "match": "\\b(fn|and|or|module|import)\\b"
     },
 
     "keyword-special": {
@@ -48,6 +50,7 @@
     "type-tokens": {
       "patterns": [
         { "include": "#comment" },
+        { "include": "#function-type" },
         {
           "name": "keyword.control.special.iglot",
           "match": "\\b(const|fin)\\b"
@@ -97,17 +100,13 @@
         "1": { "name": "keyword.other.iglot" },
         "2": { "name": "punctuation.bracket.iglot" }
       },
-      "end": "(?=[=,;)}])",
+      "end": "\\)",
+      "endCaptures": {
+        "0": { "name": "punctuation.bracket.iglot" }
+      },
       "patterns": [
         { "include": "#comment" },
-        {
-          "name": "punctuation.bracket.iglot",
-          "match": "\\)"
-        },
-        {
-          "name": "punctuation.iglot",
-          "match": "::|,"
-        },
+        { "name": "punctuation.iglot", "match": "," },
         { "include": "#type-tokens" }
       ]
     },
@@ -139,6 +138,26 @@
         },
         { "name": "punctuation.iglot", "match": "," }
       ]
+    },
+
+    "module-decl": {
+      "match": "\\b(module)\\b\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(;)",
+      "captures": {
+        "1": { "name": "keyword.other.iglot" },
+        "2": { "name": "entity.name.namespace.iglot" },
+        "3": { "name": "punctuation.terminator.statement.iglot" }
+      }
+    },
+
+    "import-decl": {
+      "match": "\\b(import)\\b\\s+(?:([A-Za-z_][A-Za-z0-9_]*)\\s*(::)\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*(;)",
+      "captures": {
+        "1": { "name": "keyword.other.iglot" },
+        "2": { "name": "entity.name.namespace.iglot" },
+        "3": { "name": "punctuation.iglot" },
+        "4": { "name": "entity.name.namespace.iglot" },
+        "5": { "name": "punctuation.terminator.statement.iglot" }
+      }
     },
 
     "builtin-call": {
@@ -267,3 +286,5 @@
     }
   }
 }
+
+
