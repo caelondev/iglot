@@ -94,3 +94,13 @@
   (type_block
     (type_decl
       name: (identifier) @property)))
+
+; modules
+(module_decl
+  name: (identifier) @module)
+
+(import_decl
+  name: (identifier) @module)
+
+(import_decl
+  alias: (identifier) @module)
