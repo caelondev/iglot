@@ -7,31 +7,36 @@ A quick reference for Iglot syntax to start writing code.
 1. [Hello, World & Comments](#1-hello-world--comments)
    - [Hello, World](#hello-world)
    - [Comments](#comments)
-2. [Types](#2-types)
+2. [Modules & Imports](#2-modules--imports)
+   - [The module header](#the-module-header)
+   - [Importing](#importing)
+   - [Aliases](#aliases)
+   - [Module rules](#module-rules)
+3. [Types](#3-types)
    - [Primitive types](#primitive-types)
    - [Non-primitive types](#non-primitive-types)
-3. [Variables](#3-variables)
-4. [Literals](#4-literals)
-5. [Operators](#5-operators)
+4. [Variables](#4-variables)
+5. [Literals](#5-literals)
+6. [Operators](#6-operators)
    - [Arithmetic](#arithmetic)
    - [Comparison](#comparison)
    - [Logical](#logical)
-6. [Control Flow](#6-control-flow)
+7. [Control Flow](#7-control-flow)
    - [If / else](#if--else)
    - [Loops](#loops)
-7. [Functions](#7-functions)
+8. [Functions](#8-functions)
    - [Declaring](#declaring)
    - [Returning](#returning)
    - [Calling](#calling)
-8. [Arrays](#8-arrays)
+9. [Arrays](#9-arrays)
    - [Bare braces](#bare-braces)
-9. [Structs](#9-structs)
-   - [Declaring](#declaring-1)
-   - [Creating](#creating)
-   - [Reading and writing members](#reading-and-writing-members)
-10. [Nullables](#10-nullables)
-11. [Built-in Functions](#11-built-in-functions)
-12. [Compiler-Internal Types](#12-compiler-internal-types)
+10. [Structs](#10-structs)
+    - [Declaring](#declaring-1)
+    - [Creating](#creating)
+    - [Reading and writing members](#reading-and-writing-members)
+11. [Nullables](#11-nullables)
+12. [Built-in Functions](#12-built-in-functions)
+13. [Compiler-Internal Types](#13-compiler-internal-types)
 
 ---
 
@@ -39,7 +44,11 @@ A quick reference for Iglot syntax to start writing code.
 
 ### Hello, World
 
+Every file starts with a `module` header (see [Modules & Imports](#2-modules--imports)). The file you run is the entry module, and it is named `main`:
+
 ```iglot
+module main;
+
 fn main() void: {
   println#({ "Hello, World!" });
 }
@@ -55,7 +64,85 @@ println#({ ":)" }); -- this is a comment
 
 ---
 
-## 2. Types
+## 2. Modules & Imports
+
+Every Iglot file is a module. A module has its own scope, so two files can both define a function called `helper` without clashing. To use code from another file, import it.
+
+### The module header
+
+The first statement of every file declares its name:
+
+```iglot
+module math;
+```
+
+- It must come before everything else (comments above it are fine).
+- It is required in every file.
+- The name must match the filename without the extension. `math.iglot` must say `module math;`, otherwise you get a name mismatch error.
+- Files must end in `.iglot`.
+
+### Importing
+
+`import` goes right after the header, before any declarations.
+
+```iglot
+-- math.iglot
+module math;
+
+fn add(a :: int, b :: int) int: {
+  return a + b;
+}
+```
+
+```iglot
+-- main.iglot
+module main;
+
+import math;
+
+fn main() void: {
+  println#({ math.add(1, 2) });   -- 3
+}
+```
+
+`import math;` binds the name `math`, and you reach things inside it with a dot: `math.add`. You never write a bare `add`, so imports can't collide with your own names.
+
+Imported functions are ordinary values, so they work anywhere a function does:
+
+```iglot
+sum :: fn (int, int) int = math.add;
+println#({ sum(50, 100) });   -- 150
+```
+
+### Aliases
+
+Give an import a different local name with `::`, the same operator you use for declarations:
+
+```iglot
+import m :: math;
+
+fn main() void: {
+  println#({ m.add(1, 2) });
+}
+```
+
+The alias goes on the left, and the module name on the right. Once aliased, only the alias exists: after `import m :: math;` the name `math` is not bound.
+
+### Module rules
+
+- **One file is one module.** Imports are looked up by name next to the importing file: `import math;` loads `math.iglot` from the same directory.
+- **Each module is loaded once.** If two files import the same module, they share it. Its top-level variables are initialized once, before the importing module's own.
+- **Everything at the top level is importable** (functions, variables and structs). Visibility modifiers are planned.
+- **No import cycles.** If `a` imports `b` and `b` imports `a`, the compiler reports the cycle and shows the chain.
+- **A module is a namespace, not a value.** `x ::= math;` is an error. Always use it as `math.something`.
+- **Missing names are errors.** `math.nope` reports that the module has no such member, and importing a file that doesn't exist reports that the module can't be found.
+- **Two imports can't bind the same name.** Use an alias to tell them apart.
+- **Built-ins need no import.** `println#()`, `prompt#()` and friends belong to the compiler, not to any module.
+- **Only functions and variables are reachable through a module for now.** Using another module's struct as a type (`math.Vec`) is not supported yet.
+
+---
+
+## 3. Types
 
 ### Primitive types
 
@@ -88,19 +175,17 @@ fn (type, type, ...) ret_type
 
 ---
 
-## 3. Variables
+## 4. Variables
 
 ```iglot
 x :: int = 10;   -- explicit type
-x :: const int = 10;   -- constant variable
-x :: fin int = 10;   -- final variable
 x ::= 10;        -- inferred type
 x = 20;          -- reassign
 ```
 
 ---
 
-## 4. Literals
+## 5. Literals
 
 ```iglot
 10; -100;        -- integers
@@ -112,7 +197,7 @@ null;            -- null
 
 ---
 
-## 5. Operators
+## 6. Operators
 
 ### Arithmetic
 
@@ -144,7 +229,7 @@ true or false    -- OR
 
 ---
 
-## 6. Control Flow
+## 7. Control Flow
 
 ### If / else
 
@@ -179,7 +264,7 @@ loop: {
 
 ---
 
-## 7. Functions
+## 8. Functions
 
 ### Declaring
 
@@ -210,9 +295,15 @@ fn add(a :: int, b :: int) int: {
 add(1, 2);
 ```
 
+Functions from an imported module are called through the module name (or its alias):
+
+```iglot
+math.add(1, 2);
+```
+
 ---
 
-## 8. Arrays
+## 9. Arrays
 
 Arrays have a fixed size and are zero-indexed. Access elements with `.[i]`.
 
@@ -237,7 +328,7 @@ array :: [3]int = {
 
 ---
 
-## 9. Structs
+## 10. Structs
 
 ### Declaring
 
@@ -266,7 +357,7 @@ p.name = "Alice";
 
 ---
 
-## 10. Nullables
+## 11. Nullables
 
 Put `?` in front of a type to allow `null`. Use `.?` to unwrap.
 
@@ -292,7 +383,7 @@ if p != null: {
 
 ---
 
-## 11. Built-in Functions
+## 12. Built-in Functions
 
 Built-ins are called with a `#` after the name.
 
@@ -313,7 +404,7 @@ type_of#(123);                         -- fn (any) string
 
 ---
 
-## 12. Compiler-Internal Types
+## 13. Compiler-Internal Types
 
 You'll mostly see these in error messages. They aren't types you write yourself.
 
@@ -322,3 +413,4 @@ You'll mostly see these in error messages. They aren't types you write yourself.
 | `any`      | Used by built-ins that accept any non-void type                                |
 | `err`      | Poison type for declarations that failed, which prevents cascading type errors |
 | `number`   | Special type used for error messages                                           |
+

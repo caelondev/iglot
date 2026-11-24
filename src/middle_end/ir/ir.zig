@@ -311,14 +311,14 @@ pub const IglotIR = struct {
     /// same as SemaType.eql. the descriptor holds the field names so debug
     /// output and runtime printing can show them.
     pub fn internStruct(self: *Self, allocator: std.mem.Allocator, s: *tt.SemaType.Struct) !u32 {
-        if (self.struct_ids.get(s.name)) |id| return id; // seen before: reuse its id
+        if (self.struct_ids.get(s.name)) |id| return id;
 
         const id: u32 = @intCast(self.module.struct_descs.items.len);
         const names = try allocator.alloc([]const u8, s.fields.len);
         for (s.fields, names) |f, *n| n.* = f.name;
 
         try self.module.struct_descs.append(allocator, .{ .name = s.name, .field_names = names });
-        try self.struct_ids.put(allocator, s.name, id); // remember name -> id
+        try self.struct_ids.put(allocator, s.name, id);
         return id;
     }
 
