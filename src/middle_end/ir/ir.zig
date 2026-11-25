@@ -14,10 +14,8 @@ const ScopeStack = @import("scope_table.zig").ScopeStack;
 const simplifyCfg = @import("simplify_cfg.zig").simplifyCfg;
 
 const buildFunctionDecl = @import("statements/function_decl.zig").buildFunctionDecl;
-const buildReturnStmt = @import("statements/return.zig").buildReturnStmt;
 const buildVariableDecl = @import("statements/variable_decl.zig").buildVariableDecl;
 const buildLoopStmt = @import("statements/loop.zig").buildLoopStmt;
-const buildBreakExpr = @import("expressions/break.zig").buildBreakExpr;
 const buildIfStmt = @import("statements/if_stmt.zig").buildIfStmt;
 
 const lit = @import("expressions/literal.zig");
@@ -30,6 +28,8 @@ const buildIndexExpr = @import("expressions/index.zig").buildIndexExpr;
 const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructInitExpr;
 const buildMemberExpr = @import("expressions/member.zig").buildMemberExpr;
 const buildNullUnwrapExpr = @import("expressions/null_unwrap.zig").buildNullUnwrapExpr;
+const buildBreakExpr = @import("expressions/break.zig").buildBreakExpr;
+const buildReturnExpr = @import("expressions/return.zig").buildReturnExpr;
 
 const IdentKind = @import("expressions/call.zig").IdentKind;
 const ResolvedIdent = @import("expressions/call.zig").ResolvedIdent;
@@ -201,7 +201,6 @@ pub const IglotIR = struct {
 
     pub fn buildStmt(self: *Self, allocator: std.mem.Allocator, stmt: typed_ast.TypedStmt) anyerror!void {
         switch (stmt) {
-            .return_stmt => |*r| try buildReturnStmt(self, allocator, r),
             .expression => |*e| _ = try self.buildExpression(allocator, e.typed),
             .variable_declaration => |*v| try buildVariableDecl(self, allocator, v),
             .loop => |*l| try buildLoopStmt(self, allocator, l),
@@ -238,6 +237,7 @@ pub const IglotIR = struct {
             .null_unwrap => |*n| try buildNullUnwrapExpr(self, allocator, n),
             .module_ref => |*mr| (try self.resolveModuleRef(allocator, mr, sema_type)).reg,
             .break_expr => |*b| try buildBreakExpr(self, allocator, b) orelse return null,
+            .return_expr => |*r| try buildReturnExpr(self, allocator, r),
         };
     }
 

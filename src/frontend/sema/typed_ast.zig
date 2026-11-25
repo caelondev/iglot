@@ -11,7 +11,6 @@ pub const TypedStmt = union(enum) {
     expression: TypedExpressionStmt,
     function_decl: TypedFunctionDeclarationStatement,
     struct_decl: TypedStructDeclarationStatement,
-    return_stmt: TypedReturnStatement,
     block: TypedBlockStatement,
     scoped: TypedScopedStatement,
     if_stmt: TypedIfStatement,
@@ -91,6 +90,7 @@ pub const TypedExpr = struct {
         null_unwrap: TypedNullUnwrap,
         module_ref: TypedModuleRef,
         break_expr: ast.BreakExpression,
+        return_expr: TypedReturnExpression,
     },
 };
 
@@ -144,7 +144,7 @@ pub const TypedFunctionDeclarationStatement = struct {
     span: tokens.Span,
 };
 
-pub const TypedReturnStatement = struct {
+pub const TypedReturnExpression = struct {
     return_value: ?*TypedExpr,
     return_value_type: tt.SemaType,
     span: tokens.Span,

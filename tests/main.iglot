@@ -1,7 +1,10 @@
 module main;
 
 fn main() void: {
-  loop: {
-    1+break;
-  }
+  x ::= ret_value();
+  println#({ "returned:", x });
+}
+
+fn ret_value() int: {
+  x ::= return 10;
 }

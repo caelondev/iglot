@@ -1,25 +1,22 @@
 const std = @import("std");
 const ast = @import("../ast.zig");
 const IglotParser = @import("../parser.zig").IglotParser;
-const parseExpression = @import("parseExpression.zig").parseExpression;
-const parseBlockStatement = @import("block_statement.zig").parseBlockStatement;
+const parseExpression = @import("../statements/parseExpression.zig").parseExpression;
 const pt = @import("../type/parse_type_expression.zig");
 const Precedence = @import("../precedence.zig").Precedence;
 const Span = @import("../../lexer/tokens.zig").Span;
 
-pub fn parseReturnStatement(
+pub fn parseReturnExpression(
     parser: *IglotParser,
     allocator: std.mem.Allocator,
-) !?ast.Statement {
+) !?ast.Expression {
     const keyword = parser.cur_tok;
 
-    parser.nextToken();
-
-    if (parser.curTokenIs(.semicolon)) {
+    if (parser.peekTokenIs(.semicolon)) {
         return .{
             .span = keyword.span,
-            .kind = .{
-                .return_stmt = .{
+            .expr = .{
+                .return_expr = .{
                     .return_value = null,
                     .span = keyword.span,
                 },
@@ -27,14 +24,15 @@ pub fn parseReturnStatement(
         };
     }
 
-    const value = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
+    parser.nextToken();
 
-    if (!try parser.expectPeek(allocator, .semicolon)) return null;
+    const value = try allocator.create(ast.Expression);
+    value.* = try parseExpression(parser, allocator, Precedence.lowest.toInt()) orelse return null;
 
     return .{
         .span = keyword.span,
-        .kind = .{
-            .return_stmt = .{
+        .expr = .{
+            .return_expr = .{
                 .return_value = value,
                 .span = Span.mergeFromSpans(keyword.span, value.span),
             },

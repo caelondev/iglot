@@ -119,6 +119,7 @@ pub const Expression = struct {
         member: MemberExpression,
         call: CallExpression,
         break_expr: BreakExpression,
+        return_expr: ReturnExpression,
     };
 };
 
@@ -128,7 +129,6 @@ pub const Statement = struct {
         expression: ExpressionStatement,
         variable_declaration: VariableDeclarationStatement,
         function_decl: FunctionDeclarationStatement,
-        return_stmt: ReturnStatement,
         if_stmt: IfStatement,
         scoped: ScopedStatement,
         loop: LoopStatement,
@@ -234,6 +234,15 @@ pub const MemberExpression = struct {
     },
 };
 
+pub const ReturnExpression = struct {
+    return_value: ?*Expression,
+    span: tokens.Span,
+};
+
+pub const BreakExpression = struct {
+    span: tokens.Span,
+};
+
 // STATEMENTS
 
 pub const ExpressionStatement = struct {
@@ -260,11 +269,6 @@ pub const BlockStatement = struct {
     statements: []Statement,
 };
 
-pub const ReturnStatement = struct {
-    return_value: ?Expression,
-    span: tokens.Span,
-};
-
 pub const IfStatement = struct {
     condition: *Expression,
     consequence: *Statement,
@@ -278,10 +282,6 @@ pub const ScopedStatement = struct {
 
 pub const LoopStatement = struct {
     body: ScopedStatement,
-};
-
-pub const BreakExpression = struct {
-    span: tokens.Span,
 };
 
 pub const StructDeclarationStatement = struct {

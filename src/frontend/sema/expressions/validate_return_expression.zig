@@ -14,11 +14,11 @@ fn isAssignable(expected: tt.SemaType, found: tt.SemaType) bool {
     };
 }
 
-pub fn validateReturnStatement(
+pub fn validateReturnExpression(
     sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
-    r: *const ast.ReturnStatement,
-) anyerror!?typed_ast.TypedReturnStatement {
+    r: *const ast.ReturnExpression,
+) anyerror!?typed_ast.TypedReturnExpression {
     const ctx = sema.current_function_ctx orelse {
         try sema.reportError(allocator, .{
             .span = r.span,
@@ -28,7 +28,7 @@ pub fn validateReturnStatement(
     };
 
     const return_value: ?*typed_ast.TypedExpr = if (r.return_value) |val|
-        try sema.validateExpression(allocator, &val, val.span, ctx.return_type) orelse return null
+        try sema.validateExpression(allocator, val, val.span, ctx.return_type) orelse return null
     else
         null;
 

@@ -86,6 +86,10 @@ pub const nud_exprs = [_]NullDenotedExpr{
         .token_kind = .@"break",
         .callback = @import("nud/break_expression.zig").parseBreakExpression,
     },
+    .{
+        .token_kind = .@"return",
+        .callback = @import("nud/return_expression.zig").parseReturnExpression,
+    },
 };
 
 pub const led_exprs = [_]LeftDenotedExpr{
@@ -163,10 +167,6 @@ pub const statements = [_]Statement{
     .{
         .token_kind = .@"fn",
         .callback = @import("statements/function_declaration.zig").parseFunctionDeclarationStatement,
-    },
-    .{
-        .token_kind = .@"return",
-        .callback = @import("statements/return_statement.zig").parseReturnStatement,
     },
     .{
         .token_kind = .@"if",

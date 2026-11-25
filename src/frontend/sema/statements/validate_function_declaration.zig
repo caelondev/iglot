@@ -81,7 +81,7 @@ fn loopCanBreak(body: *const typed_ast.TypedScopedStatement) bool {
 
 fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
     return switch (stmt.*) {
-        .return_stmt => true,
+        .expression => |*e| exprCanReturn(e.typed),
         .block => |b| blk: {
             for (b.typed_stmts) |*s| {
                 if (alwaysReturns(s)) break :blk true;
@@ -99,9 +99,8 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
             break :blk alwaysReturns(f.consequence) and alwaysReturns(f.alternative.?);
         },
         .loop => |l| !loopCanBreak(&l.body),
+        .variable_declaration => |v| exprCanReturn(v.value),
         .struct_decl,
-        .expression,
-        .variable_declaration,
         .function_decl,
         => false,
     };
@@ -134,7 +133,6 @@ pub fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
         // A break inside this loop belongs to this inner loop,
         // not the loop we're currently analyzing.
         .loop => false,
-        .return_stmt => true,
         .variable_declaration => |v| blk: {
             if (exprCanBreak(v.value)) break :blk true;
             break :blk false;
@@ -148,6 +146,7 @@ pub fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
 pub fn exprCanBreak(e: *const typed_ast.TypedExpr) bool {
     return switch (e.kind) {
         .break_expr => true,
+        .return_expr => true,
 
         // leafs, no break inside
         .identifier,
@@ -183,6 +182,51 @@ pub fn exprCanBreak(e: *const typed_ast.TypedExpr) bool {
             if (exprCanBreak(c.callee)) break :blk true;
             for (c.arguments) |arg| {
                 if (exprCanBreak(arg)) break :blk true;
+            }
+            break :blk false;
+        },
+    };
+}
+
+fn exprCanReturn(e: *const typed_ast.TypedExpr) bool {
+    return switch (e.kind) {
+        .return_expr => true,
+
+        // leafs, no break inside
+        .identifier,
+        .integer,
+        .wide_integer,
+        .float,
+        .string,
+        .module_ref,
+        .break_expr,
+        => false,
+
+        // wrappers
+        .member => |m| exprCanReturn(m.object),
+        .index => |i| exprCanReturn(i.left) or exprCanReturn(i.index),
+        .null_unwrap => |n| exprCanReturn(n.left),
+        .unary => |u| exprCanReturn(u.rhs),
+        .assignment => |a| exprCanReturn(a.assignee) or exprCanReturn(a.value),
+        .binary => |b| exprCanReturn(b.left) or exprCanReturn(b.right),
+
+        // containers
+        .array => |a| blk: {
+            for (a.elements) |el| {
+                if (exprCanReturn(el)) break :blk true;
+            }
+            break :blk false;
+        },
+        .struct_init => |s| blk: {
+            for (s.fields) |f| {
+                if (exprCanReturn(f)) break :blk true;
+            }
+            break :blk false;
+        },
+        .call => |c| blk: {
+            if (exprCanReturn(c.callee)) break :blk true;
+            for (c.arguments) |arg| {
+                if (exprCanReturn(arg)) break :blk true;
             }
             break :blk false;
         },

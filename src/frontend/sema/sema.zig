@@ -26,7 +26,7 @@ const validateMemberExpr = @import("expressions/validate_member_expr.zig").valid
 const validateFunctionDeclaration = @import("statements/validate_function_declaration.zig").validateFunctionDeclaration;
 const validateVariableDeclaration = @import("statements/validate_variable_declaration_expr.zig").validateVariableDeclaration;
 const validateStructDeclaration = @import("statements/validate_struct_declaration.zig").validateStructDeclaration;
-const validateReturnStatement = @import("statements/validate_return_statement.zig").validateReturnStatement;
+const validateReturnExpression = @import("expressions/validate_return_expression.zig").validateReturnExpression;
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
 const validateLoopStatement = @import("statements/validate_loop_statement.zig").validateLoopStatement;
@@ -300,12 +300,6 @@ pub const IglotSemanticAnalyzer = struct {
 
                 return null;
             },
-            .return_stmt => |r| {
-                const ret_stmt = try validateReturnStatement(self, allocator, &r) orelse return null;
-                return .{
-                    .return_stmt = ret_stmt,
-                };
-            },
             .variable_declaration => |*v| {
                 const decl = try validateVariableDeclaration(self, allocator, v) orelse return null;
                 return .{
@@ -438,6 +432,18 @@ pub const IglotSemanticAnalyzer = struct {
                     .sem_type = .noreturn,
                     .kind = .{
                         .break_expr = b,
+                    },
+                };
+                break :blk node;
+            },
+            .return_expr => |r| blk: {
+                const ret_expr = try validateReturnExpression(self, allocator, &r) orelse return null;
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{
+                    .span = span,
+                    .sem_type = .noreturn,
+                    .kind = .{
+                        .return_expr = ret_expr,
                     },
                 };
                 break :blk node;
@@ -625,6 +631,7 @@ pub const IglotSemanticAnalyzer = struct {
             .index_expr,
             .member,
             .break_expr,
+            .return_expr,
             => null,
         };
     }

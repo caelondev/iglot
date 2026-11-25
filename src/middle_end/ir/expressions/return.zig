@@ -4,7 +4,7 @@ const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
 const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildReturnStmt(ir: *IglotIR, allocator: std.mem.Allocator, r: *const typed_ast.TypedReturnStatement) !void {
+pub fn buildReturnExpr(ir: *IglotIR, allocator: std.mem.Allocator, r: *const typed_ast.TypedReturnExpression) !?inst.VReg {
     if (r.return_value == null) {
         try ir.emit(allocator, .{
             .op = .ret_void,
@@ -13,16 +13,16 @@ pub fn buildReturnStmt(ir: *IglotIR, allocator: std.mem.Allocator, r: *const typ
             .operands = &.{},
             .result = null,
         });
-        return;
+        return null;
     }
 
     const ret_val = r.return_value orelse {
         // noreturn value, e.g. `x ::= break;`
         // no value to bind, block is already terminated by the break
-        return;
+        return null;
     };
 
-    const dest = try ir.buildExpression(allocator, ret_val) orelse return;
+    const dest = try ir.buildExpression(allocator, ret_val) orelse return null;
     try ir.emit(allocator, .{
         .op = .ret,
         .sema_type = ret_val.sem_type,
@@ -30,4 +30,6 @@ pub fn buildReturnStmt(ir: *IglotIR, allocator: std.mem.Allocator, r: *const typ
         .operands = try allocator.dupe(inst.VReg, &.{dest}),
         .result = null,
     });
+
+    return null;
 }
