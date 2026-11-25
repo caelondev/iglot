@@ -24,6 +24,7 @@ A quick reference for Iglot syntax to start writing code.
 7. [Control Flow](#7-control-flow)
    - [If / else](#if--else)
    - [Loops](#loops)
+   - [Break and return are expressions](#break-and-return-are-expressions)
 8. [Functions](#8-functions)
    - [Declaring](#declaring)
    - [Returning](#returning)
@@ -59,7 +60,11 @@ fn main() void: {
 Comments start with a double dash:
 
 ```iglot
-println#({ ":)" }); -- this is a comment
+module main;
+
+fn main() void: {
+  println#({ ":)" }); -- this is a comment
+}
 ```
 
 ---
@@ -110,8 +115,14 @@ fn main() void: {
 Imported functions are ordinary values, so they work anywhere a function does:
 
 ```iglot
-sum :: fn (int, int) int = math.add;
-println#({ sum(50, 100) });   -- 150
+module main;
+
+import math;
+
+fn main() void: {
+  sum :: fn (int, int) int = math.add;
+  println#({ sum(50, 100) });   -- 150
+}
 ```
 
 ### Aliases
@@ -119,6 +130,8 @@ println#({ sum(50, 100) });   -- 150
 Give an import a different local name with `::`, the same operator you use for declarations:
 
 ```iglot
+module main;
+
 import m :: math;
 
 fn main() void: {
@@ -178,11 +191,15 @@ fn (type, type, ...) ret_type
 ## 4. Variables
 
 ```iglot
-x :: int = 10;   -- explicit type
-x :: const int = 10;   -- constant variable
-x :: fin int = 10;   -- final variable
-x ::= 10;        -- inferred type
-x = 20;          -- reassign
+module main;
+
+fn main() void: {
+  x :: int = 10;   -- explicit type
+  x :: const int = 10;   -- constant variable
+  x :: fin int = 10;   -- final variable
+  x ::= 10;        -- inferred type
+  x = 20;          -- reassign
+}
 ```
 
 ---
@@ -190,11 +207,15 @@ x = 20;          -- reassign
 ## 5. Literals
 
 ```iglot
-10; -100;        -- integers
-10.0; -50.5;     -- floats
-"strings";       -- strings
-true; false;     -- booleans
-null;            -- null
+module main;
+
+fn main() void: {
+  10; -100;        -- integers
+  10.0; -50.5;     -- floats
+  "strings";       -- strings
+  true; false;     -- booleans
+  null;            -- null
+}
 ```
 
 ---
@@ -204,29 +225,41 @@ null;            -- null
 ### Arithmetic
 
 ```iglot
-1 + 1;   -- addition
-1 - 1;   -- subtraction
-1 * 1;   -- multiplication
-1 / 1;   -- division
+module main;
+
+fn main() void: {
+  1 + 1;   -- addition
+  1 - 1;   -- subtraction
+  1 * 1;   -- multiplication
+  1 / 1;   -- division
+}
 ```
 
 ### Comparison
 
 ```iglot
-1 > 1;    -- greater than
-1 < 1;    -- less than
-1 >= 1;   -- greater than or equal to
-1 <= 1;   -- less than or equal to
-1 == 1;   -- equal to
-1 != 1;   -- not equal to
+module main;
+
+fn main() void: {
+  1 > 1;    -- greater than
+  1 < 1;    -- less than
+  1 >= 1;   -- greater than or equal to
+  1 <= 1;   -- less than or equal to
+  1 == 1;   -- equal to
+  1 != 1;   -- not equal to
+}
 ```
 
 ### Logical
 
 ```iglot
-!false           -- NOT
-true and true    -- AND
-true or false    -- OR
+module main;
+
+fn main() void: {
+  !false;           -- NOT
+  true and true;    -- AND
+  true or false;    -- OR
+}
 ```
 
 ---
@@ -236,21 +269,29 @@ true or false    -- OR
 ### If / else
 
 ```iglot
-if x != null: {
-  -- do something
-} else if 10 == 50: {
-  -- do this
-} else: {
-  -- something else
+module main;
+
+fn main() void: {
+  if x != null: {
+    -- do something
+  } else if 10 == 50: {
+    -- do this
+  } else: {
+    -- something else
+  }
 }
 ```
 
-One-liners work too:
+One-liners work too. Any statement is valid after the `:`, not just an expression:
 
 ```iglot
-if cond: x = 10;
-else if cond_2: return false;
-else: return true;
+module main;
+
+fn if_statements() bool: {
+  if cond: x = 10;
+  else if cond_2: return false;
+  else: return true;
+}
 ```
 
 ### Loops
@@ -258,9 +299,60 @@ else: return true;
 Iglot has one loop: `loop`. It runs forever until you `break`.
 
 ```iglot
-loop: {
-  println#({ "THIS RUNS FOREVERRRRRRR!!!" });
-  break; -- only allowed inside loops
+module main;
+
+fn main() void: {
+  loop: {
+    println#({ "THIS RUNS FOREVERRRRRRR!!!" });
+    break; -- only allowed inside loops
+  }
+}
+```
+
+A `break` belongs to the innermost loop around it. In nested loops, it only leaves the inner one.
+
+### Break and return are expressions
+
+`break` and `return` are expressions, not statements. That means they can appear anywhere an expression is allowed, not only on a line of their own.
+
+```iglot
+module main;
+
+fn pointless() ?int: {
+  x ::= return null; -- works, but pointless as-is
+}
+
+fn main() void: {
+  loop: {
+    x ::= break; -- same thing here
+  }
+}
+```
+
+The placement rules still apply:
+
+- `break` is only allowed inside a loop.
+- `return` is only allowed inside a function.
+
+A few things follow from this:
+
+- `break` leaves the loop, so code after it in the same block never runs.
+- `return` leaves the whole function, even from inside a loop. A loop that can only be left by `return` never lets control continue past it, so a function ending in such a loop doesn't need a `return` after it:
+
+```iglot
+module main;
+
+fn first_big(limit :: int) int: {
+  i ::= 0;
+  loop: {
+    if i > limit: return i;
+    i = i + 1;
+  }
+  -- no return needed here, the loop can only be left by `return`
+}
+
+fn main() void: {
+  println#({ first_big(5) });   -- 6
 }
 ```
 
@@ -271,6 +363,8 @@ loop: {
 ### Declaring
 
 ```iglot
+module main;
+
 fn main() void: {
   -- we're in a function
 }
@@ -282,25 +376,44 @@ fn add(x :: int, y :: int) int: {
 
 ### Returning
 
-`return` is only allowed inside functions. It's optional in `void` functions.
+`return` is an expression that exits the current function. It is only allowed inside functions, and it is optional in `void` functions.
 
 ```iglot
+module main;
+
 fn main() void: {}
+
 fn add(a :: int, b :: int) int: {
-    return a + b;
+  return a + b;
 }
 ```
+
+See [Break and return are expressions](#break-and-return-are-expressions) for where else it can appear.
 
 ### Calling
 
 ```iglot
-add(1, 2);
+module main;
+
+fn add(x :: int, y :: int) int: {
+  return x + y;
+}
+
+fn main() void: {
+  add(1, 2);
+}
 ```
 
 Functions from an imported module are called through the module name (or its alias):
 
 ```iglot
-math.add(1, 2);
+module main;
+
+import math;
+
+fn main() void: {
+  math.add(1, 2);
+}
 ```
 
 ---
@@ -310,10 +423,13 @@ math.add(1, 2);
 Arrays have a fixed size and are zero-indexed. Access elements with `.[i]`.
 
 ```iglot
-[3]int{ 1, 2, 3 };               -- array literal
+module main;
 
-x :: [5]int = { 10, 20, 30, 40, 50 };
-println#({ x.[2] });             -- 30
+fn main() void: {
+  a ::= [3]int{ 1, 2, 3 }; -- array literal
+  x :: [5]int = { 10, 20, 30, 40, 50 };
+  println#({ x.[2] }); -- 30
+}
 ```
 
 ### Bare braces
@@ -321,11 +437,15 @@ println#({ x.[2] });             -- 30
 `{ ... }` is a type-sensitive container. The declared type decides whether it becomes an array or a struct. Trailing commas are allowed.
 
 ```iglot
-array :: [3]int = {
-  1,
-  2,
-  3,
-};
+module main;
+
+fn main() void: {
+  array :: [3]int = {
+    1,
+    2,
+    3,
+  };
+}
 ```
 
 ---
@@ -335,26 +455,53 @@ array :: [3]int = {
 ### Declaring
 
 ```iglot
+module main;
+
 struct Person: {
   name :: string,
   age :: int,
 }
+
+fn main() void: {}
 ```
 
 ### Creating
 
 ```iglot
-p :: Person = {
-  .name = "Bob",
-  .age = 30,
-};
+module main;
+
+struct Person: {
+  name :: string,
+  age :: int,
+}
+
+fn main() void: {
+  p :: Person = {
+    .name = "Bob",
+    .age = 30,
+  };
+}
 ```
 
 ### Reading and writing members
 
 ```iglot
-println#({ p.name });   -- Bob
-p.name = "Alice";
+module main;
+
+struct Person: {
+  name :: string,
+  age :: int,
+}
+
+fn main() void: {
+  p :: Person = {
+    .name = "Bob",
+    .age = 30,
+  };
+
+  println#({ p.name });   -- Bob
+  p.name = "Alice";
+}
 ```
 
 ---
@@ -364,22 +511,45 @@ p.name = "Alice";
 Put `?` in front of a type to allow `null`. Use `.?` to unwrap.
 
 ```iglot
-p :: ?Person = {
-  .name = "Bob",
-  .age = 30,
-};
+module main;
 
-println#({ p.?, p.?.name });   -- unwrap the value, or a member through it
+struct Person: {
+  name :: string,
+  age :: int,
+}
 
-p = null;
-println#({ p.? });             -- Crash!!! (unwrapping null)
+fn main() void: {
+  p :: ?Person = {
+    .name = "Bob",
+    .age = 30,
+  };
+
+  println#({ p.?, p.?.name }); -- unwrap the value, or a member through it
+
+  p = null;
+  println#({ p.? }); -- Crash!!! (unwrapping null)
+}
 ```
 
 Check before you unwrap:
 
 ```iglot
-if p != null: {
-  println#({ p.?.name });
+module main;
+
+struct Person: {
+  name :: string,
+  age :: int,
+}
+
+fn main() void: {
+  p :: ?Person = {
+    .name = "Bob",
+    .age = 30,
+  };
+
+  if p != null: {
+    println#({ p.?.name });
+  }
 }
 ```
 
@@ -390,18 +560,22 @@ if p != null: {
 Built-ins are called with a `#` after the name.
 
 ```iglot
-println#({ "Hello, World!" });         -- fn ([UNBOUNDED]any) void
-print#({ "Hello!", "Bye!" });          -- fn ([UNBOUNDED]any) void
-prompt#("Say something! ");            -- fn (string) string
+module main;
 
-parse_to_int#("123");                  -- fn (string) int
-parse_to_wideint#("123");              -- fn (string) wideint
-parse_to_float#("3.14");               -- fn (string) float
-parse_to_double#("3.1415926535");      -- fn (string) double
+fn main() void: {
+  println#({ "Hello, World!" }); -- fn ([UNBOUNDED]any) void
+  print#({ "Hello!", "Bye!" }); -- fn ([UNBOUNDED]any) void
+  prompt#("Say something! "); -- fn (string) string
 
-fetch#("https://example.com");         -- fn (string) ?FetchResult
+  parse_to_int#("123"); -- fn (string) int
+  parse_to_wideint#("123"); -- fn (string) wideint
+  parse_to_float#("3.14"); -- fn (string) float
+  parse_to_double#("3.1415926535"); -- fn (string) double
 
-type_of#(123);                         -- fn (any) string
+  fetch#("https://example.com"); -- fn (string) ?FetchResult
+
+  type_of#(123); -- fn (any) string
+}
 ```
 
 ---
