@@ -90,7 +90,7 @@ fn validateFields(
             break :blk .err;
         };
 
-        if (try s_type.rejectVoid(sema, allocator, f.type_expr.span, "a struct field type")) {
+        if (try s_type.rejectInvalidStorage(sema, allocator, f.type_expr.span, "a struct field type")) {
             had_error.* = true;
             s_type = .err;
         }
@@ -135,6 +135,7 @@ fn containsByValue(t: tt.SemaType, target: *const tt.SemaType.Struct, seen: *std
         .function,
         .int,
         .number,
+        .noreturn,
         .string,
         .void,
         .wideint,

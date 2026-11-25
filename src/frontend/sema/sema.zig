@@ -435,7 +435,7 @@ pub const IglotSemanticAnalyzer = struct {
                 const node = try allocator.create(typed_ast.TypedExpr);
                 node.* = .{
                     .span = span,
-                    .sem_type = .string,
+                    .sem_type = .noreturn,
                     .kind = .{
                         .break_expr = b,
                     },

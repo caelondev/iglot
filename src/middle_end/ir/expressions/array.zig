@@ -57,6 +57,7 @@ fn emitZero(ir: *IglotIR, allocator: std.mem.Allocator, ty: SemaType) anyerror!i
         .bool => try emitConst(ir, allocator, .const_bool, ty, dest, .{ .bool = false }),
         .string => try emitConst(ir, allocator, .const_string, ty, dest, .{ .string = "" }),
         .nullable => try emitConst(ir, allocator, .const_null, ty, dest, .null),
+        .noreturn => unreachable,
 
         .array => |inner| {
             const n: usize = @intCast(inner.size.known);

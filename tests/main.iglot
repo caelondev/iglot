@@ -2,8 +2,6 @@ module main;
 
 fn main() void: {
   loop: {
-    if true: {
-      x ::= break;
-    }
+    1+break;
   }
 }
