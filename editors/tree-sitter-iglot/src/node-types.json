@@ -88,6 +88,10 @@
           "named": true
         },
         {
+          "type": "return_expr",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         },
@@ -163,6 +167,10 @@
             "named": true
           },
           {
+            "type": "return_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           }
@@ -226,6 +234,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -305,6 +317,10 @@
           "named": true
         },
         {
+          "type": "return_expr",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         }
@@ -373,6 +389,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -496,6 +516,10 @@
             "named": true
           },
           {
+            "type": "return_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           }
@@ -521,10 +545,6 @@
         },
         {
           "type": "loop",
-          "named": true
-        },
-        {
-          "type": "return_stmt",
           "named": true
         },
         {
@@ -619,6 +639,10 @@
           "named": true
         },
         {
+          "type": "return_expr",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         },
@@ -694,6 +718,10 @@
             "named": true
           },
           {
+            "type": "return_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           }
@@ -758,6 +786,10 @@
         },
         {
           "type": "null",
+          "named": true
+        },
+        {
+          "type": "return_expr",
           "named": true
         },
         {
@@ -828,10 +860,6 @@
         },
         {
           "type": "loop",
-          "named": true
-        },
-        {
-          "type": "return_stmt",
           "named": true
         },
         {
@@ -907,6 +935,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -989,6 +1021,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -1216,6 +1252,10 @@
           "named": true
         },
         {
+          "type": "return_expr",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         }
@@ -1307,7 +1347,7 @@
           "named": true
         },
         {
-          "type": "return_stmt",
+          "type": "return_expr",
           "named": true
         },
         {
@@ -1416,6 +1456,10 @@
             "named": true
           },
           {
+            "type": "return_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           }
@@ -1479,6 +1523,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -1566,6 +1614,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -1757,7 +1809,7 @@
     "fields": {}
   },
   {
-    "type": "return_stmt",
+    "type": "return_expr",
     "named": true,
     "fields": {
       "value": {
@@ -1818,6 +1870,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -1967,6 +2023,10 @@
             "named": true
           },
           {
+            "type": "return_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           }
@@ -2034,6 +2094,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {
@@ -2106,6 +2170,10 @@
         },
         {
           "type": "null",
+          "named": true
+        },
+        {
+          "type": "return_expr",
           "named": true
         },
         {
@@ -2290,6 +2358,10 @@
           },
           {
             "type": "null",
+            "named": true
+          },
+          {
+            "type": "return_expr",
             "named": true
           },
           {

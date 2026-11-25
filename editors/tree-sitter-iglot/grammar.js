@@ -135,7 +135,6 @@ export default grammar({
 
     _statement: $ => choice(
       $.variable_decl,
-      $.return_stmt,
       $.expression_stmt,
       $.if_stmt,
       $.loop,
@@ -152,12 +151,6 @@ export default grammar({
       "::",
       optional(field("type", $._type)),
       "=",
-      field("value", $._expression),
-      ";",
-    ),
-
-    return_stmt: $ => seq(
-      "return",
       field("value", $._expression),
       ";",
     ),
@@ -206,6 +199,7 @@ export default grammar({
       $.member,
       $.assign,
       $.break_expr,
+      $.return_expr,
     ),
 
     boolean: $ => choice("true", "false"),
@@ -271,5 +265,10 @@ export default grammar({
         field("value", $._expression),
       )
     ),
+    return_expr: $ => seq(
+      "return",
+      field("value", $._expression),
+    ),
+
   }
 });
