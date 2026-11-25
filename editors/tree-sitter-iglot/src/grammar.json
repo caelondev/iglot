@@ -592,10 +592,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "break_stmt"
-        },
-        {
-          "type": "SYMBOL",
           "name": "if_stmt"
         },
         {
@@ -688,19 +684,6 @@
             "type": "SYMBOL",
             "name": "_expression"
           }
-        },
-        {
-          "type": "STRING",
-          "value": ";"
-        }
-      ]
-    },
-    "break_stmt": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "break"
         },
         {
           "type": "STRING",
@@ -962,6 +945,10 @@
         {
           "type": "SYMBOL",
           "name": "assign"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "break_expr"
         }
       ]
     },
@@ -1166,6 +1153,10 @@
           }
         ]
       }
+    },
+    "break_expr": {
+      "type": "STRING",
+      "value": "break"
     },
     "binary_expression": {
       "type": "CHOICE",

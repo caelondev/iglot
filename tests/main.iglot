@@ -2,6 +2,8 @@ module main;
 
 fn main() void: {
   loop: {
-    println#({ "h", break });
+    if true: {
+      x ::= break;
+    }
   }
 }

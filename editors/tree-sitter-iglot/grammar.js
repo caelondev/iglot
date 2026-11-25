@@ -137,7 +137,6 @@ export default grammar({
       $.variable_decl,
       $.return_stmt,
       $.expression_stmt,
-      $.break_stmt,
       $.if_stmt,
       $.loop,
       $.switch_stmt,
@@ -162,8 +161,6 @@ export default grammar({
       field("value", $._expression),
       ";",
     ),
-
-    break_stmt: $ => seq("break", ";"),
 
     if_stmt: $ => prec.right(seq(
       "if",
@@ -208,6 +205,7 @@ export default grammar({
       $.index,
       $.member,
       $.assign,
+      $.break_expr,
     ),
 
     boolean: $ => choice("true", "false"),
@@ -222,6 +220,8 @@ export default grammar({
 
     tag: $ => "#",
     builtin_call: $ => prec.left(PREC.postfix, seq(field("callee", $.identifier), $.tag, "(", optional(commaSep1($._expression)), ")")),
+    break_expr: $ => "break",
+
 
     binary_expression: $ => choice(
       ...BINARY_OPS.map(([op, p]) =>

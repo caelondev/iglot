@@ -8,7 +8,7 @@
 "struct" @keyword.special
 "const" @keyword.special
 "fin" @keyword.special
-"break" @keyword.special
+(break_expr) @keyword.special
 "if" @keyword.special
 "else" @keyword.special
 "loop" @keyword.special

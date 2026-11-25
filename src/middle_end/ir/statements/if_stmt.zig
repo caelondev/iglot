@@ -36,7 +36,7 @@ pub fn buildIfStmt(
                 .false_block = alt_blk.id,
             },
         },
-        .op = .br,
+        .op = .cond_br,
         .operands = try allocator.dupe(inst.VReg, &.{cond_ref}),
         .result = null,
         .sema_type = null,
