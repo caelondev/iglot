@@ -118,6 +118,7 @@ pub const Expression = struct {
         index_expr: IndexExpression,
         member: MemberExpression,
         call: CallExpression,
+        break_expr: BreakExpression,
     };
 };
 
@@ -131,7 +132,6 @@ pub const Statement = struct {
         if_stmt: IfStatement,
         scoped: ScopedStatement,
         loop: LoopStatement,
-        break_stmt: BreakStatement,
         struct_decl: StructDeclarationStatement,
         switch_stmt: SwitchStatement,
     },
@@ -280,7 +280,7 @@ pub const LoopStatement = struct {
     body: ScopedStatement,
 };
 
-pub const BreakStatement = struct {
+pub const BreakExpression = struct {
     span: tokens.Span,
 };
 

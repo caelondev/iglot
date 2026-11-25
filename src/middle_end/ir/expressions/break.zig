@@ -4,9 +4,10 @@ const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
 const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildBreakStmt(self: *IglotIR, allocator: std.mem.Allocator, b: *const ast.BreakStatement) !?void {
+pub fn buildBreakExpr(self: *IglotIR, allocator: std.mem.Allocator, b: *const ast.BreakExpression) !?inst.VReg {
     _ = b;
     const top_loop = self.loop_stack.getLast();
+
     try self.emit(allocator, .{
         .data = .{ .branch_target = top_loop.break_block },
         .op = .br,
@@ -14,4 +15,7 @@ pub fn buildBreakStmt(self: *IglotIR, allocator: std.mem.Allocator, b: *const as
         .result = null,
         .sema_type = null,
     });
+
+    // break is noreturn, it produces no value
+    return null;
 }

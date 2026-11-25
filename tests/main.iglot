@@ -1,3 +1,7 @@
 module main;
 
-fn main() void: {}
+fn main() void: {
+  loop: {
+    println#({ "h", break });
+  }
+}

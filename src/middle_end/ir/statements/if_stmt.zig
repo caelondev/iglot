@@ -7,7 +7,7 @@ pub fn buildIfStmt(
     ir: *IglotIR,
     allocator: std.mem.Allocator,
     i: *const typed_ast.TypedIfStatement,
-) !?void {
+) !void {
     const cond_blk = try ir.current_fn.newBlock(allocator, "if.cond");
     const then_blk = try ir.current_fn.newBlock(allocator, "if.then");
     const alt_blk = try ir.current_fn.newBlock(allocator, "if.alt");
@@ -23,8 +23,11 @@ pub fn buildIfStmt(
 
     ir.goToBlock(cond_blk);
 
-    const cond_ref = try ir.buildExpression(allocator, i.condition) orelse
-        return null;
+    const cond_ref = try ir.buildExpression(allocator, i.condition) orelse {
+        // noreturn value, e.g. `x ::= break;`
+        // no value to bind, block is already terminated by the break
+        return;
+    };
 
     try ir.emit(allocator, .{
         .data = .{
@@ -41,7 +44,7 @@ pub fn buildIfStmt(
 
     ir.goToBlock(then_blk);
 
-    try ir.buildStmt(allocator, i.consequence.*) orelse return null;
+    try ir.buildStmt(allocator, i.consequence.*);
 
     if (!ir.current_block.isTerminated()) {
         try ir.emit(allocator, .{
@@ -56,7 +59,7 @@ pub fn buildIfStmt(
     ir.goToBlock(alt_blk);
 
     if (i.alternative) |alt| {
-        try ir.buildStmt(allocator, alt.*) orelse return null;
+        try ir.buildStmt(allocator, alt.*);
     }
 
     if (!ir.current_block.isTerminated()) {

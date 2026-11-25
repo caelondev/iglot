@@ -4,7 +4,7 @@ const inst = @import("../instruction.zig");
 const Function = @import("../function.zig").Function;
 const IglotIR = @import("../ir.zig").IglotIR;
 
-pub fn buildLoopStmt(self: *IglotIR, allocator: std.mem.Allocator, l: *const typed_ast.TypedLoopStatement) !?void {
+pub fn buildLoopStmt(self: *IglotIR, allocator: std.mem.Allocator, l: *const typed_ast.TypedLoopStatement) !void {
     const loop_start_blk = try self.current_fn.newBlock(allocator, "loop.start");
     const loop_end_blk = try self.current_fn.newBlock(allocator, "loop.end");
 
@@ -26,7 +26,7 @@ pub fn buildLoopStmt(self: *IglotIR, allocator: std.mem.Allocator, l: *const typ
         self.popLoopContext();
     }
 
-    try self.buildScopedStmt(allocator, l.body) orelse return null;
+    try self.buildScopedStmt(allocator, l.body);
 
     if (!self.current_block.isTerminated()) {
         try self.emit(allocator, .{

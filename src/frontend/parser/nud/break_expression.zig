@@ -3,16 +3,15 @@ const ast = @import("../ast.zig");
 const IglotParser = @import("../parser.zig").IglotParser;
 const Span = @import("../../lexer/tokens.zig").Span;
 
-pub fn parseBreakStatement(
+pub fn parseBreakExpression(
     parser: *IglotParser,
     allocator: std.mem.Allocator,
-) !?ast.Statement {
+) !?ast.Expression {
+    _ = allocator;
     const keyword = parser.cur_tok;
-    if (!try parser.expectPeek(allocator, .semicolon)) return null;
-
     return .{
-        .kind = .{
-            .break_stmt = .{
+        .expr = .{
+            .break_expr = .{
                 .span = keyword.span,
             },
         },

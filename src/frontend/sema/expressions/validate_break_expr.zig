@@ -6,18 +6,18 @@ const typed_ast = @import("../typed_ast.zig");
 const Span = @import("../../lexer/tokens.zig").Span;
 const IglotSemanticAnalyzer = @import("../sema.zig").IglotSemanticAnalyzer;
 
-pub fn validateBreakStatement(
+pub fn validateBreakExpression(
     sema: *IglotSemanticAnalyzer,
     allocator: std.mem.Allocator,
-    l: *const ast.BreakStatement,
-) anyerror!?ast.BreakStatement {
+    b: *const ast.BreakExpression,
+) anyerror!?ast.BreakExpression {
     if (sema.loop_depth == 0) {
         try sema.reportError(allocator, .{
-            .span = l.span,
+            .span = b.span,
             .kind = .IllegalBreak,
         });
         return null;
     }
 
-    return .{ .span = l.span };
+    return .{ .span = b.span };
 }

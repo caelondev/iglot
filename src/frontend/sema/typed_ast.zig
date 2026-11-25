@@ -17,7 +17,6 @@ pub const TypedStmt = union(enum) {
     if_stmt: TypedIfStatement,
     variable_declaration: TypedVariableDeclaration,
     loop: TypedLoopStatement,
-    break_stmt: ast.BreakStatement,
 };
 
 pub const TypedExpressionStmt = struct {
@@ -91,6 +90,7 @@ pub const TypedExpr = struct {
         member: TypedMemberExpr,
         null_unwrap: TypedNullUnwrap,
         module_ref: TypedModuleRef,
+        break_expr: ast.BreakExpression,
     },
 };
 

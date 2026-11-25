@@ -30,7 +30,7 @@ const validateReturnStatement = @import("statements/validate_return_statement.zi
 const validateIfStatement = @import("statements/validate_if_statement.zig").validateIfStatement;
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
 const validateLoopStatement = @import("statements/validate_loop_statement.zig").validateLoopStatement;
-const validateBreakStatement = @import("statements/validate_break_stmt.zig").validateBreakStatement;
+const validateBreakExpression = @import("expressions/validate_break_expr.zig").validateBreakExpression;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -245,8 +245,8 @@ pub const IglotSemanticAnalyzer = struct {
                 const decl = try validateStructDeclaration(self, allocator, s) orelse return null;
                 return .{ .struct_decl = decl };
             },
-            .function_decl => |f| {
-                const decl = try validateFunctionDeclaration(self, allocator, &f) orelse return null;
+            .function_decl => |*f| {
+                const decl = try validateFunctionDeclaration(self, allocator, f) orelse return null;
 
                 if (std.mem.eql(u8, decl.identifier.value, "main")) {
                     try self.validateMainFunctionSigniture(allocator, decl) orelse return null;
@@ -327,10 +327,6 @@ pub const IglotSemanticAnalyzer = struct {
             .scoped => |s| {
                 const scoped = try self.validateScopedStatement(allocator, &s) orelse return null;
                 return .{ .scoped = scoped };
-            },
-            .break_stmt => |b| {
-                const st = try validateBreakStatement(self, allocator, &b) orelse return null;
-                return .{ .break_stmt = st };
             },
             .struct_decl => unreachable,
             .switch_stmt => unreachable,
@@ -433,6 +429,18 @@ pub const IglotSemanticAnalyzer = struct {
                 .not_module => validateMemberExpr(self, allocator, m, span),
                 .failed => null,
                 .ok => |node| node,
+            },
+            .break_expr => |*br| blk: {
+                const b = try validateBreakExpression(self, allocator, br) orelse return null;
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{
+                    .span = span,
+                    .sem_type = .string,
+                    .kind = .{
+                        .break_expr = b,
+                    },
+                };
+                break :blk node;
             },
         };
     }
@@ -616,6 +624,7 @@ pub const IglotSemanticAnalyzer = struct {
             .bare_brace,
             .index_expr,
             .member,
+            .break_expr,
             => null,
         };
     }

@@ -100,7 +100,6 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
         },
         .loop => |l| !loopCanBreak(&l.body),
         .struct_decl,
-        .break_stmt,
         .expression,
         .variable_declaration,
         .function_decl,
@@ -108,43 +107,84 @@ fn alwaysReturns(stmt: *const typed_ast.TypedStmt) bool {
     };
 }
 
-fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
+pub fn stmtCanBreak(stmt: *const typed_ast.TypedStmt) bool {
     return switch (stmt.*) {
-        .break_stmt => true,
-
-        .block => |b| {
+        .expression => |e| exprCanBreak(e.typed),
+        .block => |b| blk: {
             for (b.typed_stmts) |*s| {
-                if (stmtCanBreak(s)) return true;
+                if (stmtCanBreak(s)) break :blk true;
             }
-            return false;
+            break :blk false;
         },
-
-        .scoped => |s| {
+        .scoped => |s| blk: {
             for (s.typed_stmts) |*st| {
-                if (stmtCanBreak(st)) return true;
+                if (stmtCanBreak(st)) break :blk true;
             }
-            return false;
+            break :blk false;
         },
-
         .if_stmt => |f| blk: {
+            if (exprCanBreak(f.condition)) break :blk true;
             if (stmtCanBreak(f.consequence)) break :blk true;
-
-            if (f.alternative) |alternative| {
-                if (stmtCanBreak(alternative)) break :blk true;
+            if (f.alternative) |alt| {
+                if (stmtCanBreak(alt)) break :blk true;
             }
-
             break :blk false;
         },
 
         // A break inside this loop belongs to this inner loop,
         // not the loop we're currently analyzing.
         .loop => false,
-
         .return_stmt => true,
-        .expression,
-        .variable_declaration,
+        .variable_declaration => |v| blk: {
+            if (exprCanBreak(v.value)) break :blk true;
+            break :blk false;
+        },
         .function_decl,
         .struct_decl,
         => false,
+    };
+}
+
+pub fn exprCanBreak(e: *const typed_ast.TypedExpr) bool {
+    return switch (e.kind) {
+        .break_expr => true,
+
+        // leafs, no break inside
+        .identifier,
+        .integer,
+        .wide_integer,
+        .float,
+        .string,
+        .module_ref,
+        => false,
+
+        // wrappers
+        .member => |m| exprCanBreak(m.object),
+        .index => |i| exprCanBreak(i.left) or exprCanBreak(i.index),
+        .null_unwrap => |n| exprCanBreak(n.left),
+        .unary => |u| exprCanBreak(u.rhs),
+        .assignment => |a| exprCanBreak(a.assignee) or exprCanBreak(a.value),
+        .binary => |b| exprCanBreak(b.left) or exprCanBreak(b.right),
+
+        // containers
+        .array => |a| blk: {
+            for (a.elements) |el| {
+                if (exprCanBreak(el)) break :blk true;
+            }
+            break :blk false;
+        },
+        .struct_init => |s| blk: {
+            for (s.fields) |f| {
+                if (exprCanBreak(f)) break :blk true;
+            }
+            break :blk false;
+        },
+        .call => |c| blk: {
+            if (exprCanBreak(c.callee)) break :blk true;
+            for (c.arguments) |arg| {
+                if (exprCanBreak(arg)) break :blk true;
+            }
+            break :blk false;
+        },
     };
 }

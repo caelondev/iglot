@@ -36,7 +36,7 @@ pub fn buildFunctionDecl(ir: *IglotIR, allocator: std.mem.Allocator, f: *const t
         try ir.current_scope.declare(allocator, p.name, vreg);
     }
 
-    try ir.buildBodyStmt(allocator, f.body) orelse return null;
+    try ir.buildBodyStmt(allocator, f.body);
 
     if (!ir.current_block.isTerminated()) {
         const op: inst.Opcode = if (f.return_type == .void) .ret_void else .@"unreachable";
