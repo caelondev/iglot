@@ -1,4 +1,3 @@
-
 {
   "name": "iglot",
   "scopeName": "source.iglot",
@@ -10,6 +9,7 @@
     { "include": "#function-decl" },
     { "include": "#struct-decl" },
     { "include": "#keyword-other" },
+    { "include": "#keyword-expression" },
     { "include": "#keyword-special" },
     { "include": "#builtin-call" },
     { "include": "#declared-name" },
@@ -42,9 +42,14 @@
       "match": "\\b(fn|and|or|module|import)\\b"
     },
 
+    "keyword-expression": {
+      "name": "keyword.control.special.iglot",
+      "match": "\\b(return|break)\\b"
+    },
+
     "keyword-special": {
       "name": "keyword.control.special.iglot",
-      "match": "\\b(return|struct|const|fin|break|if|else|loop|switch)\\b"
+      "match": "\\b(struct|const|fin|if|else|loop|switch)\\b"
     },
 
     "type-tokens": {
@@ -286,5 +291,3 @@
     }
   }
 }
-
-

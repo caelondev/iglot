@@ -267,8 +267,7 @@ export default grammar({
     ),
     return_expr: $ => seq(
       "return",
-      field("value", $._expression),
+      optional(field("value", $._expression)),
     ),
-
   }
 });
