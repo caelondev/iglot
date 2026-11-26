@@ -108,7 +108,7 @@ pub fn run(ctx: *Context) !void {
     };
     ir.deinit(allocator);
 
-    try printModule(writer, ir_module.*);
+    // try printModule(writer, ir_module.*);
 
     // Codegen
     var codegen: IglotCodegen = .init();

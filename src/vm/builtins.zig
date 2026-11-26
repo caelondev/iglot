@@ -55,14 +55,19 @@ const UNBOUNDED_ARRAY_ANY: SemaType = .{
 var FETCH_RESULT_STRUCT: SemaType.Struct = undefined;
 var FETCH_RESULT_SEMA: SemaType = .{ .@"struct" = &FETCH_RESULT_STRUCT };
 
+var INT_TYPE: SemaType = .int;
+var WIDEINT_TYPE: SemaType = .wideint;
+var FLOAT_TYPE: SemaType = .float;
+var DOUBLE_TYPE: SemaType = .double;
+
 pub const table = [_]Builtin{
     .{ .name = "print", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &print },
     .{ .name = "println", .params = &.{UNBOUNDED_ARRAY_ANY}, .ret_type = .void, .func = &println },
     .{ .name = "prompt", .params = &.{.string}, .ret_type = .string, .func = &prompt },
-    .{ .name = "parse_to_int", .params = &.{.string}, .ret_type = .int, .func = &parse_to_int },
-    .{ .name = "parse_to_wideint", .params = &.{.string}, .ret_type = .wideint, .func = &parse_to_wideint },
-    .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .float, .func = &parse_to_float },
-    .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .double, .func = &parse_to_double },
+    .{ .name = "parse_to_int", .params = &.{.string}, .ret_type = .{ .nullable = &INT_TYPE }, .func = &parse_to_int },
+    .{ .name = "parse_to_wideint", .params = &.{.string}, .ret_type = .{ .nullable = &WIDEINT_TYPE }, .func = &parse_to_wideint },
+    .{ .name = "parse_to_float", .params = &.{.string}, .ret_type = .{ .nullable = &FLOAT_TYPE }, .func = &parse_to_float },
+    .{ .name = "parse_to_double", .params = &.{.string}, .ret_type = .{ .nullable = &DOUBLE_TYPE }, .func = &parse_to_double },
     .{ .name = "fetch", .params = &.{.string}, .ret_type = .{ .nullable = &FETCH_RESULT_SEMA }, .func = &fetch },
     .{ .name = "type_of", .params = &.{.any}, .ret_type = .string, .func = &type_of },
 };

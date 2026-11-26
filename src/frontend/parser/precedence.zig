@@ -43,6 +43,7 @@ pub const Precedence = enum(u8) {
     logical_and,
     equality,
     comparison,
+    or_else,
     additive,
     multiplicative,
     exponent,
@@ -62,6 +63,7 @@ pub const Precedence = enum(u8) {
             .equal_to,
             .not_equal_to,
             => .equality,
+            .or_else => .or_else,
 
             .less,
             .greater,

@@ -1,10 +1,7 @@
 module main;
 
 fn main() void: {
-  x ::= ret_value();
-  println#({ "returned:", x });
-}
-
-fn ret_value() int: {
-  x ::= return 10;
+  msg ::= prompt#("enter a number: ");
+  num ::= parse_to_double#(msg) or_else return;
+  println#({ num });
 }

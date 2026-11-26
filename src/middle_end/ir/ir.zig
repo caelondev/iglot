@@ -270,7 +270,7 @@ pub const IglotIR = struct {
         return try self.loadSymbol(allocator, symbol, sema_type);
     }
 
-    fn loadSymbol(self: *Self, allocator: std.mem.Allocator, symbol: []const u8, sema_type: tt.SemaType) !ResolvedIdent {
+    pub fn loadSymbol(self: *Self, allocator: std.mem.Allocator, symbol: []const u8, sema_type: tt.SemaType) !ResolvedIdent {
         if (self.global_symtab.get(symbol)) |ref| {
             const dest = self.current_fn.newVReg();
             try self.emit(allocator, .{

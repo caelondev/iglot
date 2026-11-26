@@ -82,6 +82,7 @@ pub const TokenKind = enum {
     @"const",
     @"struct",
     @"switch",
+    or_else,
     module,
     loop,
     final,
@@ -171,5 +172,6 @@ pub const keywords: std.StaticStringMap(TokenKind) = .initComptime(.{
     .{ "fin", .final },
     .{ "import", .import },
     .{ "module", .module },
+    .{ "or_else", .or_else },
     .{ "loop", .loop },
 });

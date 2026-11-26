@@ -50,7 +50,14 @@ pub fn irToCgOpcode(inst: i.Instruction) bc.IglotOpcode {
     };
 }
 
-pub fn dispatchOpcode(val_type: SemaType, int: bc.IglotOpcode, w: bc.IglotOpcode, f: bc.IglotOpcode, d: bc.IglotOpcode, str: ?bc.IglotOpcode) bc.IglotOpcode {
+pub fn dispatchOpcode(
+    val_type: SemaType,
+    int: bc.IglotOpcode,
+    w: bc.IglotOpcode,
+    f: bc.IglotOpcode,
+    d: bc.IglotOpcode,
+    str: ?bc.IglotOpcode,
+) bc.IglotOpcode {
     return switch (val_type) {
         .int => int,
         .wideint => w,
@@ -58,6 +65,19 @@ pub fn dispatchOpcode(val_type: SemaType, int: bc.IglotOpcode, w: bc.IglotOpcode
         .double => d,
         .string => str.?,
         .nullable => |t| dispatchOpcode(t.*, int, w, f, d, str),
-        else => unreachable,
+
+        .bool,
+        .noreturn,
+        .@"struct",
+        .any,
+        .array,
+        .char,
+        .constant,
+        .err,
+        .function,
+        .null,
+        .number,
+        .void,
+        => unreachable,
     };
 }
