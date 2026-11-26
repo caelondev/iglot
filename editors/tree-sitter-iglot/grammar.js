@@ -13,10 +13,11 @@ const PREC = {
   and: 3,
   equality: 4,
   comparison: 5,
-  additive: 6,
-  multiplicative: 7,
-  unary: 8,
-  postfix: 9, // call, index, member
+  orelse: 6,
+  additive: 7,
+  multiplicative: 8,
+  unary: 9,
+  postfix: 10, // call, index, member
 };
 
 /** @type {[string, number][]} */
@@ -27,6 +28,7 @@ const BINARY_OPS = [
   [">", PREC.comparison],
   ["<=", PREC.comparison],
   [">=", PREC.comparison],
+  ["or_else", PREC.orelse],
   ["+", PREC.additive],
   ["-", PREC.additive],
   ["*", PREC.multiplicative],
@@ -265,9 +267,9 @@ export default grammar({
         field("value", $._expression),
       )
     ),
-    return_expr: $ => seq(
+    return_expr: $ => prec.right(seq(
       "return",
       optional(field("value", $._expression)),
-    ),
+    )),
   }
 });

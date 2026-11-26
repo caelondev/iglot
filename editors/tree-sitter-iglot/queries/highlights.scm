@@ -2,10 +2,11 @@
 "fn" @keyword
 "and" @keyword
 "or" @keyword
+"or_else" @keyword
+"struct" @keyword
 "module" @keyword
 "import" @keyword
 "return" @keyword.special
-"struct" @keyword.special
 "const" @keyword.special
 "fin" @keyword.special
 (break_expr) @keyword.special
