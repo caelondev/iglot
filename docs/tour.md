@@ -21,6 +21,7 @@ A quick reference for Iglot syntax to start writing code.
    - [Arithmetic](#arithmetic)
    - [Comparison](#comparison)
    - [Logical](#logical)
+   - [Nullable fallback](#nullable-fallback)
 7. [Control Flow](#7-control-flow)
    - [If / else](#if--else)
    - [Loops](#loops)
@@ -36,6 +37,10 @@ A quick reference for Iglot syntax to start writing code.
     - [Creating](#creating)
     - [Reading and writing members](#reading-and-writing-members)
 11. [Nullables](#11-nullables)
+    - [Unwrapping with `.?`](#unwrapping-with-)
+    - [Defaulting with `or_else`](#defaulting-with-or_else)
+    - [Diverging with `or_else`](#diverging-with-or_else)
+    - [`or_else` rules](#or_else-rules)
 12. [Built-in Functions](#12-built-in-functions)
 13. [Compiler-Internal Types](#13-compiler-internal-types)
 
@@ -262,6 +267,24 @@ fn main() void: {
 }
 ```
 
+### Nullable fallback
+
+`or_else` takes a nullable on the left and gives back its value, or the right side if it is `null`. The result is the plain, non-nullable type.
+
+```iglot
+module main;
+
+fn main() void: {
+  x :: ?int = null;
+  y ::= x or_else 5;   -- 5
+  println#({ y });
+}
+```
+
+It binds tighter than comparisons and looser than arithmetic, so `a or_else b + 1` means `a or_else (b + 1)`, and `a or_else 1 > 2` means `(a or_else 1) > 2`.
+
+See [Nullables](#11-nullables) for the full rules.
+
 ---
 
 ## 7. Control Flow
@@ -355,6 +378,8 @@ fn main() void: {
   println#({ first_big(5) });   -- 6
 }
 ```
+
+Because they are expressions, `break` and `return` also work as the right side of [`or_else`](#diverging-with-or_else).
 
 ---
 
@@ -508,7 +533,9 @@ fn main() void: {
 
 ## 11. Nullables
 
-Put `?` in front of a type to allow `null`. Use `.?` to unwrap.
+Put `?` in front of a type to allow `null`. Use `.?` to unwrap, or `or_else` to fall back to another value.
+
+### Unwrapping with `.?`
 
 ```iglot
 module main;
@@ -553,6 +580,70 @@ fn main() void: {
 }
 ```
 
+### Defaulting with `or_else`
+
+`left or_else right` evaluates to `left` if it isn't `null`, and to `right` otherwise. The result has the unwrapped type, so there is no `.?` needed afterwards, and it can never crash.
+
+```iglot
+module main;
+
+fn main() void: {
+  maybe :: ?int = null;
+  value ::= maybe or_else 42;   -- 42, and `value` is a plain int
+  println#({ value });
+}
+```
+
+This is the usual way to handle the built-in parsers, which return nullables:
+
+```iglot
+module main;
+
+fn main() void: {
+  n ::= parse_to_int#(prompt#("Enter a number: ")) or_else 0;
+  println#({ "You entered:", n });
+}
+```
+
+The right side only runs when the left side is `null`.
+
+### Diverging with `or_else`
+
+The right side is allowed to leave instead of producing a value. Since `return` and `break` are [expressions](#break-and-return-are-expressions), you can bail out right where the `null` shows up:
+
+```iglot
+module main;
+
+fn read_number() int: {
+  n ::= parse_to_int#(prompt#("Enter a number: ")) or_else return -1;
+  return n * 2;
+}
+
+fn main() void: {
+  println#({ read_number() });
+}
+```
+
+```iglot
+module main;
+
+fn main() void: {
+  loop: {
+    n ::= parse_to_int#(prompt#("Enter a number (or anything else to stop): ")) or_else break;
+    println#({ "Got:", n });
+  }
+}
+```
+
+After the `or_else`, `n` is a plain `int`, because the only way to get past that line is for the value to have been non-null.
+
+### `or_else` rules
+
+- **The left side must be nullable.** `5 or_else 1` is an error: `left side of 'or_else' must be nullable`.
+- **The right side must match the unwrapped type.** `?int or_else "hi"` is a type mismatch. The exception is a right side that diverges (`return`, `break`), which is always allowed.
+- **The result is the unwrapped type.** `?int or_else 0` is an `int`.
+- **Precedence.** It binds tighter than comparisons and looser than arithmetic. Use parentheses if you're unsure.
+
 ---
 
 ## 12. Built-in Functions
@@ -567,16 +658,18 @@ fn main() void: {
   print#({ "Hello!", "Bye!" }); -- fn ([UNBOUNDED]any) void
   prompt#("Say something! "); -- fn (string) string
 
-  parse_to_int#("123"); -- fn (string) int
-  parse_to_wideint#("123"); -- fn (string) wideint
-  parse_to_float#("3.14"); -- fn (string) float
-  parse_to_double#("3.1415926535"); -- fn (string) double
+  parse_to_int#("123"); -- fn (string) ?int
+  parse_to_wideint#("123"); -- fn (string) ?wideint
+  parse_to_float#("3.14"); -- fn (string) ?float
+  parse_to_double#("3.1415926535"); -- fn (string) ?double
 
   fetch#("https://example.com"); -- fn (string) ?FetchResult
 
   type_of#(123); -- fn (any) string
 }
 ```
+
+The `parse_to_*` functions return a nullable, so a string that isn't a valid number gives `null`. Handle that with [`or_else`](#defaulting-with-or_else) or check before you unwrap with `.?`.
 
 ---
 
