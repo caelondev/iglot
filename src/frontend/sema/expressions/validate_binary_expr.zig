@@ -138,8 +138,7 @@ pub fn validateBinaryExpr(
         .or_else => blk: {
             const payload = left.sem_type.nullable.*;
 
-            // a diverging RHS (return/break/unreachable) is allowed
-            if (right.sem_type != .noreturn and !payload.eql(right.sem_type)) {
+            if (!payload.eql(right.sem_type)) {
                 try sema.reportError(allocator, .{
                     .span = right.span,
                     .kind = .{ .TypeMismatch = .{ .expected = payload, .found = right.sem_type } },
