@@ -39,7 +39,7 @@
 
     "keyword-other": {
       "name": "keyword.other.iglot",
-      "match": "\\b(fn|and|or|module|import)\\b"
+      "match": "\\b(fn|and|or_else|or|struct|module|import)\\b"
     },
 
     "keyword-expression": {
@@ -49,7 +49,7 @@
 
     "keyword-special": {
       "name": "keyword.control.special.iglot",
-      "match": "\\b(struct|const|fin|if|else|loop|switch)\\b"
+      "match": "\\b(const|fin|if|else|loop|switch)\\b"
     },
 
     "type-tokens": {
@@ -119,7 +119,7 @@
     "struct-decl": {
       "begin": "\\b(struct)\\b\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(:)\\s*(\\{)",
       "beginCaptures": {
-        "1": { "name": "keyword.control.special.iglot" },
+        "1": { "name": "keyword.other.iglot" },
         "2": { "name": "entity.name.type.iglot" },
         "3": { "name": "punctuation.iglot" },
         "4": { "name": "punctuation.bracket.iglot" }
@@ -240,7 +240,7 @@
           }
         },
         {
-          "match": "(\\.)([A-Za-z_][A-Za-z0-9_]* )",
+          "match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)",
           "captures": {
             "1": { "name": "punctuation.iglot" },
             "2": {
@@ -285,7 +285,7 @@
         },
         {
           "name": "punctuation.iglot",
-          "match": "::|[:,.?#!]"
+          "match": "::|[:,.?#]"
         }
       ]
     }
