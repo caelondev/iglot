@@ -4,7 +4,7 @@
 
   <br>
 
-[Repository](https://codeberg.org/caelondev/iglot) · [Docs](./DOCS.md) · [Issues](https://codeberg.org/caelondev/iglot/issues)
+[Repository](https://codeberg.org/caelondev/iglot) · [Docs](#documentation) · [Issues](https://codeberg.org/caelondev/iglot/issues)
 
   <br>
 
