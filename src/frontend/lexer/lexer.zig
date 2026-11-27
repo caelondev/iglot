@@ -44,6 +44,8 @@ pub const IglotLexer = struct {
     prev_col: usize,
     cur_col: usize,
 
+    advanced: bool,
+
     const State = enum {
         start,
         identifier,
@@ -62,6 +64,8 @@ pub const IglotLexer = struct {
 
             .prev_line = 1,
             .cur_line = 1,
+
+            .advanced = false,
         };
     }
 
@@ -77,8 +81,8 @@ pub const IglotLexer = struct {
                         .span = .{
                             .column_start = self.cur_col,
                             .column_end = self.cur_col,
-                            .line_start = self.cur_line,
-                            .line_end = self.cur_line,
+                            .line_start = if (self.advanced) self.cur_line - 1 else self.cur_line,
+                            .line_end = if (self.advanced) self.cur_line - 1 else self.cur_line,
                         },
                     };
                 }
@@ -343,6 +347,7 @@ pub const IglotLexer = struct {
     fn advance(self: *Self) void {
         self.cursor += 1;
         self.cur_col += 1;
+        self.advanced = true;
     }
 
     fn isAtEnd(self: *Self) bool {
