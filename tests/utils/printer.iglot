@@ -1,6 +1,0 @@
-module printer;
-
-fn format(msg :: string, val :: int) void: {
-  println#({ msg });
-  println#({ "-->", val });
-}

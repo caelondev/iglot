@@ -10,6 +10,8 @@ A quick reference for Iglot syntax to start writing code.
 2. [Modules & Imports](#2-modules--imports)
    - [The module header](#the-module-header)
    - [Importing](#importing)
+   - [Nested imports](#nested-imports)
+   - [Root imports](#root-imports)
    - [Aliases](#aliases)
    - [Module rules](#module-rules)
 3. [Types](#3-types)
@@ -130,6 +132,54 @@ fn main() void: {
 }
 ```
 
+### Nested imports
+
+Modules can live in directories. Separate each directory and the file with `/`:
+
+```iglot
+-- tests/main.iglot
+module main;
+
+import utils/math/arithmetic;   -- loads utils/math/arithmetic.iglot
+
+fn main() void: {
+  arithmetic.sum_of(100, 2);
+}
+```
+
+- The last segment is the file, and every segment before it is a directory.
+- The binding name is the last segment, so the module above is used as `arithmetic`, not `utils` or `utils/math/arithmetic`.
+- A bare path (no `@/`) is looked up from the directory of the file that contains the import.
+- The module name in the file header must match the last segment: `arithmetic.iglot` says `module arithmetic;`.
+- There is no `..`. A bare path can only go down, never up. To reach something outside the current directory, use a [root import](#root-imports).
+
+### Root imports
+
+Prefix a path with `@/` to start from the **root** instead of the current directory. The root is the directory of the entry file, which is the file you passed to the cli. Running `iglot run src/main.iglot` makes `src/` the root, no matter where you run it from.
+
+```iglot
+-- utils/math/arithmetic.iglot
+module arithmetic;
+
+import @/utils/printer;   -- always resolves from the root
+
+fn sum_of(a :: int, b :: int) void: {
+  printer.format("sum:", a + b);
+}
+```
+
+A root import means the same thing from every file, so you can move a file around without breaking it.
+
+Using `@/` in a file that already sits in the root directory is an error, because a bare path there already starts at the root:
+
+```iglot
+-- main.iglot, in the root directory
+module main;
+
+import @/utils/printer;   -- error: redundant "@/" prefix
+import utils/printer;     -- correct
+```
+
 ### Aliases
 
 Give an import a different local name with `::`, the same operator you use for declarations:
@@ -138,18 +188,21 @@ Give an import a different local name with `::`, the same operator you use for d
 module main;
 
 import m :: math;
+import arith :: utils/math/arithmetic;
+import p :: @/utils/printer;
 
 fn main() void: {
   println#({ m.add(1, 2) });
+  arith.sum_of(1, 2);
 }
 ```
 
-The alias goes on the left, and the module name on the right. Once aliased, only the alias exists: after `import m :: math;` the name `math` is not bound.
+The alias goes on the left, and the module path on the right. Once aliased, only the alias exists: after `import m :: math;` the name `math` is not bound. Aliases are also how you import two modules that share a last segment (`a/util` and `b/util`), since both would otherwise bind `util`.
 
 ### Module rules
 
-- **One file is one module.** Imports are looked up by name next to the importing file: `import math;` loads `math.iglot` from the same directory.
-- **Each module is loaded once.** If two files import the same module, they share it. Its top-level variables are initialized once, before the importing module's own.
+- **One file is one module.** `import math;` loads `math.iglot` from the same directory as the importing file, and `import @/math;` loads it from the root.
+- **Each module is loaded once.** If two files import the same module, they share it, even if one writes the path as a bare import and the other uses `@/`. Its top-level variables are initialized once, before the importing module's own.
 - **Everything at the top level is importable** (functions, variables and structs). Visibility modifiers are planned.
 - **No import cycles.** If `a` imports `b` and `b` imports `a`, the compiler reports the cycle and shows the chain.
 - **A module is a namespace, not a value.** `x ::= math;` is an error. Always use it as `math.something`.

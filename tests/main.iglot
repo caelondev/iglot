@@ -1,7 +1,3 @@
 module main;
 
-import arith :: utils/math/arithmetic;
-
-fn main() void: {
-  arith.sum_of(100, 2);
-}
+fn main() void: {}
