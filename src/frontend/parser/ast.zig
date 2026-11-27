@@ -33,6 +33,7 @@
 //! of each expression or statement without relying on runtime type
 //! information.
 
+const std = @import("std");
 const tokens = @import("../lexer/tokens.zig");
 
 pub const Program = struct {
@@ -42,9 +43,17 @@ pub const Program = struct {
 };
 
 pub const Import = struct {
-    name: []const u8,
+    // segments of a module path
+    path: []const IdentifierExpression,
     alias: ?[]const u8,
+    from_root: bool,
+    /// span of the `@/` prefix, only set when from_root
+    root_span: ?tokens.Span,
     span: tokens.Span,
+
+    pub fn bindingName(self: *Import) []const u8 {
+        return self.alias orelse self.path[self.path.len - 1].value;
+    }
 };
 
 pub const ModuleHeader = struct {

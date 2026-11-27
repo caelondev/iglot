@@ -93,8 +93,8 @@ pub const IglotSemanticAnalyzer = struct {
         try self.initBuiltinIdentifiers(allocator);
         try builtins.initBuiltinTypes(allocator);
 
-        for (program.imports, mod.deps) |imp, dep| {
-            const local = imp.alias orelse imp.name;
+        for (program.imports, mod.deps) |*imp, dep| {
+            const local = imp.bindingName();
             if (self.imports.contains(local)) {
                 try self.reportError(allocator, .{
                     .span = imp.span,

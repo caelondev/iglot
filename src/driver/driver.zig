@@ -2,6 +2,7 @@ const std = @import("std");
 const ast = @import("../frontend/parser/ast.zig");
 
 const InkDye = @import("inkdye");
+const tokens = @import("../frontend/lexer/tokens.zig");
 const IglotLexer = @import("../frontend/lexer/lexer.zig").IglotLexer;
 const IglotParser = @import("../frontend/parser/parser.zig").IglotParser;
 const IglotModule = @import("module.zig").IglotModule;
@@ -18,6 +19,7 @@ pub const IglotModuleDriver = struct {
     in_progress: std.StringHashMapUnmanaged(void), // paths being loaded (cycle detection)
     order: std.ArrayList(*IglotModule),
     stack: std.ArrayList(*IglotModule), // modules currently being loaded, in import order
+    root_dir: []const u8,
 
     const Self = @This();
     pub fn init() Self {
@@ -29,6 +31,7 @@ pub const IglotModuleDriver = struct {
             .in_progress = .empty,
             .order = .empty,
             .stack = .empty,
+            .root_dir = "",
         };
     }
 
@@ -42,7 +45,11 @@ pub const IglotModuleDriver = struct {
         entry: []const u8,
     ) !?[]*IglotModule {
         const entry_path = try std.fs.path.resolve(allocator, &.{entry});
+        self.root_dir = std.fs.path.dirname(entry_path) orelse ".";
+
         _ = try self.visit(allocator, io, writer, ewriter, dye, entry_path) orelse return null;
+
+        if (self.errors > 0) return null;
         return self.order.items;
     }
 
@@ -65,27 +72,42 @@ pub const IglotModuleDriver = struct {
 
         var mod_deps: std.ArrayList(*IglotModule) = .empty;
 
+        const importer_dir = std.fs.path.dirname(path) orelse ".";
+
         for (mod.program.imports) |imp| {
-            const dir = std.fs.path.dirname(path) orelse ".";
-            const file = try std.fmt.allocPrint(allocator, "{s}.iglot", .{imp.name});
-            const dep_path = try std.fs.path.resolve(allocator, &.{ dir, file });
+            const name = try importName(allocator, imp);
+            const path_span: tokens.Span = .mergeFromSpans(imp.path[0].span, imp.path[imp.path.len - 1].span);
+
+            // `@/` from a file that already lives in the root dir is noise.
+            // report it and keep resolving so it doesn't cascade
+            if (imp.from_root and std.mem.eql(u8, importer_dir, self.root_dir)) {
+                const notes = try allocator.dupe(IglotDiagnostic.Annotation, &.{.{ .note = .{
+                    .message = "imports in the root directory are already root-relative, remove `@/`",
+                } }});
+                try self.fail(allocator, writer, dye, mod.source, .{
+                    .kind = .RedundantRootPrefix,
+                    .span = imp.root_span.?,
+                    .annotations = notes,
+                });
+            }
+
+            const dep_path = try self.resolveImportPath(allocator, importer_dir, imp);
 
             if (!try pathExists(io, dep_path)) {
                 try self.fail(allocator, writer, dye, mod.source, .{
-                    .kind = .{ .ModuleNotFound = .{ .name = imp.name } },
-                    .span = imp.span,
+                    .kind = .{ .ModuleNotFound = .{ .name = name } },
+                    .span = path_span,
                 });
                 return null;
             }
             if (self.in_progress.contains(dep_path)) {
-                const chain = try self.cycleChain(allocator, dep_path, imp.name);
+                const chain = try self.cycleChain(allocator, dep_path, name);
                 const msg = try std.fmt.allocPrint(allocator, "import chain: {s}", .{chain});
-
                 const notes = try allocator.dupe(IglotDiagnostic.Annotation, &.{.{ .note = .{ .message = msg } }});
 
                 try self.fail(allocator, writer, dye, mod.source, .{
-                    .kind = .{ .ImportCycle = .{ .name = imp.name } },
-                    .span = imp.span,
+                    .kind = .{ .ImportCycle = .{ .name = name } },
+                    .span = path_span,
                     .annotations = notes,
                 });
                 return null;
@@ -204,7 +226,33 @@ pub const IglotModuleDriver = struct {
             try dye.red().fmt("{d} error(s)", .{self.errors}),
         });
     }
+
+    fn resolveImportPath(self: *Self, allocator: std.mem.Allocator, importer_dir: []const u8, imp: ast.Import) ![]const u8 {
+        var parts: std.ArrayList([]const u8) = .empty;
+        try parts.append(allocator, if (imp.from_root) self.root_dir else importer_dir);
+
+        // every segment but the last is a directory
+        for (imp.path[0 .. imp.path.len - 1]) |seg| {
+            try parts.append(allocator, seg.value);
+        }
+
+        // the last one is the file
+        const file = try std.fmt.allocPrint(allocator, "{s}.iglot", .{imp.path[imp.path.len - 1].value});
+        try parts.append(allocator, file);
+
+        return std.fs.path.resolve(allocator, parts.items);
+    }
 };
+
+fn importName(allocator: std.mem.Allocator, imp: ast.Import) ![]const u8 {
+    var buf: std.ArrayList(u8) = .empty;
+    if (imp.from_root) try buf.appendSlice(allocator, "@/");
+    for (imp.path, 0..) |seg, i| {
+        if (i != 0) try buf.append(allocator, '/');
+        try buf.appendSlice(allocator, seg.value);
+    }
+    return buf.items;
+}
 
 fn renderParserDiagnostics(
     writer: *std.Io.Writer,

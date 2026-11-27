@@ -240,6 +240,10 @@ pub const IglotLexer = struct {
                         self.advance();
                         return self.newToken(.hashtag, self.source[start..self.cursor]);
                     },
+                    '@' => {
+                        self.advance();
+                        return self.newToken(.at, self.source[start..self.cursor]);
+                    },
                     '?' => {
                         self.advance();
                         return self.newToken(.question, self.source[start..self.cursor]);

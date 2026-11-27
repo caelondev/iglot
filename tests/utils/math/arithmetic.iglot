@@ -1,0 +1,7 @@
+module arithmetic;
+
+import @/utils/printer;
+
+fn sum_of(a :: int, b :: int) void: {
+  printer.format("sum:", a + b);
+}

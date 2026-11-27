@@ -1,5 +1,7 @@
 module main;
 
+import arith :: utils/math/arithmetic;
+
 fn main() void: {
-    x ::= 100000
+  arith.sum_of(100, 2);
 }

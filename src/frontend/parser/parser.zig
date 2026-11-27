@@ -293,17 +293,50 @@ pub const IglotParser = struct {
     fn parseImport(self: *Self, allocator: std.mem.Allocator) !?ast.Import {
         const import_tok = self.cur_tok;
 
-        if (!try self.expectPeek(allocator, .identifier)) return null;
-        const first = self.cur_tok;
-
-        var name = first.lexeme;
         var alias: ?[]const u8 = null;
+        var from_root = false;
+        var root_span: ?tokens.Span = null;
 
-        if (self.peekTokenIs(.box_colon)) {
+        self.nextToken();
+
+        if (self.curTokenIs(.identifier) and self.peekTokenIs(.box_colon)) {
+            alias = self.cur_tok.lexeme;
+            self.nextToken();
+            self.nextToken();
+        }
+
+        if (self.curTokenIs(.at)) {
+            const at_tok = self.cur_tok;
+            if (!try self.expectPeek(allocator, .slash)) return null;
+            from_root = true;
+            root_span = .mergeFromSpans(at_tok.span, self.cur_tok.span);
+            self.nextToken();
+        }
+
+        if (!self.curTokenIs(.identifier)) {
+            try self.reportError(allocator, .{
+                .span = self.cur_tok.span,
+                .kind = .{ .ExpectedToken = .{
+                    .expected = .identifier,
+                    .found = self.cur_tok.kind,
+                } },
+            });
+            return null;
+        }
+
+        var segments: std.ArrayList(ast.IdentifierExpression) = .empty;
+        try segments.append(allocator, .{
+            .value = self.cur_tok.lexeme,
+            .span = self.cur_tok.span,
+        });
+
+        while (self.peekTokenIs(.slash)) {
             self.nextToken();
             if (!try self.expectPeek(allocator, .identifier)) return null;
-            alias = first.lexeme;
-            name = self.cur_tok.lexeme;
+            try segments.append(allocator, .{
+                .value = self.cur_tok.lexeme,
+                .span = self.cur_tok.span,
+            });
         }
 
         if (!try self.expectSemicolon(allocator)) return null;
@@ -311,8 +344,10 @@ pub const IglotParser = struct {
         self.nextToken();
 
         return .{
-            .name = name,
+            .path = try segments.toOwnedSlice(allocator),
             .alias = alias,
+            .from_root = from_root,
+            .root_span = root_span,
             .span = .mergeFromSpans(import_tok.span, sc.span),
         };
     }
