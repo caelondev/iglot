@@ -86,7 +86,7 @@ pub fn run(ctx: *Context) !void {
         // diagnostics belong to the module just analyzed, so render them
         // against that module's own source, then clear for the next one
         if (sema.diagnostics.items.len != 0) {
-            try renderSemaDiagnostics(writer, allocator, &dye, mod.source, &sema);
+            try renderSemaDiagnostics(writer, allocator, &dye, mod.source, &sema, mod.path);
             sema.diagnostics.clearRetainingCapacity();
         }
 
@@ -138,6 +138,7 @@ fn renderSemaDiagnostics(
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
     sema: *const IglotSemanticAnalyzer,
+    path: []const u8,
 ) !void {
     for (sema.diagnostics.items) |diagnostic| {
         try renderDiagnostics(
@@ -146,6 +147,7 @@ fn renderSemaDiagnostics(
             dye,
             source,
             diagnostic,
+            path,
         );
         try writer.writeByte('\n');
     }
@@ -155,33 +157,6 @@ fn renderSemaDiagnostics(
     try writer.print("found {s}\n", .{
         try dye.red().fmt("{d} error(s)", .{
             sema.errors,
-        }),
-    });
-}
-
-fn renderDriverDiagnostics(
-    writer: *std.Io.Writer,
-    allocator: std.mem.Allocator,
-    dye: *InkDye.RuntimeChameleon,
-    source: []const u8,
-    driver: *const IglotModuleDriver,
-) !void {
-    for (driver.diagnostics.items) |diagnostic| {
-        try renderDiagnostics(
-            writer,
-            allocator,
-            dye,
-            source,
-            diagnostic,
-        );
-        try writer.writeByte('\n');
-    }
-
-    if (driver.errors == 0) return;
-    try writer.writeAll(try dye.cyan().fmt("--> ", .{}));
-    try writer.print("found {s}\n", .{
-        try dye.red().fmt("{d} error(s)", .{
-            driver.errors,
         }),
     });
 }

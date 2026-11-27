@@ -12,11 +12,19 @@ pub fn renderDiagnostics(
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
     diagnostic: IglotDiagnostic,
+    file_path: []const u8,
 ) !void {
     try formatSeverity(writer, dye, diagnostic.severity, diagnostic.kind);
     try writer.print(" {s} ", .{try dye.gray().bold().fmt("::", .{})});
     try diagnostic.kind.toMessage(writer);
-    try writer.writeAll("\n\n");
+    try writer.writeAll("\n");
+    try writer.print("  {s} {s}:{s}:{s}\n", .{
+        try dye.cyan().fmt("::", .{}),
+        file_path,
+        try dye.cyan().bold().fmt("{d}", .{diagnostic.span.line_start}),
+        try dye.cyan().bold().fmt("{d}", .{diagnostic.span.column_start}),
+    });
+    try writer.writeAll("\n");
 
     try renderSnippet(writer, allocator, dye, source, diagnostic.span);
 

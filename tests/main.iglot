@@ -5,7 +5,7 @@ import def :: definitions;
 fn main() void: {
   p :: def.Person = {
       .name = "Bob",
-      .age = 30,
+      .age = 30.0,
   };
 
   println#({ p });

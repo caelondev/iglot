@@ -84,7 +84,7 @@ pub const IglotModuleDriver = struct {
                 const notes = try allocator.dupe(IglotDiagnostic.Annotation, &.{.{ .note = .{
                     .message = "imports in the root directory are already root-relative, remove `@/`",
                 } }});
-                try self.fail(allocator, writer, dye, mod.source, .{
+                try self.fail(allocator, writer, dye, mod.source, path, .{
                     .kind = .RedundantRootPrefix,
                     .span = imp.root_span.?,
                     .annotations = notes,
@@ -94,7 +94,7 @@ pub const IglotModuleDriver = struct {
             const dep_path = try self.resolveImportPath(allocator, importer_dir, imp);
 
             if (!try pathExists(io, dep_path)) {
-                try self.fail(allocator, writer, dye, mod.source, .{
+                try self.fail(allocator, writer, dye, mod.source, path, .{
                     .kind = .{ .ModuleNotFound = .{ .name = name } },
                     .span = path_span,
                 });
@@ -105,7 +105,7 @@ pub const IglotModuleDriver = struct {
                 const msg = try std.fmt.allocPrint(allocator, "import chain: {s}", .{chain});
                 const notes = try allocator.dupe(IglotDiagnostic.Annotation, &.{.{ .note = .{ .message = msg } }});
 
-                try self.fail(allocator, writer, dye, mod.source, .{
+                try self.fail(allocator, writer, dye, mod.source, path, .{
                     .kind = .{ .ImportCycle = .{ .name = name } },
                     .span = path_span,
                     .annotations = notes,
@@ -153,13 +153,14 @@ pub const IglotModuleDriver = struct {
                 dye,
                 source,
                 &parser,
+                path,
             );
 
             return null;
         };
 
         if (parser.errors > 0) {
-            try renderParserDiagnostics(writer, allocator, dye, source, &parser);
+            try renderParserDiagnostics(writer, allocator, dye, source, &parser, path);
             return null;
         }
 
@@ -175,7 +176,7 @@ pub const IglotModuleDriver = struct {
                 .span = program.module_header.span,
             });
 
-            try self.renderPending(writer, allocator, dye, source);
+            try self.renderPending(writer, allocator, dye, source, path);
             return null;
         }
 
@@ -198,9 +199,9 @@ pub const IglotModuleDriver = struct {
         return buf.items;
     }
 
-    fn fail(self: *Self, allocator: std.mem.Allocator, writer: *std.Io.Writer, dye: *InkDye.RuntimeChameleon, source: []const u8, diagnostic: IglotDiagnostic) !void {
+    fn fail(self: *Self, allocator: std.mem.Allocator, writer: *std.Io.Writer, dye: *InkDye.RuntimeChameleon, source: []const u8, path: []const u8, diagnostic: IglotDiagnostic) !void {
         self.errors += 1;
-        try renderDiagnostics(writer, allocator, dye, source, diagnostic);
+        try renderDiagnostics(writer, allocator, dye, source, diagnostic, path);
         try writer.writeByte('\n');
     }
 
@@ -215,9 +216,10 @@ pub const IglotModuleDriver = struct {
         allocator: std.mem.Allocator,
         dye: *InkDye.RuntimeChameleon,
         source: []const u8,
+        file_path: []const u8,
     ) !void {
         for (self.diagnostics.items) |diagnostic| {
-            try renderDiagnostics(writer, allocator, dye, source, diagnostic);
+            try renderDiagnostics(writer, allocator, dye, source, diagnostic, file_path);
             try writer.writeByte('\n');
         }
         if (self.errors == 0) return;
@@ -260,6 +262,7 @@ fn renderParserDiagnostics(
     dye: *InkDye.RuntimeChameleon,
     source: []const u8,
     parser: *const IglotParser,
+    file_path: []const u8,
 ) !void {
     for (parser.diagnostics.items) |diagnostic| {
         try renderDiagnostics(
@@ -268,6 +271,7 @@ fn renderParserDiagnostics(
             dye,
             source,
             diagnostic,
+            file_path,
         );
 
         try writer.writeByte('\n');
