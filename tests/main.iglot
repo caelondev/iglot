@@ -1,5 +1,12 @@
 module main;
 
-import @/balls/apple;
+import def :: definitions;
 
-fn main() void: {}
+fn main() void: {
+  p :: def.Person = {
+      .name = "Bob",
+      .age = 30,
+  };
+
+  println#({ p });
+}

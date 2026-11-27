@@ -87,6 +87,7 @@ pub const TypeExpression = struct {
             size: ArraySize,
             element_type: *TypeExpression,
         },
+        member: MemberAccess,
     },
 
     pub const ArraySize = union(enum) {
@@ -103,6 +104,11 @@ pub const TypeExpression = struct {
         // u cannot accidentally reassign it to another value
         function,
         @"struct",
+    };
+
+    pub const MemberAccess = struct {
+        object: *TypeExpression,
+        property: IdentifierExpression,
     };
 };
 

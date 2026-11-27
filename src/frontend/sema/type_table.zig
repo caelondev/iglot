@@ -198,6 +198,24 @@ pub const SemaType = union(enum) {
                 p.* = t;
                 break :blk .{ .nullable = p };
             },
+            .member => |*m| blk: {
+                const ma = try sema.resolveModuleType(allocator, m, m.object.span);
+                switch (ma) {
+                    .failed => return null,
+                    .not_module => {
+                        const name = switch (m.object.kind) {
+                            .identifier => |i| i,
+                            else => "<expression>", // should be uunreachable but just in case
+                        };
+                        try sema.reportError(allocator, .{
+                            .span = m.object.span,
+                            .kind = .{ .NotAModule = .{ .name = name } },
+                        });
+                        return null;
+                    },
+                    .ok => |t| break :blk t,
+                }
+            },
         };
     }
 

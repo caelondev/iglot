@@ -492,7 +492,7 @@ pub const IglotSemanticAnalyzer = struct {
         return .int;
     }
 
-    fn resolveModuleMember(self: *Self, allocator: std.mem.Allocator, m: *const ast.MemberExpression, span: Span) !ModuleAccess {
+    pub fn resolveModuleMember(self: *Self, allocator: std.mem.Allocator, m: *const ast.MemberExpression, span: Span) !ModuleAccess {
         if (m.object.expr != .identifier) return .not_module;
         const namespace = m.object.expr.identifier.value;
 
@@ -536,6 +536,43 @@ pub const IglotSemanticAnalyzer = struct {
             },
         };
         return .{ .ok = node };
+    }
+
+    pub const ModuleTypeAccess = union(enum) {
+        ok: tt.SemaType,
+        failed,
+        not_module,
+    };
+
+    pub fn resolveModuleType(
+        self: *Self,
+        allocator: std.mem.Allocator,
+        m: *const ast.TypeExpression.MemberAccess,
+        span: Span,
+    ) !ModuleTypeAccess {
+        if (m.object.kind != .identifier) return .not_module;
+        const namespace = m.object.kind.identifier;
+
+        // no shadow check. variables live in the value namespace,
+        // `x.Foo` in type position can only ever mean a module
+        const target = self.imports.get(namespace) orelse return .not_module;
+
+        const member = m.property.value;
+
+        const entry = target.types.get(member) orelse {
+            try self.reportError(allocator, .{
+                .span = span,
+                .kind = .{
+                    .UnknownModuleMember = .{
+                        .module = target.name,
+                        .name = member,
+                    },
+                },
+            });
+            return .failed;
+        };
+
+        return .{ .ok = entry.sem_type };
     }
 
     fn resolveFloatType(self: *Self, value: f64, expected_type: ?tt.SemaType) tt.SemaType {

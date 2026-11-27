@@ -102,11 +102,31 @@ fn parseType(
 ) anyerror!?ast.TypeExpression {
     switch (tok.kind) {
         .identifier => {
-            return .{
+            var result: ast.TypeExpression = .{
                 .span = tok.span,
                 .mutability = .mutable,
                 .kind = .{ .identifier = tok.lexeme },
             };
+
+            while (parser.peekIs(.dot)) {
+                parser.nextToken(); // cur = '.'
+                if (!try parser.expectPeek(allocator, .identifier)) return null;
+                const member_tok = parser.cur_tok;
+
+                const obj_ptr = try allocator.create(ast.TypeExpression);
+                obj_ptr.* = result;
+
+                result = .{
+                    .span = .mergeFromSpans(tok.span, member_tok.span),
+                    .mutability = .mutable,
+                    .kind = .{ .member = .{
+                        .object = obj_ptr,
+                        .property = .{ .span = member_tok.span, .value = member_tok.lexeme },
+                    } },
+                };
+            }
+
+            return result;
         },
 
         .left_bracket => {
