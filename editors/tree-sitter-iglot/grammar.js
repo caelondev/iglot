@@ -67,8 +67,13 @@ export default grammar({
     import_decl: $ => seq(
       "import",
       optional(seq(field("alias", $.identifier), "::")),
-      field("name", $.identifier),
+      $.import_path,
       ";",
+    ),
+    import_path: $ => seq(
+      optional(seq(field("root", "@"), "/")),
+      field("name", $.identifier),
+      repeat(seq("/", field("name", $.identifier))),
     ),
 
     _declaration: $ => choice(

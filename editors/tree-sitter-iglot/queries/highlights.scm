@@ -31,6 +31,7 @@
 "(" @punctuation.bracket
 ")" @punctuation.bracket
 "?" @punctuation
+"@" @punctuation
 ; "!" @punctuation
 "," @punctuation
 "." @punctuation
@@ -97,11 +98,16 @@
       name: (identifier) @property)))
 
 ; modules
-(module_decl
-  name: (identifier) @module)
-
-(import_decl
+(import_path
   name: (identifier) @module)
 
 (import_decl
   alias: (identifier) @module)
+
+(import_path
+  name: (identifier) @module .)
+
+(import_path
+  root: "@" @keyword)
+
+(import_path "/" @punctuation.delimiter)
