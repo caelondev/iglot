@@ -65,7 +65,7 @@ pub fn parseStatement(
         Precedence.lowest.toInt(),
     ) orelse return null;
 
-    if (!try parser.expectPeek(allocator, .semicolon)) {
+    if (!try parser.expectSemicolon(allocator)) {
         return null;
     }
 
@@ -91,24 +91,24 @@ pub fn parseStatement(
 /// `synchronize` makes no progress (e.g. it lands on a token the calling
 /// loop has no way to consume, like a stray `}` at top level), forces a
 /// single token of advancement so callers can never spin forever.
-pub fn parseStatementRecovering(
-    parser: *IglotParser,
-    allocator: std.mem.Allocator,
-) !?ast.Statement {
+pub fn parseStatementRecovering(parser: *IglotParser, allocator: std.mem.Allocator) !?ast.Statement {
     const before = parser.advance_count;
+    const start_depth = parser.brace_depth;
     const stmt = try parseStatement(parser, allocator);
 
-    if (parser.panic_mode) {
-        parser.synchronize();
+    std.debug.assert(stmt != null or parser.panic_mode);
 
-        if (!parser.madeProgress(before)) {
-            parser.nextToken();
-            parser.panic_mode = false;
-        }
+    if (parser.panic_mode) {
+        parser.synchronize(start_depth);
     } else if (stmt != null) {
         parser.nextToken();
     }
 
+    // progress guarantee, but never eat the } that closes the enclosing block
+    const at_enclosing_close = parser.curTokenIs(.right_brace) and parser.brace_depth < start_depth;
+    if (!parser.madeProgress(before) and !parser.isEof() and !at_enclosing_close) {
+        parser.nextToken();
+    }
     return stmt;
 }
 

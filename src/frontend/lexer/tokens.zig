@@ -105,6 +105,18 @@ pub const Span = struct {
         };
     }
 
+    // Returns a span after the token with a one-column gap.
+    pub fn afterTokenSpan(tok: Token) Span {
+        const span = tok.span;
+
+        return .{
+            .column_start = span.column_end + 1,
+            .column_end = span.column_end,
+            .line_start = span.line_end,
+            .line_end = span.line_end,
+        };
+    }
+
     pub fn empty() Span {
         return .{
             .column_start = 0,

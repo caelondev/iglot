@@ -2,7 +2,7 @@ const std = @import("std");
 const ast = @import("../ast.zig");
 const IglotParser = @import("../parser.zig").IglotParser;
 const parseStatement = @import("parseStatement.zig").parseStatement;
-const parseScopedStatement = @import("scoped_statement.zig").parseScopedStatement;
+const parseScopedStatement = @import("block_statement.zig").parseScopedStatement;
 const Span = @import("../../lexer/tokens.zig").Span;
 
 pub fn parseLoopStatement(

@@ -28,7 +28,7 @@ pub fn parseVariableDeclaration(
         Precedence.lowest.toInt(),
     ) orelse return null;
 
-    if (!try parser.expectPeek(allocator, .semicolon)) return null;
+    if (!try parser.expectSemicolon(allocator)) return null;
 
     const val_ptr = try allocator.create(ast.Expression);
     val_ptr.* = value;

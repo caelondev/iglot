@@ -199,6 +199,7 @@ pub const IglotParser = struct {
     panic_mode: bool,
     errors: u32,
     advance_count: u32,
+    brace_depth: u32,
 
     const Self = @This();
 
@@ -214,6 +215,7 @@ pub const IglotParser = struct {
             .panic_mode = false,
             .errors = 0,
             .advance_count = 0,
+            .brace_depth = 0,
         };
 
         // fill up cur_tok and peek_tok
@@ -236,7 +238,7 @@ pub const IglotParser = struct {
             if (try self.parseImport(allocator)) |imp| {
                 try imports.append(allocator, imp);
             } else {
-                self.synchronize();
+                self.synchronize(0);
             }
         }
 
@@ -265,19 +267,19 @@ pub const IglotParser = struct {
                     .found = self.cur_tok.kind,
                 } },
             });
-            self.synchronize();
+            self.synchronize(0);
             return null;
         }
         const module_tok = self.cur_tok;
 
         if (!try self.expectPeek(allocator, .identifier)) {
-            self.synchronize();
+            self.synchronize(0);
             return null;
         }
         const name = self.cur_tok.lexeme;
 
-        if (!try self.expectPeek(allocator, .semicolon)) {
-            self.synchronize();
+        if (!try self.expectSemicolon(allocator)) {
+            self.synchronize(0);
             return null;
         }
         const sc = self.cur_tok;
@@ -304,7 +306,7 @@ pub const IglotParser = struct {
             name = self.cur_tok.lexeme;
         }
 
-        if (!try self.expectPeek(allocator, .semicolon)) return null;
+        if (!try self.expectSemicolon(allocator)) return null;
         const sc = self.cur_tok;
         self.nextToken();
 
@@ -319,6 +321,12 @@ pub const IglotParser = struct {
         self.cur_tok = self.peek_tok;
         self.peek_tok = self.lexer.nextToken();
         self.advance_count += 1;
+
+        if (self.advance_count >= 2) switch (self.cur_tok.kind) {
+            .left_brace => self.brace_depth += 1,
+            .right_brace => self.brace_depth -|= 1,
+            else => {},
+        };
     }
 
     pub fn curTokenIs(self: *Self, kind: tokens.TokenKind) bool {
@@ -327,6 +335,39 @@ pub const IglotParser = struct {
 
     pub fn peekTokenIs(self: *Self, kind: tokens.TokenKind) bool {
         return self.peek_tok.kind == kind;
+    }
+
+    pub fn expectSemicolon(self: *Self, allocator: std.mem.Allocator) !bool {
+        if (self.peekTokenIs(.semicolon)) {
+            self.nextToken();
+            return true;
+        }
+
+        const span: tokens.Span = .afterTokenSpan(self.cur_tok);
+        const diag: IglotDiagnostic = .{
+            .span = span,
+            .kind = .{ .ExpectedToken = .{
+                .expected = .semicolon,
+                .found = self.peek_tok.kind,
+            } },
+        };
+
+        const looks_like_boundary = switch (self.peek_tok.kind) {
+            .right_brace, .eof, .identifier, .@"return", .@"break" => true,
+            else => isStatementStart(self.peek_tok.kind),
+        };
+
+        if (looks_like_boundary) {
+            // report, but don't enter panic mode. we'll act like it was there
+            if (!self.panic_mode) {
+                self.errors += 1;
+                try self.diagnostics.append(allocator, diag);
+            }
+            return true;
+        }
+
+        try self.reportError(allocator, diag);
+        return false;
     }
 
     pub fn expectPeek(self: *Self, allocator: std.mem.Allocator, expected_kind: tokens.TokenKind) !bool {
@@ -358,9 +399,11 @@ pub const IglotParser = struct {
 
     pub fn reportError(self: *Self, allocator: std.mem.Allocator, diagnostic: IglotDiagnostic) !void {
         if (self.panic_mode) return;
+        if (diagnostic.severity == .err) {
+            self.panic_mode = true;
+            self.errors += 1;
+        }
 
-        self.panic_mode = true;
-        if (diagnostic.severity == .err) self.errors += 1;
         try self.diagnostics.append(allocator, diagnostic);
     }
 
@@ -368,20 +411,28 @@ pub const IglotParser = struct {
         return Precedence.ofToken(self.cur_tok).toInt();
     }
 
-    pub fn synchronize(self: *Self) void {
+    fn atStatementStart(self: *Self) bool {
+        return switch (self.cur_tok.kind) {
+            .@"return", .@"break" => true,
+
+            // var decl
+            .identifier => self.peek_tok.kind == .box_colon,
+            else => isStatementStart(self.cur_tok.kind),
+        };
+    }
+
+    pub fn synchronize(self: *Self, start_depth: u32) void {
         if (!self.panic_mode) return;
 
-        while (self.cur_tok.kind != .eof) {
-            if (self.cur_tok.kind == .semicolon) {
-                self.nextToken();
-                break;
+        while (!self.isEof()) {
+            switch (self.cur_tok.kind) {
+                .right_brace => if (self.brace_depth < start_depth) break,
+                .semicolon => if (self.brace_depth <= start_depth) {
+                    self.nextToken();
+                    break;
+                },
+                else => if (self.brace_depth <= start_depth and self.atStatementStart()) break,
             }
-            if (self.cur_tok.kind == .right_brace) break;
-            if (isStatementStart(self.peek_tok.kind)) {
-                self.nextToken();
-                break;
-            }
-
             self.nextToken();
         }
 

@@ -1,7 +1,5 @@
 module main;
 
 fn main() void: {
-  msg ::= prompt#("enter a number: ");
-  num ::= parse_to_double#(msg) or_else return;
-  println#({ num });
+    x ::= 100000
 }
