@@ -111,3 +111,13 @@
   root: "@" @keyword)
 
 (import_path "/" @punctuation.delimiter)
+
+; module member paths (a.b.c)
+(module_member
+  (identifier) @module)
+
+(module_member
+  (identifier) @property .)
+
+(module_member
+  "." @punctuation.delimiter)

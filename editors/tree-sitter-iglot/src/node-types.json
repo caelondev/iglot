@@ -76,6 +76,10 @@
           "named": true
         },
         {
+          "type": "module_member",
+          "named": true
+        },
+        {
           "type": "null",
           "named": true
         },
@@ -828,6 +832,10 @@
           "named": true
         },
         {
+          "type": "module_member",
+          "named": true
+        },
+        {
           "type": "nullable",
           "named": true
         },
@@ -1064,6 +1072,10 @@
           "named": true
         },
         {
+          "type": "module_member",
+          "named": true
+        },
+        {
           "type": "nullable",
           "named": true
         },
@@ -1133,6 +1145,10 @@
             "named": true
           },
           {
+            "type": "module_member",
+            "named": true
+          },
+          {
             "type": "nullable",
             "named": true
           },
@@ -1170,6 +1186,10 @@
         },
         {
           "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "module_member",
           "named": true
         },
         {
@@ -1685,6 +1705,21 @@
     }
   },
   {
+    "type": "module_member",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "null",
     "named": true,
     "fields": {}
@@ -1711,6 +1746,10 @@
           },
           {
             "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "module_member",
             "named": true
           },
           {
@@ -1751,6 +1790,10 @@
         },
         {
           "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "module_member",
           "named": true
         },
         {
@@ -1800,6 +1843,10 @@
           },
           {
             "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "module_member",
             "named": true
           },
           {
@@ -2267,6 +2314,10 @@
             "named": true
           },
           {
+            "type": "module_member",
+            "named": true
+          },
+          {
             "type": "nullable",
             "named": true
           },
@@ -2314,6 +2365,10 @@
           },
           {
             "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "module_member",
             "named": true
           },
           {

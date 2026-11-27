@@ -120,6 +120,7 @@ export default grammar({
       $.array,
       $.final,
       $.constant,
+      $.module_member,
     ),
 
     function_type: $ => seq("fn", $.param_types, $._type),
@@ -139,6 +140,7 @@ export default grammar({
     ),
 
     array: $ => seq("[", $._expression, "]", $._type),
+    module_member: $ => seq($.identifier, repeat1(seq(".", $.identifier))),
 
     _statement: $ => choice(
       $.variable_decl,
