@@ -61,6 +61,18 @@
           "match": "\\b(const|fin)\\b"
         },
         {
+          "name": "entity.name.namespace.iglot",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b(?=\\s*\\??\\.\\s*[A-Za-z_])"
+        },
+        {
+          "name": "punctuation.separator.iglot",
+          "match": "\\?\\.|\\."
+        },
+        {
+          "name": "variable.other.property.iglot",
+          "match": "(?<=\\.)[A-Za-z_][A-Za-z0-9_]*\\b"
+        },
+        {
           "name": "support.type.primitive.iglot",
           "match": "\\b(int|wideint|float|double|bool|string|null|void)\\b"
         },
@@ -244,7 +256,7 @@
     },
 
     "method-call": {
-      "match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+      "match": "(\\?\\.|\\.)([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
       "captures": {
         "1": { "name": "punctuation.iglot" },
         "2": { "name": "entity.name.function.method.iglot" }
@@ -262,6 +274,15 @@
           "captures": {
             "1": { "name": "punctuation.iglot" },
             "2": { "name": "punctuation.iglot" }
+          }
+        },
+        {
+          "match": "(\\?\\.)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "punctuation.iglot" },
+            "2": {
+              "name": "entity.name.type.property.iglot markup.italic.iglot"
+            }
           }
         },
         {
@@ -316,3 +337,4 @@
     }
   }
 }
+
