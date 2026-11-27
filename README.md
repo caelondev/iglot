@@ -1,6 +1,6 @@
 <div align="center">
 
-  <h1><strong>iglot</strong></h1>
+  <img src="./assets/iglot.svg" alt="The Iglot Programming Language">
 
   <br>
 
