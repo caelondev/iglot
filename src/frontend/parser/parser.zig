@@ -452,7 +452,7 @@ pub const IglotParser = struct {
 
     fn atStatementStart(self: *Self) bool {
         return switch (self.cur_tok.kind) {
-            .@"return", .@"break" => true,
+            .@"return", .@"break", .@"continue" => true,
 
             // var decl
             .identifier => self.peek_tok.kind == .box_colon,
