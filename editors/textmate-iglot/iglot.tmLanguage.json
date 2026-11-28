@@ -44,7 +44,7 @@
 
     "keyword-expression": {
       "name": "keyword.control.special.iglot",
-      "match": "\\b(return|break)\\b"
+      "match": "\\b(return|break|continue)\\b"
     },
 
     "keyword-special": {
@@ -337,4 +337,3 @@
     }
   }
 }
-
