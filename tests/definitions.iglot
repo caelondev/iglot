@@ -1,6 +1,0 @@
-module definitions;
-
-struct Person: {
-  name :: string,
-  age :: int,
-}

@@ -87,6 +87,10 @@ pub const nud_exprs = [_]NullDenotedExpr{
         .callback = @import("nud/break_expression.zig").parseBreakExpression,
     },
     .{
+        .token_kind = .@"continue",
+        .callback = @import("nud/continue_expression.zig").parseContinueExpression,
+    },
+    .{
         .token_kind = .@"return",
         .callback = @import("nud/return_expression.zig").parseReturnExpression,
     },

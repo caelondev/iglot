@@ -90,6 +90,7 @@ pub const TypedExpr = struct {
         null_unwrap: TypedNullUnwrap,
         module_ref: TypedModuleRef,
         break_expr: ast.BreakExpression,
+        continue_expr: ast.ContinueExpression,
         return_expr: TypedReturnExpression,
     },
 };

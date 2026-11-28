@@ -29,11 +29,13 @@ const buildStructInitExpr = @import("expressions/struct_init.zig").buildStructIn
 const buildMemberExpr = @import("expressions/member.zig").buildMemberExpr;
 const buildNullUnwrapExpr = @import("expressions/null_unwrap.zig").buildNullUnwrapExpr;
 const buildBreakExpr = @import("expressions/break.zig").buildBreakExpr;
+const buildContinueExpr = @import("expressions/continue.zig").buildContinueExpr;
 const buildReturnExpr = @import("expressions/return.zig").buildReturnExpr;
 
 const IdentKind = @import("expressions/call.zig").IdentKind;
 const ResolvedIdent = @import("expressions/call.zig").ResolvedIdent;
 const LoopContext = struct {
+    continue_block: inst.BlockRef,
     break_block: inst.BlockRef,
 };
 
@@ -238,6 +240,7 @@ pub const IglotIR = struct {
             .module_ref => |*mr| (try self.resolveModuleRef(allocator, mr, sema_type)).reg,
             .break_expr => |*b| try buildBreakExpr(self, allocator, b) orelse return null,
             .return_expr => |*r| try buildReturnExpr(self, allocator, r),
+            .continue_expr => |*c| try buildContinueExpr(self, allocator, c),
         };
     }
 

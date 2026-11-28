@@ -134,6 +134,7 @@ pub const Expression = struct {
         member: MemberExpression,
         call: CallExpression,
         break_expr: BreakExpression,
+        continue_expr: ContinueExpression,
         return_expr: ReturnExpression,
     };
 };
@@ -255,6 +256,10 @@ pub const ReturnExpression = struct {
 };
 
 pub const BreakExpression = struct {
+    span: tokens.Span,
+};
+
+pub const ContinueExpression = struct {
     span: tokens.Span,
 };
 

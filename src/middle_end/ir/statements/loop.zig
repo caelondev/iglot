@@ -19,6 +19,7 @@ pub fn buildLoopStmt(self: *IglotIR, allocator: std.mem.Allocator, l: *const typ
     self.goToBlock(loop_start_blk);
     try self.pushLoopContext(allocator, .{
         .break_block = loop_end_blk.id,
+        .continue_block = loop_start_blk.id,
     });
 
     defer {

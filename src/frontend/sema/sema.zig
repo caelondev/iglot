@@ -31,6 +31,7 @@ const validateIfStatement = @import("statements/validate_if_statement.zig").vali
 const validateCallExpr = @import("expressions/validate_call_expr.zig").validateCallExpr;
 const validateLoopStatement = @import("statements/validate_loop_statement.zig").validateLoopStatement;
 const validateBreakExpression = @import("expressions/validate_break_expr.zig").validateBreakExpression;
+const validateContinueExpression = @import("expressions/validate_continue_expr.zig").validateContinueExpression;
 
 const FunctionContext = struct {
     return_type: tt.SemaType,
@@ -429,9 +430,21 @@ pub const IglotSemanticAnalyzer = struct {
                 const node = try allocator.create(typed_ast.TypedExpr);
                 node.* = .{
                     .span = span,
-                    .sem_type = if (expected_type) |e| e else .noreturn,
+                    .sem_type = expected_type orelse .noreturn,
                     .kind = .{
                         .break_expr = b,
+                    },
+                };
+                break :blk node;
+            },
+            .continue_expr => |*c| blk: {
+                const e = try validateContinueExpression(self, allocator, c) orelse return null;
+                const node = try allocator.create(typed_ast.TypedExpr);
+                node.* = .{
+                    .span = span,
+                    .sem_type = expected_type orelse .noreturn,
+                    .kind = .{
+                        .continue_expr = e,
                     },
                 };
                 break :blk node;
@@ -669,6 +682,7 @@ pub const IglotSemanticAnalyzer = struct {
             .member,
             .break_expr,
             .return_expr,
+            .continue_expr,
             => null,
         };
     }

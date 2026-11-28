@@ -155,6 +155,7 @@ pub fn exprCanBreak(e: *const typed_ast.TypedExpr) bool {
         .float,
         .string,
         .module_ref,
+        .continue_expr,
         => false,
 
         // wrappers
@@ -200,6 +201,7 @@ fn exprCanReturn(e: *const typed_ast.TypedExpr) bool {
         .string,
         .module_ref,
         .break_expr,
+        .continue_expr,
         => false,
 
         // wrappers

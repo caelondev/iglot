@@ -1,12 +1,8 @@
 module main;
 
-import def :: definitions;
-
 fn main() void: {
-  p :: def.Person = {
-      .name = "Bob",
-      .age = 30.0,
-  };
-
-  println#({ p });
+  loop: {
+    x ::= continue;
+    println#({ "unreachable" });
+  }
 }
