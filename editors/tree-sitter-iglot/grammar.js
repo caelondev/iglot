@@ -208,6 +208,7 @@ export default grammar({
       $.member,
       $.assign,
       $.break_expr,
+      $.continue_expr,
       $.return_expr,
     ),
 
@@ -224,7 +225,7 @@ export default grammar({
     tag: $ => "#",
     builtin_call: $ => prec.left(PREC.postfix, seq(field("callee", $.identifier), $.tag, "(", optional(commaSep1($._expression)), ")")),
     break_expr: $ => "break",
-
+    continue_expr: $ => "continue",
 
     binary_expression: $ => choice(
       ...BINARY_OPS.map(([op, p]) =>

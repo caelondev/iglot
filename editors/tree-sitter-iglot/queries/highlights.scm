@@ -9,11 +9,12 @@
 "return" @keyword.special
 "const" @keyword.special
 "fin" @keyword.special
-(break_expr) @keyword.special
 "if" @keyword.special
 "else" @keyword.special
 "loop" @keyword.special
 "switch" @keyword.special
+(break_expr) @keyword.special
+(continue_expr) @keyword.special
 
 ; comments
 (comment) @comment
